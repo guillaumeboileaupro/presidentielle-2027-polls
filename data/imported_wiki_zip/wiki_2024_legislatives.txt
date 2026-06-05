@@ -1,0 +1,1416 @@
+Liste de sondages sur les élections législatives françaises de 2024
+Cette page dresse la liste des sondages d'opinion en France relatifs aux élections législatives françaises de 2024.
+                                                                                                                      1, 2
+Tous les sondages de cette liste, sauf mention contraire, se conforment aux règles de la Commission des sondages             et appliquent la méthode dite des quotas.
+
+Une couleur arbitraire est associée à chaque institut de sondage ; ces couleurs sont une aide visuelle et ne correspondent pas à une tendance politique.
+
+
+
+Intervalle de confiance des instituts de sondage
+Les sondages comportent une dimension purement technique. Ils sont publiés accompagnés d'une présentation des
+intervalles de confiance à 95 %. Le tableau résume les intervalles de confiance selon la taille de l'échantillon (ou du
+sous-échantillon). Si pour un échantillon (sous-échantillon) de 1 000 personnes le candidat reçoit 10 % (ou 90 %)
+d'intentions de vote, l'incertitude est de 1,8 points pour un niveau de confiance de 95 %. Il y a donc 95 % de chance
+                                                                               3
+que son score soit compris entre 8,2 et 11,8 % (respectivement 88,2–91,8 %) .
+
+La base de comparaison doit être cohérente : il faut soit donner le pourcentage par rapport à l'effectif total y compris
+                                                                                                                                 Intervalle de confiance à 95 % de
+abstention, blanc et NSPP, soit N doit être limité aux intentions de vote pour un candidat quand l'on veut que la
+                                                                                                                                 chance.
+somme des scores fasse 100 % comme ci-dessous. Par exemple à 25 % d'abstention, 1 000 sondés ne correspondent
+qu'à 750 exprimés pour un candidat, ce qui monte l'incertitude à ± 3,6 %.
+
+Les intervalles de confiances publiés sont généralement ceux donnés par la méthode dite aléatoire, ceux de la méthode des quotas n'étant pas calculables. Il est
+                                                                                                                                  4
+cependant généralement admis que la marge d’erreur des sondages par quotas est égale ou inférieure à celle des sondages aléatoires .
+
+
+
+Estimation du taux de participation
+                                     5, 6                                                                        6
+« Grande inconnue » des sondeurs , la participation est estimée entre 62 et 67 %, contre 47 % en 2022 , près de 2/3 des Français interrogés se déclarant
+                          6                                                                   7
+« certains d’aller voter » , 9% déplaçant même leur départ en vacances, dont 19% des 18-24 ans . Si elle approchait 70% ce serait un plus haut depuis 1978.
+                                                                                      8                                                                 9
+Les sondages des européennes avaient eu du mal à l'estimer, Ipsos tablant sur 45 % , alors qu'elle est montée à 51,5 %, plus haut depuis 30 ans , bien qu'à 38 %
+                                             5
+chez les 18-24 ans et 42 % chez les 25-34 ans .
+                                   10                                                                   10
+Depuis le milieu des années 2010 , la certitude d'aller voter est mesurée sur une échelle de 1 à 10 , permettant aux sondés de manifester l'incertitude de leur
+     10                                                                                        11, 12
+vote , seule l'intention des "certains" de voter étant intégrée dans les tableaux de résultats       . Le biais le plus souvent évoqué est de « sous-représenter un
+                                                                                                                    13, 12
+électorat moins politisé et moins informé, généralement plus jeune, qui ne se décidera qu’au dernier moment »             , situé « essentiellement dans les catégories
+            14
+populaires » avec trois années de suite des résultats finaux montrant une marge d'erreur sous-évaluée, les écarts constatés aux européennes de 2019, puis
+amplifiés aux régionales de 2021, et devenant spectaculaires à la présidentielle 2022.
+
+
+
+Électeurs certains de voter mais indécis
+Une proportion élevée d'électeurs se dit « certaine » de voter mais sans exprimer ou dévoiler encore d'intention, selon plusieurs sondeurs. L'avant-veille du
+                                                                                                  15            16                     17
+scrutin, elle s'élevait à 18 % des certains d'aller voter chez chez les instituts de sondage Odoxa et Opinionway , et de 12% chez Elabe contre 8 % après la
+                                              18
+dissolution Elabe et 9 % pour Opinionway . Selon Vincent Tiberj, professeur de sciences politiques à Bordeaux, le « choix d’avoir investi des socialistes dans
+de nombreuses circonscriptions gagnables mais perdues en 2022 » et au total 30 % du total des candidats NFP, vise cet électorat sur la réserve et un meilleur
+                                                                                                                               19
+report de voix au second tour qu’avec l'étiquette LFI (40 % des candidats NFP, Les Écologistes en ayant 20 % et le PCF 9 %) , car 92 circonscriptions-clés
+                                                             20
+s'étaient jouées en 2022 par moins de 1 000 votes d’écart .
+
+
+
+Prévisions des sondeurs sur 100 à 250 triangulaires
+Une élection triangulaire désigne les cas où trois candidats peuvent se maintenir et le font, avec 12,5% des inscrits. Les sondeurs en ont d'abord prévu plus d'une
+                                                                                                                                                   21
+centaine puis jusqu'à 250, la participation étant prévue de plus haut au cours de la campagne électorale jusqu'à « au plus haut depuis 25 ans » ce qui accroît
+                                 22                                                                                                                         23
+« mécaniquement » leur nombre , la clé du vote se trouvant alors « peut-être dans le nombre de désistements, même en cas de triangulaires théoriques » . Les
+                                                                                                 23
+« figures du Nouveau Front populaire » y ont appelé dans les cas de victoire potentielle du RN . L'avant-veille du scrutin, Brice Teinturier, d'IPSOS, avertissait
+                                                                                                                              24
+que cette plus forte participation peut produire des élus de premier tour, à un niveau inconnu "depuis longtemps" , mais aussi "jusqu'à environ 250
+              22                         25                        25                                                                                          7
+triangulaires" soit un nouveau record , dépassant celui de 1997 . Le moindre nombre de candidatures qu'en 2022 contribue au pronostic de triangulaires .
+                                                                                                                                26
+Une centaine de triangulaires théoriques avaient émergé aux législatives de 1997, avant des accords d'entre-deux-tours les ramenant à 79 triangulaires, dont
+                           26                                               27              25
+76 avec le Front national . C'était 8 en 2022, une en 2017, 34 en 2012 et 41 en 2002 . Selon Odoxa, dans un contexte de crise aiguë causée par l'alliance
+                                                                                                       28
+Ciotti-RN et de sondages médiocres pour le parti du président, il y a 120 à 170 triangulaires à prévoir , rendant les projections périlleuses et permettant au RN
+                                                                                                29
+de « bénéficier de la division des électeurs qui ne veulent pas » de l'extrême droite au pouvoir .
+Les résultats du premier tour entraînent un nombre inédit de 306 triangulaires et 5 quadrangulaires avant désistement. Après désistement des candidats dont la
+                                                                                                  30
+quasi totalité contre le Rassemblement national, il subsiste 89 triangulaires et 2 quadrangulaires .
+
+
+
+Différence entre sondages et estimations au soir du scrutin
+Au soir du scrutin, la « plupart des médias » donnent les pourcentages nationaux obtenus non par des sondages mais via des « estimations » fondées sur les
+                                      31                                                                31                                   31
+« 200 premiers bulletins dépouillés » d’un « nombre défini de bureaux » de vote jugés représentatifs , près de 600 bureaux pour l'IFOP , mis avec une
+                                                                                                 31        2
+grande part de bureaux hors agglomérations en raison des délais de dépouillement et vérifications dont les ⁄3 ont fermé à 18 heures, 5 % à 10 % à 19 heures et
+                                  31
+le reste, 20 % à 25 % à 20 heures .
+
+
+
+Sondages à l'échelle nationale
+
+
+
+
+  Diagramme lissé des sondages.
+  Diagramme lissé des sondages à partir du 10 juin.
+
+
+
+Premier tour
+
+Sondages nationaux
+                                                            a
+                                                      NFP                                                                ENS                                                 RN et a
+                                                                                                                                                                     b
+ Sondeur           Date        EXG                                   DVG        ECO         DVC                                                      DVD        LR
+                                                                                                                                                                           LR
+                                        LFI    PCF      EELV    PS                                    RE     MoDem        HOR      PRV      UDI                                   c
+                                                                                                                                                                         (Ciotti)
+
+ Résultats
+  (https://w
+  ww.result
+ ats-electio
+                30 juin 2024   1,14 %            28,06 %             1,53 %    0,57 %     1,22 %                      20,04 %                        3,60 %   6,57 %     3,96 %
+ ns.interieu
+ r.gouv.fr/le
+  gislatives
+    2024/)
+                                                                        Arrêt de publication des sondages pour le premier tour (29 juin 2024).
+
+ Ipsos (htt
+ ps://www.i
+ psos.com/
+ sites/defa
+ ult/files/ip
+ sos-le-mo
+                 27-28 juin                                                                                                                      d
+ nde-legisl                     1%                    29 %            1%          —        1,5%                     20 %                    —              8%              4%
+                   2024
+ atives-pre
+ mier-tour-i
+ ntentions-
+ de-vote-2
+ 8-juin-202
+   4.pdf)
+     Harris
+ Interactive
+ (https://ha
+  rris-intera
+ ctive.fr/wp
+                 27-28 juin
+ -content/u                    0,5 %                  28 %            1%          —         1%                          20 %                          2%        6%         3%
+                   2024
+  ploads/sit
+   es/6/202
+  4/06/KYJ
+  UGTRUJ
+  H5H.pdf)
+ Ifop (http
+ s://www.if
+ op.com/w
+ p-content/
+                 25-28 juin
+ uploads/2                      1%                    29 %            1%          —        0,5 %                       20,5 %                              7%                   36,5
+                   2024
+ 024/06/R
+ OL24_20
+ 240628.p
+     df)
+ Odoxa (ht       26-27 juin     1%                27,5 %             1,5 %       1%          —                          21 %                          2%        7%               35 %
+ tps://www.        2024
+ odoxa.fr/s
+  ondage/p
+  articipatio
+ n-massive
+ -record-de
+ -triangulai
+ res-et-rn-
+a-portee-d
+e-majorite
+-absolue/)
+ Opinion
+Way (http
+s://www.o
+pinion-wa
+y.com/fr/c
+omponen
+t/edocma
+n/opinion
+way-et-va
+e-solis-po     26-27 juin
+                            1%      28 %     1%      <1 %    —        20 %            2%           6%           37 %
+ur-les-ech       2024
+os-et-radi
+o-classiqu
+e-legitrack
+-vague-3-
+27-juin-20
+24/viewdo
+cument/3
+434.html?
+Itemid=0)
+Elabe (htt
+ps://elabe.
+fr/wp-cont
+ ent/uploa
+ds/2024/0
+6/280620
+ 24_elabe
+               26-27 juin                                                         f
+_bfmtv_la                   1%      27,5 %   2%       —     0,5 %   20 %      —               9%                36 %
+                 2024
+-tribune-di
+manche_l
+es-francai
+s-et-les-el
+ections-le
+gislatives.
+    pdf)
+ Cluster17
+(https://clu
+ ster17.co
+m/wp-cont
+ ent/uploa
+ds/2024/0      25-27 juin
+                            1,5 %   29,5 %   1%       —     1%        20 %            1,5 %        7,5 %   4%
+ 6/Notice-       2024
+ Publique-
+LEG-2806
+ 24-C17-L
+e-Point.pd
+     f)
+Ifop (http
+s://www.if
+op.com/w
+p-content/
+               24-27 juin
+uploads/2                   0,5 %   29 %     1%       —     1%        21 %                 6,5 %                36 %
+                 2024
+024/06/R
+OL24_20
+240627.p
+    df)
+  Opinion
+Way (http
+s://www.o
+pinion-wa
+y.com/fr/c
+omponen
+t/edocma
+ n/opinion
+way-pour-
+cnews-eur      25-26 juin
+                            1%      28 %     1%      1%      —        20 %            2%           7%           36 %
+ope-1-le-j       2024
+dd-barom
+etre-legisl
+atives-202
+4-28-juin-
+2024/view
+documen
+ t/3435.ht
+ml?Itemid
+    =0)
+    Harris
+Interactive
+(https://ha
+ rris-intera
+ctive.fr/wp
+-content/u     25-26 juin
+                            0,5 %   27 %     1%       —     0,5 %     21 %            2%           6%      3%
+ ploads/sit      2024
+  es/6/202
+ 4/06/NBV
+ CGVHBG
+ NBJHN.p
+     df)
+ Cluster17     22-24 juin   1,5 %   30 %     1,5 %    —     1%       19,5 %           1,5 %        7,5 %   4%
+(https://clu     2024
+ster17.co
+m/wp-cont
+ent/uploa
+ds/2024/0
+6/Sondag
+e-Le-Point
+-Cluster-1
+ 7-3.pdf)
+ Ipsos (htt
+ps://www.i
+psos.com/
+ sites/defa
+ult/files/ct/
+ news/doc
+ uments/2
+ 024-06/ip      21-24 juin                                                        d
+                             1%      29 %     1%    —      1,5 %   19,5 %     —               8%        4%
+ sos-enqu         2024
+ete-electo
+ rale-franc
+aise-2024
+-vague-6-r
+ apport-co
+mplet-WE
+   B.pdf)
+    Harris
+Interactive
+(https://ha
+ rris-intera
+ctive.fr/wp
+-content/u      21-24 juin
+                             1%      27 %     1%    —      1%         20 %            2%           7%   4%
+ ploads/sit       2024
+  es/6/202
+4/06/UHD
+ I1873ND
+ HQQO18
+    3.pdf)
+Ifop (http
+s://www.if
+op.com/w
+p-content/
+                20-24 juin
+uploads/2                    1%      29,5 %   1%    —      1%        20,5 %                   7%             36 %
+                  2024
+024/06/R
+OL24_20
+240624.p
+    df)
+Elabe (htt
+ps://elabe.
+fr/wp-cont
+ ent/uploa
+ds/2024/0
+6/220620
+ 24_elabe
+                19-21 juin                                                        f
+_bfmtv_la                    1%      27 %     2%    —      0,5 %   20 %       —            10 %              36 %
+                  2024
+-tribune-di
+manche_l
+es-francai
+s-et-les-el
+ections-le
+gislatives.
+    pdf)
+Ipsos (htt
+ps://www.
+commissi
+on-des-so
+                19-20 juin
+ndages.fr/                   1,5 %   29,5 %   1%    —      1%        19,5 %           1,5 %        7%   4%
+                  2024
+notices/m
+edias/fichi
+ers/add/1
+  835)
+ Opinion
+Way (http
+s://www.c
+ommissio
+n-des-son       19-20 juin
+                             1%      28 %     1%   <1 %     —         22 %            3%           6%        35 %
+dages.fr/n        2024
+otices/me
+dias/fichie
+rs/add/18
+    29)
+Odoxa (ht
+tps://www.
+                19-20 juin
+odoxa.fr/s                   2%      28 %     3%   1,5 %    —         19 %            1%           7%        33 %
+                  2024
+ ondage/1
+ 3142-2/)
+   Harris       19-20 juin   1%      26 %     1%    —      1%         21 %            2%           6%   2%
+Interactive       2024
+ (https://w
+ww.commi
+ssion-des-
+sondages.
+fr/notices/f
+iles/notice
+ s/2024/jui
+n/9857-ha
+rris-intera
+ctive-chall
+enges-va
+gue-2-20-j
+ uin.pdf)
+ Opinion
+Way (http
+s://www.c
+ommissio
+n-des-son      18-20 juin                                                                                                                                f
+                            <1 %                  27 %                     2%          1%           —                      20 %                    —         2%           7%               35 %
+dages.fr/n       2024
+otices/me
+dias/fichie
+rs/add/18
+    29)
+ Ifop (http
+ s://www.c
+ ommissio
+n-des-son
+dages.fr/n
+ otices/file
+               18-20 juin
+s/notices/                  1%                    29 %                     1%           —          1%                          22 %                                  6%                    34 %
+                 2024
+2024/juin/
+9856-leg-i
+fop-le-figa
+ro-lfi-sud-r
+adio-le-20
+ -juin.pdf)
+Cluster17
+(http://ww
+w.commis
+sion-des-s
+ondages.f
+r/notices/fi
+               17-19 juin
+ les/notice                 1%                    30 %                     3%           —           —                          19 %                          2,5 %        7%               32 %
+                 2024
+s/2024/jui
+ n/9862-le
+ g-cluster-
+17-le-poin
+t-21-juin.p
+     df)
+Ifop (http
+s://www.if
+op.com/w
+p-content/     14-17 juin
+                            1,5 %                 28 %                     3%           —           —                          18 %                          2%           5%         4%
+uploads/2        2024
+024/06/12
+0918-Rap
+ port.pdf)
+                                                                         Début de la campagne électorale officielle en vue du premier tour (17 juin 2024).
+
+Ifop (http
+s://www.if
+op.com/w
+p-content/     13-14 juin
+                            1%                    26 %                    3,5 %         —           —                          19 %                          1,5 %             7%
+uploads/2        2024
+024/06/12
+0912-Rap
+ port.pdf)
+                                    Debout la France soutient l'« union des droites » derrière le RN et renonce à présenter des candidats dans la majorité des circonscriptions (14 juin 2024).
+
+  Opinion
+Way (http
+s://www.c
+ommissio
+n-des-son
+dages.fr/n
+otices/file    12-13 juin                                                                                                                            f
+                            1%                    25 %                     2%          2%           —                      20 %                              2%                7%
+s/notices/       2024
+2024/juin/
+9854-leg-
+opinion-w
+ay-legitrac
+k-v1-le-18
+ -juin.pdf)
+ Cluster17
+ (https://w
+ww.commi
+ssion-des-
+sondages.
+fr/notices/f
+               11-13 juin
+iles/notice                 1%                   28,5 %                    3%         1,5 %        1%                          18 %                          2,5 %             7%
+                 2024
+ s/2024/jui
+ n/9852-le
+ g-cluster-
+17-le-poin
+t-14-juin-2
+  024.pdf)
+                                                                                                                                                     f
+ Opinion       11-12 juin   1%                    25 %                     3%          1%           —                      19 %                              1%                9%
+Way (http        2024
+s://www.c
+ommissio
+n-des-son
+dages.fr/n
+otices/file
+s/notices/
+2024/juin/
+9853-leg-
+ow-le-jdd-
+cnews-eur
+ope-1-le-1
+4-juin.pdf)
+Elabe (htt
+ps://elabe.
+fr/wp-cont
+ent/uploa
+ds/2024/0
+6/120620
+                11-12 juin
+24_elabe                      1%                     28 %                     5%           —          —                             18 %                           2%                6,5 %
+                  2024
+_bfmtv_le
+s-francais
+-et-les-ele
+ctions-legi
+slatives.p
+     df)
+                                                   Le président LR, Éric Ciotti, annonce une alliance avec le Rassemblement national, rapidement contestée en interne (11 juin 2024).
+                                      Les principaux partis de gauche, regroupés en 2022 sous l'étiquette NUPES, annoncent la création d'un Nouveau Front populaire (nuit du 10 au 11 juin 2024)
+
+ Ifop (http
+s://www.c                     1%                     25 %                     5%           —          —                             18 %                          1,5 %               9%
+ommissio
+n-des-son
+dages.fr/n
+ otices/file
+                10-11 juin
+s/notices/                    1%        11 %              19 %                3%           —          —                             17 %                           2%                 8%
+                  2024
+2024/juin/
+9850-leg-i
+fop-le-figa
+ro-lci-sud-
+radio-11-j                    1%        11 %     2%       6%       13 %       2%           —          —                             16 %                           1%                 8%
+  uin.pdf)
+ Opinion
+Way (http
+s://www.c
+ommissio
+n-des-son
+dages.fr/n
+otices/file                                                                                                                                                f
+               10 juin 2024   1%                     23 %                     4%          2%          —                         18 %                               2%                 8%
+s/notices/
+2024/juin/
+9848-leg-
+opinionwa
+y-cnews-1
+0-juin-202
+  4.pdf)
+   Harris
+Interactive
+ (https://w
+ww.commi
+ssion-des-
+sondages.
+fr/notices/f    9-10 juin
+                              3%                     22 %                     9%           —          —                             19 %                                        9%
+iles/notice       2024
+ s/2024/jui
+ n/9847-le
+g-harris-in
+teractive-c
+hallenges-
+m6-rtl.pdf)
+                                                                                                               32                                                                                 33
+                                Le président de la République Emmanuel Macron dissout l'Assemblée nationale         et convoque des élections législatives pour le 30 juin et le 7 juillet 2024        (9 juin
+
+Ifop (http
+s://www.c
+ommissio
+n-des-son                     1,5 %                  24 %                     6%           —          —                             19 %                           3%                11 %
+dages.fr/n
+otices/file       12-13
+s/notices/      décembre
+2023/dec          2023
+embre/97
+05-leg-ifo
+                              1%        10 %     4%       9%        8%        2%           —          —                             18 %                           3%                10 %
+p-sud-radi
+o-17-dece
+mbre.pdf)
+Elabe (htt
+ps://elabe.
+fr/wp-cont
+ent/uploa
+ds/2023/0
+4/202304         3-5 avril                                                                                                                                 f
+                              1%                    25,5 %                    3%           —          —                        21,5 %                              1%               11,5 %
+05_elabe          2023
+_bfmtv_le
+s-francais
+-et-le-clim
+at-politiqu
+   e.pdf)
+ Ifop (htt     20-21 mars     1%                     26 %                     5%           —          —                             22 %                           2%                10 %
+p://www.c         2023
+ommissio
+n-des-son
+ dages.fr/n
+  otices/file
+  s/notices/
+  2023/mar                      1%        11 %    3%        9%        7%       3%          —          —                      21 %                        1%           10 %
+  s/9684-le
+ g-ifop-jdd.
+     pdf)
+    Harris
+ Interactive
+  (http://ww
+ w.commis
+ sion-des-s
+ ondages.f
+                 3-7 mars                                                                                                                         f
+ r/notices/fi                   1%                      24 %                   6%          —         1%                    24 %                          3%           10 %
+                   2023
+  les/notice
+  s/2023/m
+ ars/9683-l
+ eg-23-hi-c
+ hallenges.
+     pdf)
+  Cluster17
+ (https://clu
+  ster17.co
+ m/wp-cont
+  ent/uploa         4-6
+                                                                                                                                                  f
+ ds/2022/1       novembre      1,5 %                    24,5 %                 3%          —         0,5 %                 25 %                          2%          10,5 %
+  1/sondag         2022
+  e-legislati
+  ves-Notic
+  e-techniq
+   ue.pdf)
+ Ifop (http
+ s://www.if
+                               1,5 %                    25 %                   4%          —          —                      27 %                        2%           11 %
+ op.com/w
+ p-content/         2-4
+ uploads/2       novembre
+ 022/11/11         2022
+ 9572-Rap
+                               1,5 %      11 %    3%        7%        8%       2%          —          —                      26 %                        3%           11 %
+ port-JDDx
+  SR.pdf)
+ Résultats
+  (https://w
+  ww.result
+ ats-electio
+ ns.interieu    12 juin 2022   1,2 %                    25,7 %                 3,7 %      2,7 %      1,3 %                  25,8 %                      2,3 %        11,3 %
+ r.gouv.fr/le
+ gislatives-
+ 2022/FE.h
+     tml)
+
+
+
+Sondages locaux
+
+
+Par circonscription législative
+
+
+10e circonscription du Nord
+
+Premier tour
+
+                                                                                                   REV          REN
+                                                                                  LO                                          RES         LR                 RN         REC
+                                                                                                  (NFP)      (Ensemble)
+                Sondeur                          Date            Échantillon
+                                                                                                                                                                      Viguie-
+                                                                                Charlon      Mortreux         Darmanin       Brazon      Garcia       Verbrugghe
+                                                                                                                                                                     Desplaces
+
+ Résultats (https://www.resultats-el
+ ections.interieur.gouv.fr/legislatives    30 juin 2024            49 691        1,10 %        24,83 %         36,03 %       0,25 %      2,98 %         34,31 %        0,51 %
+                2024/)
+ Ifop (http://www.commission-des-s
+ ondages.fr/notices/files/notices/202
+                                            18-20 juin              602          1,5 %            24 %          42 %              1%     2,5 %           28 %           1%
+ 4/juin/9869-leg-10eme-nord-ifop-p
+            aris-match.pdf)
+
+Second tour
+
+                                                                                                                            REV (NFP)      REN (Ensemble)             RN
+                                       Sondeur                                                    Date       Échantillon
+                                                                                                                             Mortreux          Darmanin            Verbrugghe
+
+                                                                                                                                  27 %                44 %           29 %
+ Ifop (https://www.ifop.com/wp-content/uploads/2024/06/120925-Resultats.pdf)                 18-20 juin         602
+                                                                                                                                   -                  65 %           35 %
+
+
+3e circonscription du Lot-et-Garonne
+
+Premier tour
+                                                                                                                                   LFI
+                                                                                                                      LO                           DVG               LR         RN
+                                                                                                                                  (NFP)
+                                  Sondeur                                            Date          Échantillon
+                                                                                                                     Gasc         Czapla       Cahuzac           Lepers       Cousin
+
+ Résultats (https://www.resultats-elections.interieur.gouv.fr/legislatives
+                                                                                30 juin 2024          53 004        1,01 %        18,36 %         14,56 %     24,99 %         41,08 %
+                                2024/)
+
+ Ifop (https://www.ifop.com/wp-content/uploads/2024/06/120960-Result
+                                                                                   24-26 juin          650           1%             19 %           23 %              19 %      38 %
+                                ats.pdf)
+
+Second tour
+
+                                                                                                                        LFI (NFP)           DVG             RN
+                                        Sondeur                                             Date       Échantillon
+                                                                                                                           Czapla       Cahuzac        Cousin
+
+                                                                                                                             22 %           31 %          47 %
+ Ifop (https://www.ifop.com/wp-content/uploads/2024/06/120960-Resultats.pdf)            24-26 juin           650
+                                                                                                                              -             49 %          51 %
+
+
+1re circonscription des Alpes Maritimes
+
+Premier tour
+
+                                                                                         LFI            HOR                                         RAD
+                                                                           LO                                          EAC             LR                             DIV       DIV
+                                                                                        (NFP)        (Ensemble)                                     (RN)
+                Sondeur                      Date          Échantillon
+                                                                                                                       Ben           Vanier-                                  Wahid
+                                                                         Langouet      Salerno        Monetti                                       Ciotti           Bovis
+                                                                                                                      Moulay         Guérin                                   Spach
+
+ Résultats (https://www.resultats
+ -elections.interieur.gouv.fr/legisl    30 juin 2024         51 738       0,62 %       26,62 %        22,79 %         2,81 %         5,78 %        41,04 %           0,07 %   0,27 %
+           atives2024/)
+ Ifop (https://www.ifop.com/wp-c
+ ontent/uploads/2024/06/120963
+ -Ifop-Fiducial-pour-Sud-Radio-L
+                                         25-27 juin           702         0,5 %         26 %            22 %            3%            5,5 %         42 %             0,5 %     0,5 %
+ e-climat-legislatif-dans-la-1e-cir
+ conscription-des-Alpes-Maritime
+                s.pdf)
+
+Second tour
+
+                                                                                                                                            LFI           HOR                  RAD
+                                                                                                                                           (NFP)       (Ensemble)              (RN)
+                                              Sondeur                                                    Date        Échantillon
+                                                                                                                                       Salerno              Monetti            Ciotti
+
+
+ Ifop (https://www.ifop.com/wp-content/uploads/2024/06/120963-Ifop-Fiducial-pour-Sud-Radi                25-27                             27 %              27 %              46 %
+                                                                                                                        702
+            o-Le-climat-legislatif-dans-la-1e-circonscription-des-Alpes-Maritimes.pdf)                    juin                             40 %                  -             60 %
+
+
+7e circonscription de la Seine-Saint-Denis
+
+Premier tour
+
+                                                                                         LFI                                           HOR
+                                                      LO        NPA-R      PRCF                    LFI diss.          AC                              DVD              RN       DIV
+                                                                                        (NFP)                                       (Ensemble)
+ Sondeur            Date        Échantillon
+                                                                                       Ali Ben
+                                                  Jochaud      Caudron    Duterte                  Corbière        Verhaeghe         Breteau         Toche            Trova    Atlani
+                                                                                         Ali
+
+ Résultats
+  (https://w
+ ww.result
+  ats-electi
+                 30 juin 2024      55 346           0,63 %      0,30 %     0,33 %      36,38 %       40,19 %        0,95 %           10,06 %         1,31 %          9,69 %    0,14 %
+  ons.interi
+ eur.gouv.f
+ r/legislativ
+  es2024/)
+ Ifop (http
+ s://www.if
+ op.com/w
+ p-content/
+                  25-26 juin           700            1%          0%         1%         35 %          40 %           1,5 %            10 %            1,5 %           10 %      0%
+ uploads/2
+ 024/06/12
+ 0961-Res
+ ultats.pdf)
+
+Second tour
+                                                                                                                       LFI (NFP)    LFI diss.
+                                     Sondeur                                              Date       Échantillon
+                                                                                                                      Ali Ben Ali   Corbière
+
+ Ifop (https://www.ifop.com/wp-content/uploads/2024/06/120961-Resultats.pdf)           25-26 juin        700              46%        54 %
+
+
+6e circonscription du Calvados
+Second tour
+
+                                                                                                                      REN (Ensemble)         RN
+                                     Sondeur                                             Date        Échantillon
+                                                                                                                          Borne            Calbrix
+
+ Ifop (https://www.ifop.com/wp-content/uploads/2024/07/120979-Resultats.pdf)           2-3 juillet      711                54 %             46 %
+
+
+
+Projections sur second tour avant le 1er tour
+La question posée est : « En cas de duel entre un candidat du Front populaire et un candidat du Rassemblement national dans votre circonscription, vous
+préférez… ? »
+
+                                                   Sondeur                                                     Date        Panel    NFP      RN      Ne sait pas
+
+           OpinionWay (https://www.commission-des-sondages.fr/notices/medias/fichiers/add/1830)         17-18 juin 2024    1 044    33 %    41 %        26 %
+
+La question posée est : « En cas de duel entre un candidat de la Majorité présidentielle et un candidat du Rassemblement national dans votre circonscription,
+vous souhaitez… ? »
+
+                                                   Sondeur                                                     Date        Panel    ENS      RN      Ne sait pas
+
+           OpinionWay (https://www.commission-des-sondages.fr/notices/medias/fichiers/add/1830)         17-18 juin 2024    1 044    40 %    37 %        22 %
+
+
+
+Projections en sièges
+Les projections en sièges sont beaucoup moins fiables et beaucoup plus fragiles que celles en pourcentage de voix, notamment à cause des triangulaires, qui ne
+                                        34
+sont pas connues avant le 2 juillet 2024 .
+
+Deux projections, par Mediapart et Le Figaro, menées à partir des résultats des récentes élections européennes du 9 juin 2024, montrent le RN en tête dans 457
+                                    35                                                                                                     35, 36
+d'entre elles (près de huit sur dix) et au second tour des duels dans 513 circonscriptions, dont 461 (90 % d’entre eux) entre RN et gauche       , mais aussi 52
+                                                                                         36
+duels incluant Renaissance, dont 41 contre le Nouveau Front populaire et 11 contre le RN .
+
+
+
+
+Élections législatives françaises de 2024 : points moyens des projections en sièges.
+Données ci-dessous, moyennes mobiles sur 4 valeurs.
+                                                         a                        ENS                                                UPF
+                                                      NFP                                                        b
+ Sondeur             Date           Panel                          DVG      (RE-MoDem-HOR-   DVD           LR        RN et alliés   (DLF-   Autres
+                                               (LFI-PCF-EELV-PS)
+                                                                                PRV-UDI)                                             LP)
+
+ Résultats
+ (https://ww
+w.resultats-
+elections.int
+erieur.gouv.
+                                                      178            12           150          27           39          142                   29
+fr/legislative                                                                                                                       —
+                 7 juillet 2024   32 908 657        30,84 %        2,08 %        26 %        4,68 %       6,76 %      24,61 %               5,03 %
+   s2024/)                                                                                                                           (-)
+                                                     (193)           (-)         (166)         (-)            (47)      (142)                (29)
+(Composition
+des groupes à
+l'ouverture de
+  l'Assemblée
+    nationale)
+
+  Cluster 17
+(https://clust
+ er17.com/s
+ ondage-ele
+                                                   165 - 195                   130 - 160                  30 - 50     170 - 210             15 - 30
+ctions-legisl    5 juillet 2024     1 401                            —                         —                                     —
+                                                   29-34 %                     23-28 %                    5-9 %       29-36 %               3-5 %
+atives-notre
+ -ultime-proj
+ection-en-si
+    eges/)
+Ifop (https://
+www.tf1info.
+fr/elections/
+exclusif-a-q
+ uoi-ressem
+blera-la-futu
+ re-assembl
+                   3-5 juillet                      155-185        10-18       120-150                50-65           170-210               5-15
+ ee-decouvr                         2 859                                                                                            —
+                     2024                           27-32%         2-3%        21-26%                 9-11%           29-36%                1-3%
+ez-les-resul
+tats-de-notr
+e-sondage-
+ quotidien-d
+ u-5-juillet-2
+307299.htm
+      l)
+    Harris
+ Interactive
+(https://harri
+ s-interactiv
+e.fr/wp-cont       4-5 juillet                     168-198                     115-145                 32-63          185-215               15-30
+                                    2 951                            —                                                               —
+ ent/upload          2024                          29-34 %                     20-25 %                6-11 %          32-37 %               3-5 %
+s/sites/6/20
+24/07/UJYH
+GTRFEZSE
+ FGHJ.pdf)
+ Ipsos (http
+ s://www.ips
+os.com/fr-fr/
+legislatives-
+2024/legisla       3-4 juillet                      145-175        14-16       126-156                 57-67          175-205               8-12
+                                   10 101                                                                                            —
+tives-2024-li        2024                           25-30%         2-3%        22-27%                 10-12%          30-35 %               1-2%
+ntention-de-
+vote-48h-du
+-second-tou
+      r)
+Elabe (http
+s://elabe.fr/
+                   3-4 juillet                          165-190                120-140                35-50           200-230               10-12
+elections-le                        2 005                                                                                            —
+                     2024                               28-33%                 21-24%                 6-9%            35-40%                1-2%
+gislatives-2
+  024-4/)
+OpinionWay
+ (https://ww
+w.opinion-w
+ay.com/fr/co
+mponent/ed
+ocman/opini
+ onway-et-v
+ ae-solis-po
+                   3-4 juillet                          150-180                125-155                38-50           205-230                8-12
+ur-les-echo                         3 355                                                                                            —
+                     2024                               26-31 %                21-27 %                6-9 %           34-39 %               1-2 %
+s-et-radio-cl
+assique-legi
+track-vague
+-4-5-juillet-2
+024/viewdo
+cument/344
+4.html?Item
+    id=0)
+Odoxa (http        3-4 juillet      1 005               140-180                115-155                 40-60          210-250        —      10-20
+s://www.pub          2024                               24-31 %                20-27 %                7-10 %          36-43 %               1-3 %
+ licsenat.fr/a
+ctualites/pol
+itique/sonda
+ge-legislativ
+es-le-rn-loin
+-de-la-major
+ite-absolue-
+le-nfp-en-ba
+isse-la-majo
+rite-se-requi
+nque#:~:tex
+ t=Selon%2
+0la%20dern
+ i%C3%A8r
+  e%20%C
+  3%A9tud
+  e%20r%C
+3%A9alis%
+C3%A9e,av
+ant%20le%
+201er%20to
+     ur.)
+Ifop (https://
+www.tf1info.
+fr/elections/
+sondage-ex
+clusif-a-quoi
+-ressembler
+ a-la-future-
+                 3-4 juillet                       170-200                                95-125                       25-45                     210-240              15-27
+assemblee-                      1 916                                     —                                                                                     —
+                   2024                            29-35 %                               16-22 %                       4-8 %                     36-42 %              3-5 %
+decouvrez-l
+es-projectio
+ns-de-notre
+-enquet-quo
+tidienne-du-
+4-juillet-230
+ 7122.html)
+    Harris
+ Interactive
+(https://harri
+ s-interactiv
+e.fr/wp-cont     2-3 juillet                       159-183                               110-135                       30-50                     190-220              17-31
+                                3 383                                     —                                                                                     —
+ ent/upload        2024                            28-32 %                               19-23 %                       5-9 %                     33-38 %              3-5 %
+s/sites/6/20
+ 24/07/FYV
+ GTFDSFG
+HJGFD.pdf)
+                               Sondage après les désistements au nom du « Front républicain » pour empêcher l'extrême droite d'arriver au pouvoir.
+
+Ifop (https://
+www.ifop.co
+m/wp-conte
+                 25-28 juin                        170-200              10-18             70-100                       30-60                     225-265               1-5
+ nt/uploads/                    2 884                                                                                                                           —
+                   2024                            29-35 %              2-3 %            12-17 %                      5-10 %                     38-46 %              <1 %
+2024/06/RO
+L24_20240
+  628.pdf)
+    Harris
+ Interactive
+(https://harri
+ s-interactiv
+e.fr/wp-cont     27-28 juin                        120-150                                80-130                       30-50                     240-295        0-2   10-20
+                                2 182                                     —
+ ent/upload        2024                            21-26 %                               14-23 %                       5-9 %                     42-51 %       <1 %   1-3 %
+s/sites/6/20
+24/06/KYJU
+ GTRUJH5
+    H.pdf)
+Ifop (https://
+www.ifop.co
+m/wp-conte
+                 25-28 juin                        170-200              10-18             70-100                       30-60                     225-265               1-5
+ nt/uploads/                    2 884                                                                                                                           —
+                   2024                            29-35 %              2-3 %            12-17 %                      5-10 %                     38-46 %              <1 %
+2024/06/RO
+L24_20240
+  628.pdf)
+Odoxa (http
+s://www.odo
+ xa.fr/sonda
+ge/participa
+tion-massiv
+                 26-27 juin                              150-190                          70-110                       15-45                     265-305
+e-record-de                     1 896                                                                                                                           —      —
+                   2024                                  26-33%                           12-19%                       3-8%                      46-53 %
+-triangulaire
+s-et-rn-a-po
+rtee-de-maj
+orite-absolu
+      e/)
+Elabe (http
+s://elabe.fr/
+wp-content/
+uploads/20
+                 26-27 juin                              155-175                          85-105                       30-40                         260-295          8-10
+24/06/les-fr                    1 871                                                                                                                           —
+                   2024                                  27-30%                           15-18%                       5-7%                          45-51%           1-2%
+ancais-et-le
+s-elections-l
+egislatives.
+    pdf)
+Ifop (https://
+www.ifop.co
+m/wp-conte
+                 24-27 juin                        180-210               5-9              75-110                       25-50                     220-260               6-10
+ nt/uploads/                    2 823                                                                                                                           —
+                   2024                            31-36 %              1-2 %            13-19 %                       4-9 %                     38-45 %              1–2 %
+2024/06/RO
+L24_20240
+  627.pdf)
+    Harris       25-26 juin     2 014              125-155                —               75-125                       30-50                     250-305        0–2   10–20
+ Interactive       2024                            22-27 %                               13-22 %                       5-9 %                     43-53 %       <1 %   1–3 %
+(https://harri
+ s-interactiv
+e.fr/wp-cont
+ ent/upload
+s/sites/6/20
+ 24/06/NBV
+CGVHBGN
+ BJHN.pdf)
+  Cluster 17
+  (https://ww
+w.commissi
+ on-des-son
+dages.fr/not
+                 22-24 juin                              180-230                                 65-100                        25-40                       210-250                     20-30
+ices/files/no                       1 681                                       —                                                                                                —
+                   2024                                  31-40%                                  11-17%                        4-7%                        36-43 %                     3-5%
+ tices/2024/j
+ uin/9870-le
+g-cluster-17
+-le-point-25-
+   juin.pdf)
+    Harris
+ Interactive
+(http://www.
+commission
+-des-sonda
+ges.fr/notic
+es/files/noti    21-24 juin                              150-180                                 85-130                        30-50                       230-275               0–2   10–20
+                                    2 325                                       —
+ces/2024/jui       2024                                  26-31 %                                15-23 %                        5-9 %                       40-48 %              <1 %   1–3 %
+n/9866-leg-
+harris-intera
+ctive-challe
+nges-vague
+ -3-le-24-jui
+    n.pdf)
+Ifop (https://
+www.ifop.co
+m/wp-conte
+                 21-24 juin                              185-215               6-10              70-100                        30-50                       220-260                      3-7
+ nt/uploads/                        1 843                                                                                                                                        —
+                   2024                                  32-37%                1-2%              12-17%                        5-9%                        38-45 %                      1%
+2024/06/RO
+L24_20240
+  624.pdf)
+Elabe (http
+s://elabe.fr/
+wp-content/
+uploads/20
+24/06/2206
+2024_elabe
+                 19-21 juin                                    150-170                           90-110                        35-45                       250-280                     10-12
+_bfmtv_la-tr                        2 002                                                                                                                                        —
+                   2024                                        26-29%                            16-19%                        6-8%                        43-49%                       2%
+ibune-dima
+nche_les-fr
+ancais-et-le
+s-elections-l
+egislatives.
+    pdf)
+ Ifop (http://
+www.commi
+ssion-des-s
+ondages.fr/
+ notices/file
+                 18-20 juin                              180-210               8-12              80-110                        40-60                       200-240                     5-10
+s/notices/20                        2 317                                                                                                                                        —
+                   2024                                  31-36%                1-2%              14-19%                        7-10%                       35-42 %                     1-2%
+24/juin/986
+0-leg-lci-ifo
+p-le-figaro-s
+ud-radio.pd
+      f)
+Odoxa (http
+s://www.odo
+                 19-20 juin                                    160-210                           70-120                        10-50                       250-300
+xa.fr/sonda                         1 861                                                                                                                                        —      —
+                   2024                                        28-36%                            12-21%                        2-9%                        43-52 %
+ ge/13142-
+     2/)
+    Harris
+ Interactive
+(https://harri
+ s-interactiv
+e.fr/wp-cont     19-20 juin                              135-165                                 95-130                        30-50                       235-280               0–2   10–20
+                                    2 004                                       —
+ ent/upload        2024                                  23-29 %                                16-23 %                        5-9 %                       41-48 %              <1 %   1–3 %
+s/sites/6/20
+ 24/06/BVC
+ XERDFYG
+  BYH.pdf)
+ Cluster 17
+(http://www.
+commission
+-des-sonda
+ges.fr/notic
+                 17-19 juin                              190-240                                 70-100                        20-30                       200-250                     20-30
+es/files/noti                       2 699                                       —                                                                                                —
+                   2024                                  33-42%                                  12-17%                        3-5%                        35-43 %                     3-5%
+ces/2024/jui
+n/9862-leg-
+cluster-17-l
+e-point-21-j
+  uin.pdf)
+                                                       Début de la campagne électorale officielle en vue du premier tour (17 juin 2024).
+                  Debout la France soutient l'« union des droites » derrière le RN et renonce à présenter des candidats dans la majorité des circonscriptions (14 juin 2024).
+   Cluster 17
+ (https://clust
+ er17.com/w
+  p-content/u
+  ploads/202
+                    11-12 juin                              190–235              10–14               70–100                       25–35                       195–245                        10–16
+ 4/06/Sonda                             2 764                                                                                                                                        —
+                      2024                                  33–41 %               2%                12–17 %                       4–6 %                       34–42 %                        2–3 %
+ ge-Cluster1
+  7-Le-Point-
+ Legislatives
+  -14-juin-4.p
+       df)
+  Elabe (http
+ s://elabe.fr/
+ wp-content/
+  uploads/20
+ 24/06/1206
+                    11-12 juin                                    150–190                            90–130                       30–40                       220–270                        10–20
+ 2024_elabe                             1 502                                                                                                                                        —
+                      2024                                        26–33 %                           16–23 %                       5–7 %                       38–47 %                        2–3 %
+ _bfmtv_les-
+ francais-et-l
+ es-elections
+  -legislative
+     s.pdf)
+                        Le président de Les Républicains, Éric Ciotti, annonce une alliance avec le Rassemblement national, rapidement contestée en interne (11 juin 2024).
+                   Les principaux partis de gauche, regroupés en 2022 sous l'étiquette NUPES, annoncent la création d'un Nouveau Front populaire (nuit du 10 au 11 juin 2024).
+
+     Harris
+  Interactive
+  (https://ww
+ w.commissi
+  on-des-son
+ dages.fr/not
+                    9-10 juin                               115–145                                 125–155                       40–55                       235–265               0–2       5–20
+ ices/files/no                          2 340                                       —
+                      2024                                  20–25 %                                 22–27 %                      7–10 %                       41–46 %              <1 %      1–3 %
+ tices/2024/j
+  uin/9847-le
+ g-harris-inte
+ ractive-chall
+ enges-m6-rt
+     l.pdf)
+       Le président de la République Emmanuel Macron déclare la dissolution de l'Assemblée nationale et convoque des élections législatives pour le 30 juin et le 7 juillet 2024 (9 juin 2024).
+
+  Ipsos (http
+ s://www.bfm
+ tv.com/politi
+ que/front-na
+ tional/entre-
+ 243-a-305-s
+ ieges-un-so
+  ndage-com          8-13
+                                                             55–79               20–22         117–165 (+3 DVC)           7–8           44–60                 243–305                        10–11
+ mande-par-l       décembre             4 000                                                                                                                                        —
+                                                            10–14 %              3–4 %            21–29 %                 1%           8–10 %                 42–53 %                         2%
+  r-donne-la-        2023
+ majorite-au-
+ rn-en-cas-d
+ e-legislative
+ s-anticipees
+ _AN-20240
+ 3150589.ht
+      ml)
+  Elabe (http
+ s://elabe.fr/
+ wp-content/
+  uploads/20
+ 23/04/2023          3-5 avril                              150–180              15–20              130–155                       60–75                       150–175               1–2      12–15
+                                        1 808
+ 0405_elabe           2023                                  26–31 %              2–3 %              23–27 %                      10–13 %                      26–30 %              <1 %      2–3 %
+ _bfmtv_les-
+ francais-et-l
+ e-climat-poli
+   tique.pdf)
+     Harris
+  Interactive
+ (http://www.
+ commission
+ -des-sonda
+                    3-7 mars                                      158–168                           234–244                       69–79                             91–100                    8–14
+ ges.fr/notic                           2 108
+                      2023                                        27–29 %                           41–42 %                      12–14 %                           16–17 %                   1–2 %
+ es/files/noti
+ ces/2023/m
+ ars/9683-le
+ g-23-hi-chal
+ lenges.pdf)
+  Résultats                                                    131                 22                  249                          74                           89                  1            11
+          37      12 juin 2022       22 745 492
+  de 2022                                                     23 %                 4%                 43 %                         13 %                         15 %               <1 %           2%
+
+
+
+Répartition des sièges par parti au sein des alliances
+                                                                                                                                                                         38
+Un sondage sur la répartition des sièges par parti au sein des alliances réalisé par Ipsos les 3 et 4 juillet 2024 donne les résultats suivants :
+         Alliance                       Parti ou groupe             Sièges projetés
+
+                             La France insoumise                            58 à 68
+
+                             Parti communiste français                          7à9
+Nouveau Front populaire
+                             Les Écologistes                                29 à 37
+
+                             Parti socialiste                               51 à 61
+
+                             Mouvement démocrate                            23 à 31
+        Ensemble             Renaissance                                    78 à 94
+
+                             Horizons                                       17 à 23
+
+                             Divers centre
+                                                                                6à8
+          Droite             Union des démocrates et indépendants
+
+                             Les Républicains                               57 à 67
+
+                             Républicains à droite (RAD)                    18 à 24
+        RN et alliés
+                             Rassemblement national                      157 à 181
+
+          Divers             Divers                                            8 à 12
+
+
+
+Voir aussi
+     Liste de sondages sur les élections législatives françaises de 2022
+     Crise de 2024 au parti Les Républicains
+
+
+Notes et références
+
+Notes
+a. NUPES avant le 11 juin 2024.
+b. Candidats investis par la Commission nationale d'investiture des Républicains.
+c. Candidats LR pro-RN investis par Éric Ciotti. Le ministère de l'Intérieur et des Outre-Mer a attribué à ces candidats la nuance UXD, « union
+    de l'extrême droite ».
+d. Indiqué dans le sondage comme étant dans DVC.
+e. Dont 0,5% Divers souverainiste
+ f. Indiqué dans le sondage comme étant alliés aux LR.
+g. Dont 0,5 % Divers souverainiste et Extrême droite
+
+
+Références
+1. Communiqué sondages campagne électorale 2022 (https://www.co                10. "Les Dessous de la campagne 2017" par Laurent Neumann aux
+   mmission-des-sondages.fr/hist/communiques/communique-sondage                    Éditions Calmann-Lévy en 2017 [6] (https://www.google.fr/books/edi
+   s-elections-presidentielles-11-mars-2022.htm).                                  tion/Les_Dessous_de_la_campagne_2017/xQvVDgAAQBAJ?hl=fr&
+2. Sur les présidentielles de 2012 : fiabilité, contrôle… (http://www.com          gbpv=1&dq=%22certains+d%27aller+voter%22+sondeurs&pg=PT2
+   mission-des-sondages.fr/hist/pdf/2012.pdf).                                     04&printsec=frontcover).
+3. La table à 95 % fournie est la plus usitée (compromis entre erreur et       11. "Dix Leçons sur les sondages politiques", par Alexandre Dézé en
+   fiabilité de l'information). Il existe des tables présentant des                2022 aux éditions de Boeck Supérieur.
+   intervalles de confiance à 90 ou 99 % moins souvent publiées. Elles         12. "Élection présidentielle 2022 : biais et disparités méthodologiques
+   mettent en évidence le fait que plus on veut une confiance élevée,              des intentions de vote" par Bruno Cautrès, chercheur au CNRS et
+   plus on augmente la plage d'incertitude.                                        au Cevipof-Sciences Po, Le Monde, 10 octobre 2021 [7] (https://ww
+4. « Les questions que vous vous posez sur les sondages (https://ww                w.lemonde.fr/politique/article/2021/10/10/presidentielle-2022-biais-et
+   w.ipsos.com/fr-fr/les-questions-que-vous-vous-posez-sur-les-sonda               -disparites-methodologiques-des-intentions-de-vote_6097801_8234
+   ges) », sur ipsos (consulté le 12 juin 2022).                                   48.html) .
+5. "Législatives : à qui peut profiter l’abstention ?" par Nathan Tacchi le    13. "5 choses à surveiller absolument lorsque vous lisez un sondage"
+   13 juin 2024 dans Le Point [1] (https://www.lepoint.fr/politique/legisla        par Lucie Alexandre le 22 octobre dans L'Obs[8] (https://www.nouvel
+   tives-a-qui-peut-profiter-l-abstention-13-06-2024-2562842_20.php).              obs.com/politique/20211022.OBS50162/5-choses-a-regarder-absol
+                                                                                   ument-lorsque-vous-lisez-un-sondage.html).
+6. Article par Alexis Graillot le 19/06/2024 sur Public Sénat [2] (https://
+   www.publicsenat.fr/actualites/politique/legislatives-rn-nouveau-front-      14. "Présidentielle : les sondeurs en quête des électeurs cachés" par
+   populaire-majorite-presidentielle-a-qui-profiterait-une-forte-participati       Valérie de Senneville, Les Échos, 17 avril 2017 [9] (https://www.lese
+   on).                                                                            chos.fr/2017/04/presidentielle-les-sondeurs-en-quete-des-electeurs-
+7. Article de Noémie Lair le 28 juin 2024 sur France Bleu [3] (https://w           caches-165571).
+   ww.francebleu.fr/infos/politique/legislatives-2024-a-qui-peut-profiter-l    15. Sondage Odoxa des 26-27 juin, page 11 [10] (https://www.odoxa.fr/
+   a-participation-qui-s-annonce-en-forte-hausse-1150074)                          sondage/participation-massive-record-de-triangulaires-et-rn-a-porte
+                                                                                   e-de-majorite-absolue/)
+8. "Européennes 2024 : l'effrayant taux de participation prévu par les
+   sondeurs" le 29 avril 2024 [4] (https://www.linternaute.com/actualite/      16. Sondage Opinionway des 26-27 juin, page 6 [11] (https://www.opini
+   politique/5144152-europeennes-2024-l-effrayant-taux-de-participatio             on-way.com/fr/component/edocman/opinionway-pour-cnews-europe
+   n-prevu-par-les-sondeurs/).                                                     -1-le-jdd-barometre-legislatives-2024-28-juin-2024/viewdocument/3
+9. Huffington post le 16/06/2024 [5] (https://www.huffingtonpost.fr/politi         435.html?Itemid=0).
+   que/article/legislatives-2024-sept-cartes-des-resultats-des-europeen        17. Sondage Elabe des 26-27 juin, page 12 [12] (https://elabe.fr/election
+   nes-et-leur-enseignement-pour-l-assemblee-de-demain_235537.ht                   s-legislatives-2024-3/).
+   ml).                                                                        18. Notice sur le site de la Commission des sondages [13] (https://www.
+                                                                                   commission-des-sondages.fr/notices/files/notices/2024/juin/9853-leg
+                                                                                   -ow-le-jdd-cnews-europe-1-le-14-juin.pdf).
+19. "Ce que la gauche peut (raisonnablement) espérer des législatives"             29. Anthony Berthelier et Émilie Garcia, « Tout comprendre aux
+    par Fabien Escalona, dans Médiapart le 23 juin 2024 [14] (https://w                triangulaires, ces matchs à trois cruciaux aux législatives (https://ww
+    ww.mediapart.fr/journal/politique/230624/ce-que-la-gauche-peut-rais                w.huffingtonpost.fr/politique/video/legislatives-2024-les-triangulaires-
+    onnablement-esperer-des-legislatives).                                             ces-matchs-a-trois-qui-pourraient-etre-cruciaux-apres-le-premier-tou
+20. Article par Marie Maison le 21 juin 2022 dans Le Monde [15] (http                  r_236071.html) », sur Le HuffPost, 26 juin 2024 (consulté le
+    s://www.lemonde.fr/les-decodeurs/article/2022/06/21/legislatives-20                15 juillet 2024)
+    22-les-candidats-battus-a-quelques-voix-pres-peuvent-ils-demander              30. Pierre Breteau, Maxime Vaudano, Iris Derœux, Jonathan Parienté,
+    -un-recomptage_6131439_4355770.html).                                              Patxi Berhouet, Romain Geoffroy et William Audureau,
+21. "Résultats des législatives 2024 : déjà des tendances de 1er et de 2e              « Législatives 2024 : y a-t-il une triangulaire dans votre
+    tour" par Fabien Dabert, L'Internaute le 20 juin 2024 [16] (https://ww             circonscription ? », Le Monde, Les Décodeurs,‎2 juillet 2024 (lire en
+    w.linternaute.com/actualite/politique/5472396-resultats-des-legislativ             ligne (https://www.lemonde.fr/les-decodeurs/article/2024/07/02/legisl
+    es-2024-deja-tendances-qui-va-gouverner/).                                         atives-2024-pour-faire-barrage-au-rn-195-candidats-et-candidates-s
+22. « Législatives 2024 : on vous explique pourquoi il faut s'attendre à               e-sont-deja-desistes-suivez-le-decompte-en-temps-reel_6245837_4
+                                                                                       355771.html), consulté le 6 juillet 2024)
+    un plus grand nombre de triangulaires qu'en 2022 après le premier
+    tour (https://www.francetvinfo.fr/elections/legislatives/legislatives-20       31. Romain Geoffroy et Romain Imbach, « Comment les instituts de
+    24-on-vous-explique-pourquoi-il-faut-s-attendre-a-un-plus-grand-no                 sondage estiment les résultats des élections législatives dès 20
+    mbre-de-triangulaires-qu-en-2022-apres-le-premier-tour_6631383.ht                  heures », Le Monde, Les Décodeurs,‎30 juin 2024 (lire en ligne (http
+    ml) », sur Franceinfo, 28 juin 2024 (consulté le 15 juillet 2024)                  s://www.lemonde.fr/les-decodeurs/article/2024/06/30/comment-les-i
+                                                                                       nstituts-de-sondage-estiment-les-resultats-des-elections-legislatives
+23. Article de Baptiste Farge le 28 juin 2024 sur BFMTV [17] (https://ww
+                                                                                       -des-20-heures_6244935_4355771.html), consulté le
+    w.bfmtv.com/politique/elections/legislatives/legislatives-pourquoi-on-
+                                                                                       15 juillet 2024)
+    peut-s-attendre-a-un-nombre-important-de-triangulaires_AN-202406
+    280051.html)                                                                   32. Décret du 9 juin 2024 portant dissolution de l'Assemblée nationale
+                                                                                       (https://www.legifrance.gouv.fr/WAspad/UnTexteDeJorf?numjo=PRE
+24. Article de France Bleu, avec AFP le 28 juin 2024 [18] (https://www.fr
+                                                                                       X2415533D).
+    ancebleu.fr/infos/politique/legislatives-2024-rn-favori-record-de-trian
+    gulaires-attendu-consignes-de-vote-le-point-avant-la-fin-de-la-camp            33. Décret no 2024-527 du 9 juin 2024 portant convocation des
+    agne-6512310)                                                                      électeurs (https://www.legifrance.gouv.fr/loda/id/JORFTEXT0000496
+                                                                                       89654/2024-06-14/).
+25. Julien Lecuyer, « Législatives : pourquoi le nombre de triangulaires
+    pourrait atteindre un record dimanche (https://www.lavoixdunord.fr/1           34. Romain Geoffroy et Romain Imbach, « Législatives 2024 : les « très
+    477838/article/2024-06-28/legislatives-pourquoi-le-nombre-de-triang                très fragiles » projections en sièges données par les sondages au
+    ulaires-pourrait-atteindre-un-record) », La Voix du Nord,                          premier tour », Le Monde,‎28 juin 2024 (lire en ligne (http://web.arch
+    28 juin 2024 (consulté le 15 juillet 2024)                                         ive.org/web/20240628051559/https://www.lemonde.fr/les-decodeur
+                                                                                       s/article/2024/06/28/legislatives-2024-les-tres-tres-fragiles-projectio
+26. Ulysse Legavre-Jérôme, « Législatives 2024 : ce que va changer la
+                                                                                       ns-en-sieges-donnees-par-les-sondages-au-premier-tour_6244935_
+    hausse attendue de la participation (https://www.lesechos.fr/election
+                                                                                       4355770.html))
+    s/legislatives/legislatives-2024-ce-que-va-changer-la-hausse-attend
+    ue-de-la-participation-2103601) », Les Échos, 25 juin 2024                     35. Guillaume Tabard, « Législatives: d'après la projection des
+    (consulté le 15 juillet 2024)                                                      européennes, les macronistes et LR menacés de disparition (https://
+                                                                                       www.lefigaro.fr/elections/legislatives/legislatives-d-apres-la-projectio
+27. Flavien Groyer et Coline Mollard, « Législatives 2024 : qu'est-ce
+                                                                                       n-des-europeennes-les-macronistes-et-lr-menaces-de-disparition-20
+    qu'une triangulaire ? - France Bleu (https://www.francebleu.fr/infos/p
+    olitique/legislatives-2024-qu-est-ce-qu-une-triangulaire-et-pourquoi-              240612) » , Fig Data, Le Figaro, 12 juin 2024 (consulté le
+                                                                                       15 juillet 2024)
+    pourrait-il-y-en-avoir-plus-que-d-habitude-1828210) », sur ici par
+    France Bleu et France 3, 25 juin 2024 (consulté le 15 juillet 2024)            36. Mathieu Dejean, Fabien Escalona et Donatien Huet, « Gauches :
+                                                                                       pourquoi l’accord trouvé pour les législatives était indispensable (htt
+28. Mathieu B., « Sondages législatives 2024 : pourquoi il faut se méfier
+    des projections en siège (https://fr.news.yahoo.com/sondages-legisl                ps://www.mediapart.fr/journal/politique/120624/gauches-pourquoi-l-a
+                                                                                       ccord-trouve-pour-les-legislatives-etait-indispensable) » , sur
+    atives-2024--pourquoi-il-faut-se-mefier-des-projections-en-siege-15
+                                                                                       Mediapart, 12 juin 2024 (consulté le 15 juillet 2024)
+    5515695.html) », sur Yahoo News, 24 juin 2024 (consulté le
+    15 juillet 2024)                                                               37. « Résultats des élections législatives 2022 (https://www.lemonde.fr/r
+                                                                                       esultats-legislatives-2022/) » , sur Le Monde, juin 2022 (consulté le
+                                                                                       10 juin 2024).
+                                                                                   38. Ipsos, « Legislatives 2024 : l'intention de vote à 48h du second tour
+                                                                                       (https://www.ipsos.com/fr-fr/legislatives-2024/legislatives-2024-linten
+                                                                                       tion-de-vote-48h-du-second-tour) », 5 juillet 2024
+
+
+
+
+Ce document provient de « https://fr.wikipedia.org/w/index.php?title=Liste_de_sondages_sur_les_élections_législatives_françaises_de_2024&oldid=235367398 ».
+
