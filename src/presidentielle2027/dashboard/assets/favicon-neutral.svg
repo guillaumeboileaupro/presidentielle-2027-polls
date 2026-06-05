@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Présidentielle 2027">
+  <rect width="64" height="64" rx="14" fill="#ffffff"/>
+  <rect x="6" y="6" width="52" height="52" rx="12" fill="#f3ebff" stroke="#d7c3f7" stroke-width="2"/>
+  <path d="M18 42 L28 22 L36 34 L46 18" fill="none" stroke="#ef1926" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="46" cy="18" r="4" fill="#9a36e0"/>
+</svg>
