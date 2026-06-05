@@ -1,0 +1,11 @@
+election_round,bloc_label,bloc_name,vote_share_percent,seats,seat_share_percent,vote_seat_gap,source_url,source_label
+first_round,gauche,Nouveau Front populaire / gauche,31.49,32,5.55,-25.94,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+first_round,centre,Ensemble / centre présidentiel,22.94,2,0.35,-22.59,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+first_round,extrême_droite,RN et alliés,34.44,39,6.76,-27.68,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+first_round,droite,LR / droite,10.17,3,0.52,-9.65,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+first_round,autres,Divers / autres,0.97,0,0.00,-0.97,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+second_round,gauche,Nouveau Front populaire / gauche,27.42,193,33.45,6.03,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+second_round,centre,Ensemble / centre présidentiel,25.32,165,28.60,3.28,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+second_round,extrême_droite,RN et alliés,37.21,143,24.78,-12.43,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+second_round,droite,LR / droite,9.01,66,11.44,2.43,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024
+second_round,autres,Divers / autres,1.06,10,1.73,0.67,https://www.archives-resultats-elections.interieur.gouv.fr/resultats/legislatives2024/ensemble_geographique/index.php,Ministère de l'Intérieur législatives 2024

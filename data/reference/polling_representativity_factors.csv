@@ -1,0 +1,5 @@
+collection_method,risk_multiplier,source_url,source_label,notes
+online,1.15,https://www.senat.fr/rap/r10-054/r10-054_mono.html,Rapport du Sénat 2010 sur les sondages,"Les enquêtes par quotas et panels auto-administrés exigent un redressement plus prudent quand les sous-échantillons utiles sont réduits."
+mixed,1.08,https://www.senat.fr/lc/lc308/lc308.html,Note du Sénat 2022 sur l'encadrement des sondages,"La publication doit expliciter la méthode de collecte et la représentativité effective de l'échantillon."
+phone,0.97,https://www.senat.fr/compte-rendu-commissions/20150706/ce_aai.html,Compte rendu Sénat 2015 sur la Commission des sondages,"Le contrôle porte sur la qualité sociogéographique de l'échantillon et le redressement du souvenir de vote."
+unknown,1.20,https://www.senat.fr/lc/lc308/lc308.html,Note du Sénat 2022 sur l'encadrement des sondages,"Quand la méthode n'est pas documentée, la correction historique doit être considérée comme plus prudente et l'incertitude relevée."
