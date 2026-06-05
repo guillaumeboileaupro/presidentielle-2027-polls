@@ -1,0 +1,31 @@
+{
+  "created_at": "2026-05-31T08:07:31.813717+00:00",
+  "method": "Conversion PDF vers CSV sans filtrage volontaire: lignes pdftotext -layout, pages texte PyMuPDF, lignes PyMuPDF, mots coordonnes, lignes visuelles reconstruites par coordonnees.",
+  "inputs": [
+    {
+      "file": "Liste_de_sondages_sur_l'élection_présidentielle_française_de_2022.pdf",
+      "pages": 83,
+      "bytes": 2897478,
+      "sha256": "013d61d1d69e82307ad6f465567c76ea3e51de3b509867a0c0efc41b86712555"
+    },
+    {
+      "file": "Liste_de_sondages_sur_les_élections_législatives_françaises_de_2024.pdf",
+      "pages": 16,
+      "bytes": 925205,
+      "sha256": "8adfcc09cccddeffaff791e61f08f7b5597f26571d668d2ba0afc621a44bc457"
+    },
+    {
+      "file": "Liste_de_sondages_sur_l'élection_présidentielle_française_de_2027.pdf",
+      "pages": 16,
+      "bytes": 1075006,
+      "sha256": "b0ddd63cefedcdb5ca975ec3b328f7d646ffb2178bc177f0b457098a639b18ca"
+    }
+  ],
+  "outputs": {
+    "ALL_pdftotext_layout_lines.csv": 11434,
+    "ALL_pages_text.csv": 115,
+    "ALL_text_lines.csv": 22652,
+    "ALL_words_coordinates.csv": 38811,
+    "ALL_visual_rows.csv": 9890
+  }
+}
