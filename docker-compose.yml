@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/python:1-3.11-bullseye
+    working_dir: /workspace/presidentielle-2027-polls
+    volumes:
+      - ./:/workspace/presidentielle-2027-polls
+    env_file:
+      - .env
+    command: sleep infinity
+
