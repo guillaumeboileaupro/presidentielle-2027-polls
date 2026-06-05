@@ -1,0 +1,9 @@
+polling_company,website_url,commission_des_sondages_reference,default_collection_method,default_population,quota_method_expected,methodology_notes,metadata_status
+Odoxa,https://www.odoxa.fr/,yes,unknown,unknown,unknown,Metadata must be validated poll by poll from notices or institute publications.,partial
+Ifop,https://www.ifop.com/,yes,unknown,unknown,unknown,Large historical producer. Do not infer mode or base without the notice.,partial
+Elabe,https://elabe.fr/,yes,unknown,unknown,unknown,Institute metadata should be attached from the PDF notice when available.,partial
+Harris Interactive,https://harris-interactive.fr/,yes,unknown,unknown,unknown,Some rows come from Wikipedia extraction only and need notice enrichment.,partial
+OpinionWay,https://www.opinion-way.com/,yes,unknown,unknown,unknown,Mode and sample base should be documented at poll level, not guessed globally.,partial
+Cluster17,https://cluster17.com/,yes,unknown,unknown,unknown,Useful polling source but methodology must still be tracked per publication.,partial
+Verian,https://www.veriangroup.com/,yes,unknown,unknown,unknown,Metadata currently incomplete in the repository.,partial
+
