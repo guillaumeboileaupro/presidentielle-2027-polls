@@ -41,7 +41,8 @@ def _build_candidate_symbols(frame: pd.DataFrame) -> dict[str, str]:
 
 def render_error_bars_raw_page(frame: pd.DataFrame) -> None:
     st.subheader("Barres d’erreur brutes")
-    st.caption("Formule utilisée : `moe_95 = 1.96 * sqrt(p * (1 - p) / n) * 100`.")
+    st.caption("Formule utilisée :")
+    st.latex(r"\mathrm{moe}_{95} = 1.96 \times \sqrt{\frac{p(1-p)}{n}} \times 100")
     working = frame.loc[(frame["round"] == "first_round") & (~frame["is_generic_bloc"])].copy()
     if "source_url" not in working.columns:
         working["source_url"] = pd.NA
