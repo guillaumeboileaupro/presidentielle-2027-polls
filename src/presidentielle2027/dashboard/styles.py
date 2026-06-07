@@ -239,6 +239,56 @@ WIKI_DASHBOARD_CSS = """
     .stCheckbox label {
         color: var(--fi-text) !important;
     }
+    div[data-testid="stRadio"] {
+        margin-bottom: 0.25rem;
+    }
+    div[data-testid="stRadio"] > label {
+        font-weight: 800;
+        color: var(--fi-text) !important;
+        margin-bottom: 0.45rem;
+    }
+    div[data-testid="stRadio"] [role="radiogroup"] {
+        display: flex !important;
+        align-items: stretch;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+    }
+    div[data-testid="stRadio"] [role="radiogroup"] label {
+        margin: 0 !important;
+        width: auto !important;
+        min-height: 46px;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px !important;
+        border: 1px solid var(--fi-border) !important;
+        background: rgba(154, 54, 224, 0.08) !important;
+        padding: 0.2rem 0.95rem !important;
+        box-shadow: none !important;
+        transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+    }
+    div[data-testid="stRadio"] [role="radiogroup"] label:hover {
+        transform: translateY(-1px);
+        border-color: var(--fi-border-strong) !important;
+        box-shadow: 0 10px 22px rgba(154, 54, 224, 0.08);
+    }
+    div[data-testid="stRadio"] [role="radiogroup"] label > div:first-child {
+        display: none !important;
+    }
+    div[data-testid="stRadio"] [role="radiogroup"] label p {
+        margin: 0 !important;
+        color: var(--fi-text) !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+    }
+    div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+        background: linear-gradient(135deg, rgba(154, 54, 224, 0.14), rgba(239, 25, 38, 0.1)) !important;
+        border-color: var(--fi-border-strong) !important;
+        box-shadow: 0 14px 26px rgba(154, 54, 224, 0.12);
+    }
+    div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) p {
+        font-weight: 800 !important;
+    }
     iframe {
         background: #ffffff !important;
     }
@@ -361,12 +411,34 @@ WIKI_DASHBOARD_CSS = """
     summary {
         overflow-wrap: anywhere;
     }
+    div[data-testid="stPopover"] > div > button {
+        min-width: 48px !important;
+        min-height: 48px !important;
+        width: 48px !important;
+        border-radius: 999px !important;
+        padding: 0 !important;
+        font-size: 1.15rem !important;
+        font-weight: 900 !important;
+        color: #fff !important;
+        background: linear-gradient(135deg, rgba(154, 54, 224, 0.96), rgba(239, 25, 38, 0.94)) !important;
+        border: none !important;
+        box-shadow: 0 14px 28px rgba(154, 54, 224, 0.2) !important;
+    }
+    div[data-testid="stPopover"] > div > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 30px rgba(154, 54, 224, 0.24) !important;
+    }
     @media (max-width: 1100px) {
         [data-testid="stAppViewContainer"] > .main {
             max-width: 100%;
         }
         [data-testid="stPlotlyChart"] {
             padding: 0.2rem;
+        }
+        div[data-testid="stPopover"] > div > button {
+            min-width: 44px !important;
+            min-height: 44px !important;
+            width: 44px !important;
         }
     }
 </style>

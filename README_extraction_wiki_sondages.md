@@ -11,6 +11,9 @@ Le script `make_wiki_datasets.py` génère automatiquement :
 - `sondages_presidentielle_2027_wikipedia_tables.csv`
 - `sondages_presidentielle_2022_wikipedia_tables.csv`
 - `sondages_legislatives_2024_wikipedia_tables.csv`
+- `sondages_presidentielle_2027_wikipedia_content_blocks.csv`
+- `sondages_presidentielle_2022_wikipedia_content_blocks.csv`
+- `sondages_legislatives_2024_wikipedia_content_blocks.csv`
 - `wikipedia_sondages_2022_2024_2027_tables.xlsx`
 
 Commande :
@@ -34,6 +37,14 @@ Les CSV contiennent les tableaux Wikipédia, avec :
 - `row_links_json` avec les liens trouvés dans chaque ligne
 
 Le script garde aussi les URLs sources et les liens trouvés dans chaque ligne via `row_links_json`.
+
+Les fichiers `*_wikipedia_content_blocks.csv` contiennent en plus le contenu textuel structuré de la page, avec :
+- `block_index`
+- `section`
+- `subsection`
+- `tag`
+- `text`
+- `links_json`
 
 Note d'usage dans le repo :
 
