@@ -27,7 +27,7 @@ PARTY_LOGO_FILENAMES: dict[str, str] = {
     "RN": "Logo Rassemblement National - Cropped.svg",
     "LR": "Les Républicains - logo (France, 2023) (cropped).svg",
     "PS": "Le Parti socialiste wordmark.svg",
-    "PS-PP": "Logo Place publique.svg",
+    "PS-PP": "Le Parti socialiste wordmark.svg",
     "PP": "Logo Place publique.svg",
     "EELV": "Logo Les Écologistes (France).png",
     "PCF": "PCF LOGO.svg",
