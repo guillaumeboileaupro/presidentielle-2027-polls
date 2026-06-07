@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Extraction complète des tableaux Wikipédia demandés.
+Extraction complète des tableaux et du contenu Wikipédia demandés.
 
-Ce script génère 3 fichiers CSV, un par page Wikipédia :
+Ce script génère 3 fichiers CSV de tableaux, un par page Wikipédia :
 1. sondages_presidentielle_2027_wikipedia_tables.csv
 2. sondages_presidentielle_2022_wikipedia_tables.csv
 3. sondages_legislatives_2024_wikipedia_tables.csv
+
+Il génère aussi 3 fichiers CSV de contenu textuel structuré :
+1. sondages_presidentielle_2027_wikipedia_content_blocks.csv
+2. sondages_presidentielle_2022_wikipedia_content_blocks.csv
+3. sondages_legislatives_2024_wikipedia_content_blocks.csv
 
 Il conserve aussi :
 - source_page
@@ -45,18 +50,21 @@ PAGES = [
         "title": "Liste de sondages sur l'élection présidentielle française de 2027",
         "url": "https://fr.wikipedia.org/wiki/Liste_de_sondages_sur_l%27%C3%A9lection_pr%C3%A9sidentielle_fran%C3%A7aise_de_2027",
         "output_csv": "sondages_presidentielle_2027_wikipedia_tables.csv",
+        "content_csv": "sondages_presidentielle_2027_wikipedia_content_blocks.csv",
     },
     {
         "key": "presidentielle_2022",
         "title": "Liste de sondages sur l'élection présidentielle française de 2022",
         "url": "https://fr.wikipedia.org/wiki/Liste_de_sondages_sur_l%27%C3%A9lection_pr%C3%A9sidentielle_fran%C3%A7aise_de_2022",
         "output_csv": "sondages_presidentielle_2022_wikipedia_tables.csv",
+        "content_csv": "sondages_presidentielle_2022_wikipedia_content_blocks.csv",
     },
     {
         "key": "legislatives_2024",
         "title": "Liste de sondages sur les élections législatives françaises de 2024",
         "url": "https://fr.wikipedia.org/wiki/Liste_de_sondages_sur_les_%C3%A9lections_l%C3%A9gislatives_fran%C3%A7aises_de_2024",
         "output_csv": "sondages_legislatives_2024_wikipedia_tables.csv",
+        "content_csv": "sondages_legislatives_2024_wikipedia_content_blocks.csv",
     },
 ]
 
@@ -121,6 +129,73 @@ def nearest_heading(table: BeautifulSoup | None) -> str:
         if node.name in {"h2", "h3", "h4"}:
             return node.get_text(" ", strip=True)
     return ""
+
+
+def extract_content_blocks(page: dict[str, str], cache_dir: Path | None = None) -> pd.DataFrame:
+    url = page["url"]
+    html = fetch_html(page, cache_dir=cache_dir)
+    soup = BeautifulSoup(html, "lxml")
+    content_root = soup.select_one("div.mw-parser-output")
+    if content_root is None:
+        return pd.DataFrame(
+            columns=[
+                "source_page",
+                "source_url",
+                "page_key",
+                "block_index",
+                "section",
+                "subsection",
+                "tag",
+                "text",
+                "links_json",
+            ]
+        )
+
+    current_h2 = ""
+    current_h3 = ""
+    rows: list[dict[str, object]] = []
+    block_index = 0
+    for node in content_root.children:
+        if getattr(node, "name", None) is None:
+            continue
+        if node.name == "h2":
+            current_h2 = clean_cell(node.get_text(" ", strip=True))
+            current_h3 = ""
+            continue
+        if node.name == "h3":
+            current_h3 = clean_cell(node.get_text(" ", strip=True))
+            continue
+        if node.name not in {"p", "ul", "ol", "dl", "blockquote"}:
+            continue
+        text = clean_cell(node.get_text(" ", strip=True))
+        if not text:
+            continue
+        links = []
+        for anchor in node.find_all("a", href=True):
+            href = anchor["href"]
+            if href.startswith("#"):
+                continue
+            links.append(
+                {
+                    "label": clean_cell(anchor.get_text(" ", strip=True)),
+                    "url": urljoin(url, href),
+                }
+            )
+        rows.append(
+            {
+                "source_page": page["title"],
+                "source_url": url,
+                "page_key": page["key"],
+                "block_index": block_index,
+                "section": current_h2,
+                "subsection": current_h3,
+                "tag": node.name,
+                "text": text,
+                "links_json": json.dumps(links, ensure_ascii=False),
+            }
+        )
+        block_index += 1
+    return pd.DataFrame(rows)
 
 
 def fetch_html(page: dict[str, str], cache_dir: Path | None = None, timeout: int = 60) -> str:
@@ -202,6 +277,7 @@ def main() -> None:
     cache_dir = Path(args.cache_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     all_frames: list[pd.DataFrame] = []
+    all_content_frames: list[pd.DataFrame] = []
     try:
         for page in PAGES:
             df = extract_page(page, cache_dir=cache_dir)
@@ -209,6 +285,14 @@ def main() -> None:
             df.to_csv(output, index=False, encoding="utf-8-sig")
             print(f"OK : {output} ({len(df)} lignes, {len(df.columns)} colonnes)", file=sys.stderr)
             all_frames.append(df)
+            content_df = extract_content_blocks(page, cache_dir=cache_dir)
+            content_output = out_dir / page["content_csv"]
+            content_df.to_csv(content_output, index=False, encoding="utf-8-sig")
+            print(
+                f"OK : {content_output} ({len(content_df)} blocs, {len(content_df.columns)} colonnes)",
+                file=sys.stderr,
+            )
+            all_content_frames.append(content_df)
     except RequestException as exc:
         print(
             "Erreur réseau vers Wikipédia. "
@@ -222,6 +306,8 @@ def main() -> None:
     with pd.ExcelWriter(xlsx, engine="openpyxl") as writer:
         for page, df in zip(PAGES, all_frames):
             df.to_excel(writer, sheet_name=page["key"][:31], index=False)
+        for page, content_df in zip(PAGES, all_content_frames):
+            content_df.to_excel(writer, sheet_name=f"{page['key'][:23]}_content", index=False)
     print(f"OK : {xlsx}", file=sys.stderr)
 
 

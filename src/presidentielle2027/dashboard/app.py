@@ -26,6 +26,157 @@ from presidentielle2027.dashboard.styles import apply_browser_chrome_overrides, 
 from presidentielle2027.extraction.canonicalization import canonicalize_candidate_fields, is_generic_bloc_label
 
 
+PAGE_CONFIG = [
+    {
+        "label": "Sources et métadonnées",
+        "renderer": render_sources_metadata_page,
+        "help": """
+### Sources et métadonnées
+
+Cette vue documente les fichiers utilisés, leur niveau de transformation et leur statut d'import.
+
+- `observé` : donnée lue dans une source publique.
+- `reconstruit` : donnée réorganisée ou rapprochée automatiquement.
+- `corrigé` : donnée ajustée par une méthode de redressement.
+
+Commencer ici si vous voulez vérifier l'origine d'un chiffre avant d'interpréter une projection.
+""",
+    },
+    {
+        "label": "Sondages 2027 - premier tour brut",
+        "renderer": render_first_round_raw_page,
+        "help": """
+### Premier tour brut
+
+Cette page montre les intentions de vote non redressées par l'historique électoral.
+
+- les courbes résument la dynamique des sondages publiés ;
+- les tableaux conservent la granularité source ;
+- les valeurs restent dépendantes du mode de collecte et du terrain disponible.
+
+Lire cette vue comme un état descriptif des sondages, pas comme une prévision ferme.
+""",
+    },
+    {
+        "label": "Sondages 2027 - second tour brut",
+        "renderer": render_second_round_raw_page,
+        "help": """
+### Second tour brut
+
+Cette vue regroupe les duels testés par les instituts sans correction méthodologique additionnelle.
+
+- chaque duel dépend fortement de l'offre de candidats ;
+- les écarts faibles doivent être lus avec prudence ;
+- l'absence de duel ne signifie pas qu'il est impossible, seulement qu'il n'est pas mesuré ici.
+""",
+    },
+    {
+        "label": "Barres d’erreur brutes",
+        "renderer": render_error_bars_raw_page,
+        "help": """
+### Barres d’erreur brutes
+
+La page visualise l'incertitude statistique déclarée autour des mesures publiées.
+
+- une barre courte ne supprime pas les biais de questionnaire ou d'échantillon ;
+- une barre longue signale qu'un écart apparent peut être peu robuste ;
+- comparer les recouvrements aide à éviter les surinterprétations.
+""",
+    },
+    {
+        "label": "Analyse historique 2022",
+        "renderer": lambda _frame: render_analysis_2022_page(),
+        "help": """
+### Analyse historique 2022
+
+Cette page reconstitue le comportement des sondages de la présidentielle 2022 pour servir de point de comparaison.
+
+- elle aide à mesurer les biais récurrents ;
+- elle ne doit pas être plaquée mécaniquement sur 2027 ;
+- elle sert surtout de base de calibration et d'audit.
+""",
+    },
+    {
+        "label": "Comparaison 2022 sondages vs résultat",
+        "renderer": lambda _frame: render_analysis_2022_comparison_page(),
+        "help": """
+### Comparaison 2022
+
+Ici, les dernières mesures disponibles sont confrontées au résultat réellement obtenu.
+
+- la page isole les écarts finaux ;
+- elle montre quels candidats étaient surestimés ou sous-estimés ;
+- elle sert de repère pour juger la fiabilité des corrections utilisées ailleurs.
+""",
+    },
+    {
+        "label": "Analyse législatives 2024",
+        "renderer": lambda _frame: render_analysis_2024_page(),
+        "help": """
+### Législatives 2024
+
+Cette vue traite 2024 comme une boussole récente sur les écarts entre sondages, blocs et sièges.
+
+- les violons montrent la dispersion des mesures dans le temps ;
+- les graphiques sièges vs résultat servent à visualiser les erreurs d'atterrissage ;
+- l'objectif est d'ancrer les corrections dans un précédent plus proche de 2027 que 2022.
+""",
+    },
+    {
+        "label": "Biais calculés",
+        "renderer": render_biases_page,
+        "help": """
+### Biais calculés
+
+Cette page synthétise les écarts estimés entre les sondages publiés et les résultats observés de référence.
+
+- un biais positif signifie qu'un bloc a tendance à être corrigé à la hausse ;
+- un biais négatif signifie qu'il a tendance à être ramené vers le bas ;
+- ces coefficients dépendent des hypothèses retenues dans les pages historiques.
+""",
+    },
+    {
+        "label": "Projection corrigée 2027",
+        "renderer": render_dynamic_bias_page,
+        "help": """
+### Projection corrigée 2027
+
+Cette vue applique les redressements retenus aux sondages 2027 pour produire une lecture corrigée.
+
+- la correction ne transforme pas un sondage en certitude ;
+- elle transpose des biais passés avec des pondérations explicites ;
+- il faut toujours relire les hypothèses avant d'utiliser le résultat.
+""",
+    },
+    {
+        "label": "Dataset corrigé 2027",
+        "renderer": render_corrected_dataset_page,
+        "help": """
+### Dataset corrigé 2027
+
+Cette page expose le jeu de données corrigé, ses colonnes de calcul et les audits associés.
+
+- utile pour vérifier les transformations ligne par ligne ;
+- utile aussi pour exporter ou reproduire les calculs ;
+- si un chiffre vous surprend, c'est la bonne page pour remonter sa chaîne de construction.
+""",
+    },
+    {
+        "label": "Scénarios exploratoires",
+        "renderer": render_projection_scenarios_page,
+        "help": """
+### Scénarios exploratoires
+
+Cette vue teste des hypothèses alternatives plutôt qu'un scénario central unique.
+
+- les sorties montrent une sensibilité aux paramètres ;
+- elles servent à comparer des variantes, pas à annoncer un verdict ;
+- il faut les lire comme des stress tests politiques et méthodologiques.
+""",
+    },
+]
+
+
 @st.cache_data(show_spinner=False)
 def load_dashboard_data() -> pd.DataFrame:
     normalized_v2_path = get_settings().processed_dir / "wikipedia_2027_polls_normalized_v2.csv"
@@ -80,45 +231,23 @@ def main() -> None:
         st.warning("Aucune donnée disponible.")
         return
 
-    page = st.radio(
-        "Vue",
-        [
-            "Sources et métadonnées",
-            "Sondages 2027 - premier tour brut",
-            "Sondages 2027 - second tour brut",
-            "Barres d’erreur brutes",
-            "Analyse historique 2022",
-            "Comparaison 2022 sondages vs résultat",
-            "Analyse législatives 2024",
-            "Biais calculés",
-            "Projection corrigée 2027",
-            "Dataset corrigé 2027",
-            "Scénarios exploratoires",
-        ],
-        horizontal=True,
-    )
-    if page == "Sources et métadonnées":
-        render_sources_metadata_page(frame)
-    elif page == "Sondages 2027 - premier tour brut":
-        render_first_round_raw_page(frame)
-    elif page == "Sondages 2027 - second tour brut":
-        render_second_round_raw_page(frame)
-    elif page == "Barres d’erreur brutes":
-        render_error_bars_raw_page(frame)
-    elif page == "Analyse historique 2022":
-        render_analysis_2022_page()
-    elif page == "Comparaison 2022 sondages vs résultat":
-        render_analysis_2022_comparison_page()
-    elif page == "Analyse législatives 2024":
-        render_analysis_2024_page()
-    elif page == "Biais calculés":
-        render_biases_page(frame)
-    elif page == "Projection corrigée 2027":
-        render_dynamic_bias_page(frame)
-    elif page == "Scénarios exploratoires":
-        render_projection_scenarios_page(frame)
-    else:
-        render_corrected_dataset_page(frame)
+    page_labels = [config["label"] for config in PAGE_CONFIG]
+    page_lookup = {config["label"]: config for config in PAGE_CONFIG}
+
+    nav_col, help_col = st.columns([16, 1.4])
+    with nav_col:
+        page = st.radio(
+            "Vue",
+            page_labels,
+            horizontal=True,
+            key="dashboard_page",
+            label_visibility="collapsed",
+        )
+    with help_col:
+        with st.popover("?", help="Aide pour la vue active", use_container_width=True):
+            st.markdown(page_lookup[page]["help"])
+
+    page_lookup[page]["renderer"](frame)
 
 
 if __name__ == "__main__":
