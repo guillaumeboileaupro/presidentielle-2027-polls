@@ -41,14 +41,32 @@ PARTY_LOGO_FILENAMES: dict[str, str] = {
     "D!": "DemsFrance.png",
 }
 
+CANDIDATE_LOGO_FILENAMES: dict[tuple[str, str], str] = {
+    ("PS-PP", "Raphaël Glucksmann"): "Logo Place publique.svg",
+    ("PS-PP", "François Hollande"): "Le Parti socialiste wordmark.svg",
+    ("PP", "Raphaël Glucksmann"): "Logo Place publique.svg",
+}
 
-def get_party_logo_url(candidate_party: object | None) -> str | None:
+
+def resolve_party_logo_filename(
+    candidate_party: object | None,
+    candidate_name: object | None = None,
+) -> str | None:
     if candidate_party is None:
-        return PLACEHOLDER_LOGO_PATH
+        return None
     normalized_party = str(candidate_party).strip()
     if not normalized_party:
-        return PLACEHOLDER_LOGO_PATH
-    filename = PARTY_LOGO_FILENAMES.get(normalized_party)
+        return None
+    normalized_candidate = str(candidate_name).strip() if candidate_name not in (None, "", "nan") else ""
+    if normalized_candidate:
+        filename = CANDIDATE_LOGO_FILENAMES.get((normalized_party, normalized_candidate))
+        if filename is not None:
+            return filename
+    return PARTY_LOGO_FILENAMES.get(normalized_party)
+
+
+def get_party_logo_url(candidate_party: object | None, candidate_name: object | None = None) -> str | None:
+    filename = resolve_party_logo_filename(candidate_party, candidate_name)
     if filename is None:
         return PLACEHOLDER_LOGO_PATH
     return f"{COMMONS_SPECIAL_FILEPATH}{quote(filename, safe='()')}"
@@ -89,7 +107,7 @@ def render_candidate_badges(
         political_family = getattr(row, "political_family", None)
         estimate = getattr(row, value_column, None)
         color = get_political_color(candidate_party, political_family)
-        logo_url = get_party_logo_url(candidate_party) if include_remote_logos else None
+        logo_url = get_party_logo_url(candidate_party, candidate_name) if include_remote_logos else None
         party_label = str(candidate_party).strip() if candidate_party not in (None, "", "nan") else "Sans étiquette"
         value_label = f"{float(estimate):.1f}%" if estimate is not None and pd.notna(estimate) else "n.d."
 
@@ -128,7 +146,10 @@ def build_candidate_summary_table(frame: pd.DataFrame, value_column: str) -> pd.
     if sort_columns:
         working = working.sort_values(sort_columns, ascending=[False] * len(sort_columns))
     latest = working.groupby("candidate_name", dropna=False).head(1).copy()
-    latest["party_logo"] = latest["candidate_party"].map(get_party_logo_url)
+    latest["party_logo"] = latest.apply(
+        lambda row: get_party_logo_url(row.get("candidate_party"), row.get("candidate_name")),
+        axis=1,
+    )
     latest["color"] = latest.apply(
         lambda row: get_political_color(row.get("candidate_party"), row.get("political_family")),
         axis=1,
@@ -168,7 +189,13 @@ def build_force_summary_table(
         working = working.sort_values(sort_columns, ascending=[False] * len(sort_columns))
 
     latest = working.groupby(force_column, dropna=False).head(1).copy()
-    latest["party_logo"] = latest[party_column].map(get_party_logo_url) if party_column in latest.columns else None
+    if party_column in latest.columns:
+        latest["party_logo"] = latest.apply(
+            lambda row: get_party_logo_url(row.get(party_column), row.get("candidate_name")),
+            axis=1,
+        )
+    else:
+        latest["party_logo"] = None
     latest["value_display"] = latest[value_column].map(lambda x: f"{x:.1f}%" if pd.notna(x) else "n.d.")
     latest = latest.sort_values(value_column, ascending=False)
 
