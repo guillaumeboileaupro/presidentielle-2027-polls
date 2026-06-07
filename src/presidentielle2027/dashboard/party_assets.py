@@ -23,20 +23,22 @@ COMMONS_SPECIAL_FILEPATH = "https://commons.wikimedia.org/wiki/Special:FilePath/
 PLACEHOLDER_LOGO_PATH = str(Path(__file__).parent / "assets" / "logo-placeholder.svg")
 
 PARTY_LOGO_FILENAMES: dict[str, str] = {
-    "LFI": "Logo France Insoumise.svg",
-    "RN": "Logo Rassemblement National.svg",
-    "LR": "Les Républicains - logo (France, 2023).svg",
-    "PS": "Logo du Parti socialiste.png",
-    "PS-PP": "Logo du Parti socialiste.png",
-    "PP": "Logo du Parti socialiste.png",
-    "EELV": "Europe Ecologie-Les Verts Logo.svg",
-    "PCF": "Logo – Parti communiste français (2018).svg",
-    "DLF": "Debout la France logo (2017).svg",
+    "LFI": "LFI Logo 2024 (cropped).svg",
+    "RN": "Logo Rassemblement National - Cropped.svg",
+    "LR": "Les Républicains - logo (France, 2023) (cropped).svg",
+    "PS": "Le Parti socialiste wordmark.svg",
+    "PS-PP": "Le Parti socialiste wordmark.svg",
+    "PP": "Le Parti socialiste wordmark.svg",
+    "EELV": "Logo Les Écologistes (France).png",
+    "PCF": "PCF LOGO.svg",
+    "DLF": "Debout la France logo (2022).png",
     "REC": "Logo du parti Reconquête.svg",
     "RE": "Renaissance parti logo.svg",
-    "ENS": "Renaissance parti logo.svg",
-    "HOR": "Logo Parti Politique Horizons - 2021.svg",
+    "ENS": "Groupe EPR.png",
+    "HOR": "Logo Horizons.svg",
     "NFP": "Logo Nouveau Front Populaire 2024.svg",
+    "UDR": "UDR logo.svg",
+    "D!": "DemsFrance.png",
 }
 
 
