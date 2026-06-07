@@ -406,6 +406,12 @@ La matrice encode une affinité de transfert entre blocs, par exemple :
 - une partie du bloc `centre` peut aller vers `gauche`, `droite` ou `extrême_droite` ;
 - une partie du bloc `droite` peut se reporter davantage vers `extrême_droite` que vers `gauche`.
 
+Depuis l'ajustement le plus récent, cette matrice n'est plus strictement statique :
+
+- dans un duel `gauche` contre `extrême_droite`, le repo applique un renforcement contextuel du report `centre -> gauche` ;
+- l'idée n'est pas de supposer un vote automatique à `100 %`, mais de modéliser un front républicain plus fort qu'une matrice moyenne tous duels confondus ;
+- ce réglage affecte notamment les hypothèses de type `Attal vs Bardella`, `Attal vs Le Pen`, `Mélenchon vs Bardella` ou `Ruffin vs Le Pen` quand la lecture par blocs du premier tour corrigé est projetée vers le second tour.
+
 Le benchmark final est normalisé en pourcentages sur le duel considéré.
 
 ### 11.3. Biais de sondage 2024

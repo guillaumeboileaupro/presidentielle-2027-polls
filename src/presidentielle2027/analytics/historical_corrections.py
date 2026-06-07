@@ -98,6 +98,12 @@ SECOND_ROUND_TRANSFER_MATRIX: dict[str, dict[str, float]] = {
     "autres": {"gauche": 0.12, "centre": 0.20, "droite": 0.15, "extrême_droite": 0.15, "autres": 1.00},
 }
 
+DUEL_SPECIFIC_SECOND_ROUND_OVERRIDES: dict[frozenset[str], dict[str, dict[str, float]]] = {
+    frozenset({"gauche", "extrême_droite"}): {
+        "centre": {"gauche": 0.82, "extrême_droite": 0.03},
+    }
+}
+
 LEGISLATIVE_BLOC_NORMALIZATION: dict[str, str] = {
     "left": "gauche",
     "gauche": "gauche",
@@ -191,6 +197,20 @@ def normalize_broad_bloc(candidate_party: object | None, political_family: objec
     if family in FAMILY_BROAD_BLOC_MAP:
         return FAMILY_BROAD_BLOC_MAP[family]
     return "autres"
+
+
+def get_second_round_transfer_map(
+    source_bloc: str,
+    candidate_a_bloc: str,
+    candidate_b_bloc: str,
+) -> dict[str, float]:
+    base = SECOND_ROUND_TRANSFER_MATRIX.get(source_bloc, SECOND_ROUND_TRANSFER_MATRIX["autres"]).copy()
+    duel_key = frozenset({candidate_a_bloc, candidate_b_bloc})
+    duel_overrides = DUEL_SPECIFIC_SECOND_ROUND_OVERRIDES.get(duel_key, {})
+    source_override = duel_overrides.get(source_bloc)
+    if source_override:
+        base.update(source_override)
+    return base
 
 
 def compute_days_bucket(days_until_election: pd.Series) -> pd.Series:
@@ -953,7 +973,7 @@ def compute_second_round_legislative_benchmark(
     score_b = 0.0
     for source_bloc, share in bloc_shares.items():
         normalized_source_bloc = LEGISLATIVE_BLOC_NORMALIZATION.get(str(source_bloc), "autres")
-        transfer_map = SECOND_ROUND_TRANSFER_MATRIX.get(normalized_source_bloc, SECOND_ROUND_TRANSFER_MATRIX["autres"])
+        transfer_map = get_second_round_transfer_map(normalized_source_bloc, candidate_a_bloc, candidate_b_bloc)
         score_a += share * transfer_map.get(candidate_a_bloc, 0.0)
         score_b += share * transfer_map.get(candidate_b_bloc, 0.0)
     total = score_a + score_b
