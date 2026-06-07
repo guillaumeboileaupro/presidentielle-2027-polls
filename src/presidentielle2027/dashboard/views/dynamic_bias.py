@@ -139,10 +139,10 @@ def render_dynamic_bias_page(frame: pd.DataFrame) -> None:
     st.markdown("**Tracé du biais projeté 2027 pour chaque sondage**")
     st.caption(
         "Lecture : le biais projeté 2027 correspond à la correction ajoutée au score brut. "
-        "Formule : resultat estime = score brut + biais projete 2027. "
         "Un biais positif signifie que le parti est historiquement sous-estime par le sondage ; "
         "un biais negatif signifie qu'il est historiquement surestime."
     )
+    st.latex(r"\mathrm{score\ corrig\acute{e}\ 2027} = \mathrm{score\ brut} + \mathrm{biais\ projet\acute{e}\ 2027}")
     available_forces = ["Toutes"] + sorted(corrected["force_label"].dropna().astype(str).unique().tolist())
     available_pollsters = ["Tous"] + sorted(corrected["polling_company"].dropna().astype(str).unique().tolist())
     c1, c2 = st.columns(2)
