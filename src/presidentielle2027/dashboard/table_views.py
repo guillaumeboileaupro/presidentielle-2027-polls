@@ -113,7 +113,10 @@ def render_poll_results_table(frame: pd.DataFrame) -> None:
 
     working = clean_user_facing_frame(rename_user_facing_columns(frame))
     if "Parti" in working.columns:
-        working["Logo"] = working["Parti"].map(get_party_logo_url)
+        working["Logo"] = working.apply(
+            lambda row: get_party_logo_url(row.get("Parti"), row.get("Candidat")),
+            axis=1,
+        )
     ordered_columns = [
         "Logo",
         "Source",
