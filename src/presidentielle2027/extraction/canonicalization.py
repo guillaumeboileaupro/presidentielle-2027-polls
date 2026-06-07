@@ -61,6 +61,8 @@ CANDIDATE_ALIASES: dict[str, str] = {
     "Lecornu": "Sébastien Lecornu",
     "Riner": "Teddy Riner",
     "Sébastien": "Sébastien Chenu",
+    "Vallaud": "Boris Vallaud",
+    "Boris Vallaud": "Boris Vallaud",
     "de Villiers": "Philippe de Villiers",
     "Wauquiez": "Laurent Wauquiez",
 }
@@ -71,7 +73,7 @@ CANDIDATE_PARTY_DEFAULTS: dict[str, str | None] = {
     "Fabien Roussel": "PCF",
     "Jean-Luc Mélenchon": "LFI",
     "Marine Tondelier": "EELV",
-    "Raphaël Glucksmann": "PS-PP",
+    "Raphaël Glucksmann": "PP",
     "Édouard Philippe": "HOR",
     "Gabriel Attal": "RE",
     "Dominique de Villepin": None,
@@ -85,9 +87,10 @@ CANDIDATE_PARTY_DEFAULTS: dict[str, str | None] = {
     "Xavier Bertrand": "LR",
     "Gérald Darmanin": "RE",
     "Emmanuel Macron": "RE",
-    "Olivier Faure": "PS-PP",
+    "Olivier Faure": "PS",
     "Cyril Hanouna": None,
-    "François Hollande": "PS-PP",
+    "François Hollande": "PS",
+    "Boris Vallaud": "PS",
     "Sarah Knafo": "REC",
     "Michel-Édouard Leclerc": None,
     "Sébastien Lecornu": "RE",
@@ -120,6 +123,7 @@ POLITICAL_FAMILY_DEFAULTS: dict[str, str | None] = {
     "Olivier Faure": "centre_gauche",
     "Cyril Hanouna": "hors_champ",
     "François Hollande": "centre_gauche",
+    "Boris Vallaud": "centre_gauche",
     "Sarah Knafo": "extrême_droite",
     "Michel-Édouard Leclerc": "hors_champ",
     "Sébastien Lecornu": "centre_droit",
@@ -146,6 +150,14 @@ def canonicalize_candidate_fields(
 
     party = _none_if_na(candidate_party)
     family = _none_if_na(political_family)
+
+    # Some raw sources collapse PS and Place Publique into a single "PS-PP" bucket.
+    # For dashboard display and candidate-level analysis, keep candidate-specific labels.
+    if party == "PS-PP":
+        if canonical_name == "Raphaël Glucksmann":
+            party = "PP"
+        elif canonical_name in {"François Hollande", "Olivier Faure", "Boris Vallaud"}:
+            party = "PS"
 
     if canonical_name in CANDIDATE_PARTY_DEFAULTS and party is None:
         party = CANDIDATE_PARTY_DEFAULTS[canonical_name]
