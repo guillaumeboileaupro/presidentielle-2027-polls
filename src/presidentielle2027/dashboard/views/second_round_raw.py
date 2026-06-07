@@ -9,9 +9,9 @@ import streamlit as st
 
 from presidentielle2027.analytics.historical_corrections import (
     CURRENT_ELECTION_DATE,
-    SECOND_ROUND_TRANSFER_MATRIX,
     apply_first_round_historical_correction,
     apply_second_round_legislative_correction,
+    get_second_round_transfer_map,
     get_reference_dir,
     normalize_broad_bloc,
 )
@@ -110,7 +110,7 @@ def _build_corrected_transfer_analysis(
     for _, bloc_row in latest_blocs.sort_values("corrected_share", ascending=False).iterrows():
         source_bloc = str(bloc_row["broad_bloc"])
         corrected_share = float(bloc_row["corrected_share"])
-        transfer_map = SECOND_ROUND_TRANSFER_MATRIX.get(source_bloc, SECOND_ROUND_TRANSFER_MATRIX["autres"])
+        transfer_map = get_second_round_transfer_map(source_bloc, candidate_a_bloc, candidate_b_bloc)
         to_a = float(transfer_map.get(candidate_a_bloc, 0.0))
         to_b = float(transfer_map.get(candidate_b_bloc, 0.0))
         contribution_a = corrected_share * to_a

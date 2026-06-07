@@ -12,6 +12,7 @@ from presidentielle2027.analytics.historical_corrections import (
     apply_second_round_legislative_correction,
     compute_second_round_legislative_benchmark,
     compute_legislative_2024_poll_bias,
+    get_second_round_transfer_map,
     load_legislative_2024_results,
 )
 
@@ -103,7 +104,14 @@ def test_second_round_legislative_benchmark_uses_2024_bloc_labels() -> None:
     legislative = load_legislative_2024_results(Path("data/reference"))
     left, far_right = compute_second_round_legislative_benchmark("gauche", "extrême_droite", legislative)
     assert round(left + far_right, 5) == 100.0
-    assert far_right > left
+    assert left > far_right
+    assert left > 54.0
+
+
+def test_second_round_transfer_map_strengthens_centre_to_left_against_far_right() -> None:
+    transfer_map = get_second_round_transfer_map("centre", "gauche", "extrême_droite")
+    assert transfer_map["gauche"] == pytest.approx(0.82)
+    assert transfer_map["extrême_droite"] == pytest.approx(0.03)
 
 
 def test_compute_legislative_2024_poll_bias_uses_national_wiki_table() -> None:
