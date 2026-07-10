@@ -37,6 +37,13 @@ POLL_TO_SEAT_BLOC = {
     "autres": "Divers / autres",
 }
 SEAT_TO_POLL_BLOC = {value: key for key, value in POLL_TO_SEAT_BLOC.items()}
+POLL_BLOC_LABELS = {
+    "gauche": "Gauche / NFP",
+    "centre": "Centre / Ensemble",
+    "droite": "Droite / LR",
+    "extrême_droite": "RN et alliés",
+    "autres": "Divers / autres",
+}
 POLLSTER_MARKERS = ["Ipsos", "Ifop", "Elabe", "OpinionWay", "Opinion", "Harris", "Cluster17", "Odoxa"]
 NATIONAL_POLLSTERS_2024 = {
     "Ipsos",
@@ -59,6 +66,10 @@ FRENCH_MONTHS = {
 
 def _get_bloc_color(bloc_label: str) -> str:
     return get_political_color(None, bloc_label)
+
+
+def _display_poll_bloc(bloc_label: str) -> str:
+    return POLL_BLOC_LABELS.get(bloc_label, bloc_label.replace("_", " ").capitalize())
 
 
 def _analysis_2024_layout_overrides(horizontal_legend: bool = False, extra_right_margin: int = 220) -> dict[str, object]:
@@ -332,6 +343,7 @@ def _render_2024_smoothed_polls() -> None:
     for bloc_label, group in polls.groupby("bloc_label", dropna=False):
         visible_labels.append(str(bloc_label))
         color = _get_bloc_color(str(bloc_label))
+        display_label = _display_poll_bloc(str(bloc_label))
         ordered = group.sort_values("publication_date")
         figure.add_trace(
             go.Scatter(
@@ -339,7 +351,7 @@ def _render_2024_smoothed_polls() -> None:
                 y=ordered["estimate_percent"],
                 mode="markers",
                 marker={"size": 5, "color": color, "opacity": 0.35},
-                name=f"{bloc_label} - points",
+                name=f"{display_label} - points",
                 legendgroup=str(bloc_label),
                 showlegend=False,
                 customdata=ordered[["polling_company"]].to_numpy(),
@@ -355,7 +367,7 @@ def _render_2024_smoothed_polls() -> None:
                 y=smoothed["score_smooth"],
                 mode="lines",
                 line={"width": 2.2, "color": color},
-                name=str(bloc_label),
+                name=display_label,
                 legendgroup=str(bloc_label),
                 showlegend=True,
                 hovertemplate="%{x|%d/%m/%Y}<br>%{y:.1f}%<extra></extra>",
@@ -380,7 +392,7 @@ def _render_2024_smoothed_polls() -> None:
 
     available_order = [label for label in label_order if label in visible_labels]
     if available_order:
-        st.caption("Blocs visibles : " + ", ".join(available_order))
+        st.caption("Blocs visibles : " + ", ".join(_display_poll_bloc(label) for label in available_order))
 
 
 def _render_2024_poll_vs_seats_timeline(
@@ -635,84 +647,176 @@ def _render_2024_violin_distributions(polls: pd.DataFrame, seat_projections: pd.
         if polls.empty:
             st.info("Aucune distribution de sondages disponible.")
         else:
-            poll_options = sorted(polls["bloc_label"].dropna().astype(str).unique().tolist())
-            poll_bloc = st.selectbox(
-                "Bloc sondages",
-                poll_options,
-                key="analysis_2024_violin_poll_bloc",
-            )
-            poll_frame = polls.loc[polls["bloc_label"] == poll_bloc].copy()
-            if not poll_frame.empty:
-                poll_frame["date_label"] = poll_frame["publication_date"].dt.strftime("%d/%m")
+            poll_violin = go.Figure()
+            label_order = ["gauche", "centre", "droite", "extrême_droite", "autres"]
+            available_order = [label for label in label_order if label in polls["bloc_label"].dropna().astype(str).unique().tolist()]
+            for poll_bloc in available_order:
+                poll_frame = polls.loc[polls["bloc_label"] == poll_bloc].copy()
+                if poll_frame.empty:
+                    continue
                 poll_color = _get_bloc_color(poll_bloc)
-                poll_violin = go.Figure()
                 poll_violin.add_trace(
                     go.Violin(
-                        x=poll_frame["date_label"],
+                        x=[_display_poll_bloc(poll_bloc)] * len(poll_frame),
                         y=poll_frame["estimate_percent"],
                         box_visible=True,
                         meanline_visible=True,
                         points="all",
                         pointpos=0,
                         jitter=0.08,
-                        marker={"size": 5, "opacity": 0.45, "color": poll_color},
+                        marker={"size": 5, "opacity": 0.35, "color": poll_color},
                         line={"color": poll_color},
                         fillcolor=poll_color,
                         opacity=0.55,
-                        hovertemplate="Date: %{x}<br>Sondage: %{y:.1f}%<extra></extra>",
-                        name=poll_bloc,
+                        customdata=poll_frame[["publication_date", "polling_company"]].to_numpy(),
+                        hovertemplate="%{customdata[0]|%d/%m/%Y}<br>Sondage: %{y:.1f}%<br>Institut: %{customdata[1]}<extra></extra>",
+                        name=_display_poll_bloc(poll_bloc),
+                        legendgroup=poll_bloc,
                         showlegend=False,
                     )
                 )
-                poll_violin.update_layout(
-                    title=f"Législatives 2024 · distribution des sondages · {poll_bloc}",
-                    **_analysis_2024_layout_overrides(horizontal_legend=False, extra_right_margin=80),
-                )
-                poll_violin.update_xaxes(title_text="Date de publication")
-                poll_violin.update_yaxes(title_text="Intentions de vote (%)", ticksuffix=" %")
-                st.plotly_chart(poll_violin, width="stretch", config={"displayModeBar": False, "responsive": True})
+            poll_violin.update_layout(
+                title="Législatives 2024 · distribution des sondages par bloc",
+                **_analysis_2024_layout_overrides(horizontal_legend=False, extra_right_margin=80),
+            )
+            poll_violin.update_xaxes(title_text="")
+            poll_violin.update_yaxes(title_text="Intentions de vote (%)", ticksuffix=" %")
+            st.plotly_chart(poll_violin, width="stretch", config={"displayModeBar": False, "responsive": True})
 
     with right:
         st.markdown("**Violons projections sièges 2024**")
         if seat_projections.empty:
             st.info("Aucune distribution de projections en sièges disponible.")
         else:
-            seat_options = sorted(seat_projections["bloc_name"].dropna().astype(str).unique().tolist())
-            seat_bloc = st.selectbox(
-                "Bloc sièges",
-                seat_options,
-                key="analysis_2024_violin_seat_bloc",
-            )
-            seat_frame = seat_projections.loc[seat_projections["bloc_name"] == seat_bloc].copy()
-            if not seat_frame.empty:
-                seat_frame["date_label"] = seat_frame["publication_date"].dt.strftime("%d/%m")
+            seat_violin = go.Figure()
+            for seat_bloc in SEAT_PROJECTION_BLOCS:
+                seat_frame = seat_projections.loc[seat_projections["bloc_name"] == seat_bloc].copy()
+                if seat_frame.empty:
+                    continue
                 seat_color = _get_bloc_color(SEAT_TO_POLL_BLOC.get(seat_bloc, "autres"))
-                seat_violin = go.Figure()
                 seat_violin.add_trace(
                     go.Violin(
-                        x=seat_frame["date_label"],
+                        x=[seat_bloc] * len(seat_frame),
                         y=seat_frame["seat_projection_mid"],
                         box_visible=True,
                         meanline_visible=True,
                         points="all",
                         pointpos=0,
                         jitter=0.08,
-                        marker={"size": 5, "opacity": 0.45, "color": seat_color},
+                        marker={"size": 5, "opacity": 0.35, "color": seat_color},
                         line={"color": seat_color},
                         fillcolor=seat_color,
                         opacity=0.55,
-                        hovertemplate="Date: %{x}<br>Projection médiane: %{y:.1f}<extra></extra>",
+                        customdata=seat_frame[["publication_date", "polling_company"]].to_numpy(),
+                        hovertemplate="%{customdata[0]|%d/%m/%Y}<br>Projection médiane: %{y:.1f}<br>Institut: %{customdata[1]}<extra></extra>",
                         name=seat_bloc,
+                        legendgroup=seat_bloc,
                         showlegend=False,
                     )
                 )
-                seat_violin.update_layout(
-                    title=f"Législatives 2024 · distribution des sièges projetés · {seat_bloc}",
-                    **_analysis_2024_layout_overrides(horizontal_legend=False, extra_right_margin=80),
+            seat_violin.update_layout(
+                title="Législatives 2024 · distribution des sièges projetés par bloc",
+                **_analysis_2024_layout_overrides(horizontal_legend=False, extra_right_margin=80),
+            )
+            seat_violin.update_xaxes(title_text="")
+            seat_violin.update_yaxes(title_text="Sièges projetés")
+            st.plotly_chart(seat_violin, width="stretch", config={"displayModeBar": False, "responsive": True})
+
+
+def _render_2024_violin_timeline_distributions(polls: pd.DataFrame, seat_projections: pd.DataFrame) -> None:
+    if polls.empty and seat_projections.empty:
+        return
+
+    left, right = st.columns(2)
+    with left:
+        st.markdown("**Violons sondages 2024 par date**")
+        if polls.empty:
+            st.info("Aucune distribution de sondages disponible.")
+        else:
+            poll_options = ["gauche", "centre", "droite", "extrême_droite", "autres"]
+            available_poll_options = [option for option in poll_options if option in polls["bloc_label"].dropna().astype(str).unique().tolist()]
+            if available_poll_options:
+                poll_bloc = st.selectbox(
+                    "Bloc sondages",
+                    available_poll_options,
+                    format_func=_display_poll_bloc,
+                    key="analysis_2024_violin_poll_bloc",
                 )
-                seat_violin.update_xaxes(title_text="Date de publication")
-                seat_violin.update_yaxes(title_text="Sièges projetés")
-                st.plotly_chart(seat_violin, width="stretch", config={"displayModeBar": False, "responsive": True})
+                poll_frame = polls.loc[polls["bloc_label"] == poll_bloc].copy()
+                if not poll_frame.empty:
+                    poll_frame["date_label"] = poll_frame["publication_date"].dt.strftime("%d/%m")
+                    poll_color = _get_bloc_color(poll_bloc)
+                    poll_violin = go.Figure()
+                    poll_violin.add_trace(
+                        go.Violin(
+                            x=poll_frame["date_label"],
+                            y=poll_frame["estimate_percent"],
+                            box_visible=True,
+                            meanline_visible=True,
+                            points="all",
+                            pointpos=0,
+                            jitter=0.08,
+                            marker={"size": 5, "opacity": 0.45, "color": poll_color},
+                            line={"color": poll_color},
+                            fillcolor=poll_color,
+                            opacity=0.55,
+                            customdata=poll_frame[["publication_date", "polling_company"]].to_numpy(),
+                            hovertemplate="%{customdata[0]|%d/%m/%Y}<br>Sondage: %{y:.1f}%<br>Institut: %{customdata[1]}<extra></extra>",
+                            name=_display_poll_bloc(poll_bloc),
+                            showlegend=False,
+                        )
+                    )
+                    poll_violin.update_layout(
+                        title=f"Législatives 2024 · distribution des sondages dans le temps · {_display_poll_bloc(poll_bloc)}",
+                        **_analysis_2024_layout_overrides(horizontal_legend=False, extra_right_margin=80),
+                    )
+                    poll_violin.update_xaxes(title_text="Date de publication")
+                    poll_violin.update_yaxes(title_text="Intentions de vote (%)", ticksuffix=" %")
+                    st.plotly_chart(poll_violin, width="stretch", config={"displayModeBar": False, "responsive": True})
+
+    with right:
+        st.markdown("**Violons projections sièges 2024 par date**")
+        if seat_projections.empty:
+            st.info("Aucune distribution de projections en sièges disponible.")
+        else:
+            seat_options = [seat_bloc for seat_bloc in SEAT_PROJECTION_BLOCS if seat_bloc in seat_projections["bloc_name"].dropna().astype(str).unique().tolist()]
+            if seat_options:
+                seat_bloc = st.selectbox(
+                    "Bloc sièges",
+                    seat_options,
+                    key="analysis_2024_violin_seat_bloc",
+                )
+                seat_frame = seat_projections.loc[seat_projections["bloc_name"] == seat_bloc].copy()
+                if not seat_frame.empty:
+                    seat_frame["date_label"] = seat_frame["publication_date"].dt.strftime("%d/%m")
+                    seat_color = _get_bloc_color(SEAT_TO_POLL_BLOC.get(seat_bloc, "autres"))
+                    seat_violin = go.Figure()
+                    seat_violin.add_trace(
+                        go.Violin(
+                            x=seat_frame["date_label"],
+                            y=seat_frame["seat_projection_mid"],
+                            box_visible=True,
+                            meanline_visible=True,
+                            points="all",
+                            pointpos=0,
+                            jitter=0.08,
+                            marker={"size": 5, "opacity": 0.45, "color": seat_color},
+                            line={"color": seat_color},
+                            fillcolor=seat_color,
+                            opacity=0.55,
+                            customdata=seat_frame[["publication_date", "polling_company"]].to_numpy(),
+                            hovertemplate="%{customdata[0]|%d/%m/%Y}<br>Projection médiane: %{y:.1f}<br>Institut: %{customdata[1]}<extra></extra>",
+                            name=seat_bloc,
+                            showlegend=False,
+                        )
+                    )
+                    seat_violin.update_layout(
+                        title=f"Législatives 2024 · distribution des sièges projetés dans le temps · {seat_bloc}",
+                        **_analysis_2024_layout_overrides(horizontal_legend=False, extra_right_margin=80),
+                    )
+                    seat_violin.update_xaxes(title_text="Date de publication")
+                    seat_violin.update_yaxes(title_text="Sièges projetés")
+                    st.plotly_chart(seat_violin, width="stretch", config={"displayModeBar": False, "responsive": True})
 
 
 def render_analysis_2024_page() -> None:
@@ -761,8 +865,11 @@ def render_analysis_2024_page() -> None:
         "Divers / autres": 10,
     }
     if not seat_projections.empty:
-        st.markdown("**Distributions 2024 par date**")
+        st.markdown("**Distributions 2024 par bloc**")
         _render_2024_violin_distributions(polls, seat_projections)
+
+        st.markdown("**Distributions 2024 par date**")
+        _render_2024_violin_timeline_distributions(polls, seat_projections)
 
         st.markdown("**Sondages vs temps, sièges et résultat obtenu**")
         _render_2024_poll_vs_seats_timeline(polls, seat_projections, final_seats, reference_dir)

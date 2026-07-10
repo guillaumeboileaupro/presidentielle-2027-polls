@@ -1,0 +1,540 @@
+circo_key;dept_label;circo_label;party_raw;nfp_internal_party
+1-101;Ain;1ère circonscription;Parti socialiste;PS / NFP
+1-102;Ain;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+1-103;Ain;3ème circonscription;La France insoumise;LFI / NFP
+1-104;Ain;4ème circonscription;Les Ecologistes - EELV;EELV / NFP
+1-105;Ain;5ème circonscription;La France insoumise;LFI / NFP
+2-201;Aisne;1ère circonscription;Parti socialiste;PS / NFP
+2-202;Aisne;2ème circonscription;La France insoumise;LFI / NFP
+2-204;Aisne;4ème circonscription;Parti socialiste;PS / NFP
+2-205;Aisne;5ème circonscription;Parti socialiste;PS / NFP
+3-301;Allier;1ère circonscription;Parti communiste français;PCF / NFP
+3-302;Allier;2ème circonscription;La France insoumise;LFI / NFP
+3-303;Allier;3ème circonscription;Parti socialiste;PS / NFP
+4-401;Alpes-de-Haute-Provence;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+4-402;Alpes-de-Haute-Provence;2ème circonscription;La France insoumise;LFI / NFP
+5-501;Hautes-Alpes;1ère circonscription;Parti socialiste;PS / NFP
+5-502;Hautes-Alpes;2ème circonscription;Parti socialiste;PS / NFP
+6-601;Alpes-Maritimes;1ère circonscription;La France insoumise;LFI / NFP
+6-602;Alpes-Maritimes;2ème circonscription;La France insoumise;LFI / NFP
+6-603;Alpes-Maritimes;3ème circonscription;Parti socialiste;PS / NFP
+6-604;Alpes-Maritimes;4ème circonscription;Parti communiste français;PCF / NFP
+6-605;Alpes-Maritimes;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+6-606;Alpes-Maritimes;6ème circonscription;La France insoumise;LFI / NFP
+6-607;Alpes-Maritimes;7ème circonscription;La France insoumise;LFI / NFP
+6-608;Alpes-Maritimes;8ème circonscription;La France insoumise;LFI / NFP
+6-609;Alpes-Maritimes;9ème circonscription;Parti socialiste;PS / NFP
+7-701;Ardèche;1ère circonscription;Parti socialiste;PS / NFP
+7-702;Ardèche;2ème circonscription;Parti socialiste;PS / NFP
+7-703;Ardèche;3ème circonscription;La France insoumise;LFI / NFP
+8-801;Ardennes;1ère circonscription;Parti socialiste;PS / NFP
+8-802;Ardennes;2ème circonscription;La France insoumise;LFI / NFP
+8-803;Ardennes;3ème circonscription;La France insoumise;LFI / NFP
+9-901;Ariège;1ère circonscription;Parti socialiste;PS / NFP
+9-902;Ariège;2ème circonscription;Parti socialiste;PS / NFP
+10-1001;Aube;1ère circonscription;Parti socialiste;PS / NFP
+10-1002;Aube;2ème circonscription;Parti socialiste;PS / NFP
+10-1003;Aube;3ème circonscription;Parti socialiste;PS / NFP
+11-1101;Aude;1ère circonscription;La France insoumise;LFI / NFP
+11-1102;Aude;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+11-1103;Aude;3ème circonscription;Parti socialiste;PS / NFP
+12-1201;Aveyron;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+12-1202;Aveyron;2ème circonscription;La France insoumise;LFI / NFP
+12-1203;Aveyron;3ème circonscription;Parti socialiste;PS / NFP
+13-1301;Bouches-du-Rhône;1ère circonscription;Parti socialiste;PS / NFP
+13-1302;Bouches-du-Rhône;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+13-1303;Bouches-du-Rhône;3ème circonscription;Parti socialiste;PS / NFP
+13-1304;Bouches-du-Rhône;4ème circonscription;La France insoumise;LFI / NFP
+13-1305;Bouches-du-Rhône;5ème circonscription;La France insoumise;LFI / NFP
+13-1306;Bouches-du-Rhône;6ème circonscription;Les Ecologistes - EELV;EELV / NFP
+13-1307;Bouches-du-Rhône;7ème circonscription;La France insoumise;LFI / NFP
+13-1308;Bouches-du-Rhône;8ème circonscription;La France insoumise;LFI / NFP
+13-1309;Bouches-du-Rhône;9ème circonscription;Parti socialiste;PS / NFP
+13-1310;Bouches-du-Rhône;10ème circonscription;La France insoumise;LFI / NFP
+13-1311;Bouches-du-Rhône;11ème circonscription;Parti socialiste;PS / NFP
+13-1312;Bouches-du-Rhône;12ème circonscription;Parti socialiste;PS / NFP
+13-1313;Bouches-du-Rhône;13ème circonscription;Parti communiste français;PCF / NFP
+13-1314;Bouches-du-Rhône;14ème circonscription;Parti socialiste;PS / NFP
+13-1315;Bouches-du-Rhône;15ème circonscription;La France insoumise;LFI / NFP
+13-1316;Bouches-du-Rhône;16ème circonscription;Parti communiste français;PCF / NFP
+14-1401;Calvados;1ère circonscription;La France insoumise;LFI / NFP
+14-1402;Calvados;2ème circonscription;Parti socialiste;PS / NFP
+14-1403;Calvados;3ème circonscription;Parti socialiste;PS / NFP
+14-1404;Calvados;4ème circonscription;Parti communiste français;PCF / NFP
+14-1405;Calvados;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+14-1406;Calvados;6ème circonscription;La France insoumise;LFI / NFP
+15-1501;Cantal;1ère circonscription;Parti socialiste;PS / NFP
+15-1502;Cantal;2ème circonscription;La France insoumise;LFI / NFP
+16-1601;Charente;1ère circonscription;La France insoumise;LFI / NFP
+16-1602;Charente;2ème circonscription;La France insoumise;LFI / NFP
+16-1603;Charente;3ème circonscription;Parti socialiste;PS / NFP
+17-1701;Charente-Maritime;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+17-1702;Charente-Maritime;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+17-1703;Charente-Maritime;3ème circonscription;Parti socialiste;PS / NFP
+17-1704;Charente-Maritime;4ème circonscription;La France insoumise;LFI / NFP
+17-1705;Charente-Maritime;5ème circonscription;Parti socialiste;PS / NFP
+18-1801;Cher;1ère circonscription;Parti socialiste;PS / NFP
+18-1802;Cher;2ème circonscription;Parti communiste français;PCF / NFP
+18-1803;Cher;3ème circonscription;La France insoumise;LFI / NFP
+19-1901;Corrèze;1ère circonscription;Parti socialiste;PS / NFP
+19-1902;Corrèze;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+21-2101;Côte-d'Or;1ère circonscription;Parti socialiste;PS / NFP
+21-2102;Côte-d'Or;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+21-2103;Côte-d'Or;3ème circonscription;Parti socialiste;PS / NFP
+21-2104;Côte-d'Or;4ème circonscription;La France insoumise;LFI / NFP
+21-2105;Côte-d'Or;5ème circonscription;Parti communiste français;PCF / NFP
+22-2201;Côtes-d'Armor;1ère circonscription;La France insoumise;LFI / NFP
+22-2202;Côtes-d'Armor;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+22-2203;Côtes-d'Armor;3ème circonscription;Parti socialiste;PS / NFP
+22-2204;Côtes-d'Armor;4ème circonscription;La France insoumise;LFI / NFP
+22-2205;Côtes-d'Armor;5ème circonscription;La France insoumise;LFI / NFP
+23-2301;Creuse;1ère circonscription;La France insoumise;LFI / NFP
+24-2401;Dordogne;1ère circonscription;La France insoumise;LFI / NFP
+24-2402;Dordogne;2ème circonscription;Parti socialiste;PS / NFP
+24-2403;Dordogne;3ème circonscription;Parti socialiste;PS / NFP
+24-2404;Dordogne;4ème circonscription;Les Ecologistes - EELV;EELV / NFP
+25-2501;Doubs;1ère circonscription;La France insoumise;LFI / NFP
+25-2502;Doubs;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+25-2503;Doubs;3ème circonscription;Parti communiste français;PCF / NFP
+25-2504;Doubs;4ème circonscription;Parti socialiste;PS / NFP
+25-2505;Doubs;5ème circonscription;La France insoumise;LFI / NFP
+26-2601;Drôme;1ère circonscription;Parti socialiste;PS / NFP
+26-2602;Drôme;2ème circonscription;La France insoumise;LFI / NFP
+26-2603;Drôme;3ème circonscription;Les Ecologistes - EELV;EELV / NFP
+26-2604;Drôme;4ème circonscription;Parti socialiste;PS / NFP
+27-2701;Eure;1ère circonscription;Parti socialiste;PS / NFP
+27-2702;Eure;2ème circonscription;Parti socialiste;PS / NFP
+27-2703;Eure;3ème circonscription;La France insoumise;LFI / NFP
+27-2704;Eure;4ème circonscription;Parti socialiste;PS / NFP
+27-2705;Eure;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+28-2801;Eure-et-Loir;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+28-2802;Eure-et-Loir;2ème circonscription;Parti socialiste;PS / NFP
+28-2804;Eure-et-Loir;4ème circonscription;Parti socialiste;PS / NFP
+29-2901;Finistère;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+29-2902;Finistère;2ème circonscription;La France insoumise;LFI / NFP
+29-2903;Finistère;3ème circonscription;La France insoumise;LFI / NFP
+29-2904;Finistère;4ème circonscription;Les Ecologistes - EELV;EELV / NFP
+29-2905;Finistère;5ème circonscription;Parti communiste français;PCF / NFP
+29-2906;Finistère;6ème circonscription;Parti socialiste;PS / NFP
+29-2907;Finistère;7ème circonscription;La France insoumise;LFI / NFP
+29-2908;Finistère;8ème circonscription;La France insoumise;LFI / NFP
+30-3001;Gard;1ère circonscription;La France insoumise;LFI / NFP
+30-3002;Gard;2ème circonscription;Parti socialiste;PS / NFP
+30-3003;Gard;3ème circonscription;Parti communiste français;PCF / NFP
+30-3004;Gard;4ème circonscription;Parti socialiste;PS / NFP
+30-3005;Gard;5ème circonscription;La France insoumise;LFI / NFP
+30-3006;Gard;6ème circonscription;Les Ecologistes - EELV;EELV / NFP
+31-3101;Haute-Garonne;1ère circonscription;La France insoumise;LFI / NFP
+31-3102;Haute-Garonne;2ème circonscription;La France insoumise;LFI / NFP
+31-3103;Haute-Garonne;3ème circonscription;La France insoumise;LFI / NFP
+31-3104;Haute-Garonne;4ème circonscription;La France insoumise;LFI / NFP
+31-3105;Haute-Garonne;5ème circonscription;La France insoumise;LFI / NFP
+31-3106;Haute-Garonne;6ème circonscription;Parti socialiste;PS / NFP
+31-3107;Haute-Garonne;7ème circonscription;La France insoumise;LFI / NFP
+31-3108;Haute-Garonne;8ème circonscription;Parti socialiste;PS / NFP
+31-3109;Haute-Garonne;9ème circonscription;Les Ecologistes - EELV;EELV / NFP
+31-3110;Haute-Garonne;10ème circonscription;Parti socialiste;PS / NFP
+32-3201;Gers;1ère circonscription;La France insoumise;LFI / NFP
+33-3301;Gironde;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+33-3302;Gironde;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+33-3303;Gironde;3ème circonscription;La France insoumise;LFI / NFP
+33-3304;Gironde;4ème circonscription;Parti socialiste;PS / NFP
+33-3305;Gironde;5ème circonscription;Parti socialiste;PS / NFP
+33-3306;Gironde;6ème circonscription;Parti socialiste;PS / NFP
+33-3307;Gironde;7ème circonscription;Parti socialiste;PS / NFP
+33-3308;Gironde;8ème circonscription;Parti communiste français;PCF / NFP
+33-3309;Gironde;9ème circonscription;Parti socialiste;PS / NFP
+33-3310;Gironde;10ème circonscription;Les Ecologistes - EELV;EELV / NFP
+33-3311;Gironde;11ème circonscription;La France insoumise;LFI / NFP
+33-3312;Gironde;12ème circonscription;La France insoumise;LFI / NFP
+34-3401;Hérault;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+34-3402;Hérault;2ème circonscription;La France insoumise;LFI / NFP
+34-3403;Hérault;3ème circonscription;Parti socialiste;PS / NFP
+34-3404;Hérault;4ème circonscription;La France insoumise;LFI / NFP
+34-3405;Hérault;5ème circonscription;Parti socialiste;PS / NFP
+34-3406;Hérault;6ème circonscription;La France insoumise;LFI / NFP
+34-3407;Hérault;7ème circonscription;Parti communiste français;PCF / NFP
+34-3408;Hérault;8ème circonscription;La France insoumise;LFI / NFP
+34-3409;Hérault;9ème circonscription;La France insoumise;LFI / NFP
+35-3501;Ille-et-Vilaine;1ère circonscription;La France insoumise;LFI / NFP
+35-3502;Ille-et-Vilaine;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+35-3503;Ille-et-Vilaine;3ème circonscription;Parti socialiste;PS / NFP
+35-3504;Ille-et-Vilaine;4ème circonscription;La France insoumise;LFI / NFP
+35-3505;Ille-et-Vilaine;5ème circonscription;La France insoumise;LFI / NFP
+35-3506;Ille-et-Vilaine;6ème circonscription;Parti communiste français;PCF / NFP
+35-3507;Ille-et-Vilaine;7ème circonscription;La France insoumise;LFI / NFP
+35-3508;Ille-et-Vilaine;8ème circonscription;Parti socialiste;PS / NFP
+36-3601;Indre;1ère circonscription;La France insoumise;LFI / NFP
+36-3602;Indre;2ème circonscription;Parti socialiste;PS / NFP
+37-3701;Indre-et-Loire;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+37-3702;Indre-et-Loire;2ème circonscription;La France insoumise;LFI / NFP
+37-3703;Indre-et-Loire;3ème circonscription;La France insoumise;LFI / NFP
+37-3704;Indre-et-Loire;4ème circonscription;Parti socialiste;PS / NFP
+37-3705;Indre-et-Loire;5ème circonscription;Parti communiste français;PCF / NFP
+38-3801;Isère;1ère circonscription;La France insoumise;LFI / NFP
+38-3802;Isère;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+38-3803;Isère;3ème circonscription;La France insoumise;LFI / NFP
+38-3804;Isère;4ème circonscription;Parti socialiste;PS / NFP
+38-3805;Isère;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+38-3806;Isère;6ème circonscription;La France insoumise;LFI / NFP
+38-3807;Isère;7ème circonscription;Parti communiste français;PCF / NFP
+38-3808;Isère;8ème circonscription;Les Ecologistes - EELV;EELV / NFP
+38-3809;Isère;9ème circonscription;La France insoumise;LFI / NFP
+38-3810;Isère;10ème circonscription;La France insoumise;LFI / NFP
+39-3901;Jura;1ère circonscription;La France insoumise;LFI / NFP
+39-3902;Jura;2ème circonscription;Parti communiste français;PCF / NFP
+39-3903;Jura;3ème circonscription;Les Ecologistes - EELV;EELV / NFP
+40-4001;Landes;1ère circonscription;Parti socialiste;PS / NFP
+40-4002;Landes;2ème circonscription;Parti communiste français;PCF / NFP
+40-4003;Landes;3ème circonscription;Parti socialiste;PS / NFP
+41-4102;Loir-et-Cher;2ème circonscription;Parti communiste français;PCF / NFP
+41-4103;Loir-et-Cher;3ème circonscription;Les Ecologistes - EELV;EELV / NFP
+42-4201;Loire;1ère circonscription;Parti socialiste;PS / NFP
+42-4202;Loire;2ème circonscription;La France insoumise;LFI / NFP
+42-4203;Loire;3ème circonscription;Parti communiste français;PCF / NFP
+42-4204;Loire;4ème circonscription;La France insoumise;LFI / NFP
+42-4205;Loire;5ème circonscription;La France insoumise;LFI / NFP
+42-4206;Loire;6ème circonscription;La France insoumise;LFI / NFP
+43-4301;Haute-Loire;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+43-4302;Haute-Loire;2ème circonscription;Parti socialiste;PS / NFP
+44-4401;Loire-Atlantique;1ère circonscription;Parti socialiste;PS / NFP
+44-4402;Loire-Atlantique;2ème circonscription;La France insoumise;LFI / NFP
+44-4403;Loire-Atlantique;3ème circonscription;La France insoumise;LFI / NFP
+44-4404;Loire-Atlantique;4ème circonscription;Les Ecologistes - EELV;EELV / NFP
+44-4405;Loire-Atlantique;5ème circonscription;Parti socialiste;PS / NFP
+44-4406;Loire-Atlantique;6ème circonscription;Les Ecologistes - EELV;EELV / NFP
+44-4407;Loire-Atlantique;7ème circonscription;Parti communiste français;PCF / NFP
+44-4408;Loire-Atlantique;8ème circonscription;La France insoumise;LFI / NFP
+44-4409;Loire-Atlantique;9ème circonscription;La France insoumise;LFI / NFP
+44-4410;Loire-Atlantique;10ème circonscription;La France insoumise;LFI / NFP
+45-4501;Loiret;1ère circonscription;Parti socialiste;PS / NFP
+45-4502;Loiret;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+45-4503;Loiret;3ème circonscription;La France insoumise;LFI / NFP
+45-4504;Loiret;4ème circonscription;Parti communiste français;PCF / NFP
+45-4505;Loiret;5ème circonscription;La France insoumise;LFI / NFP
+45-4506;Loiret;6ème circonscription;Parti socialiste;PS / NFP
+46-4601;Lot;1ère circonscription;La France insoumise;LFI / NFP
+46-4602;Lot;2ème circonscription;Parti socialiste;PS / NFP
+47-4701;Lot-et-Garonne;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+47-4702;Lot-et-Garonne;2ème circonscription;Parti socialiste;PS / NFP
+47-4703;Lot-et-Garonne;3ème circonscription;La France insoumise;LFI / NFP
+48-4801;Lozère;1ère circonscription;Parti socialiste;PS / NFP
+49-4901;Maine-et-Loire;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+49-4902;Maine-et-Loire;2ème circonscription;La France insoumise;LFI / NFP
+49-4903;Maine-et-Loire;3ème circonscription;La France insoumise;LFI / NFP
+49-4904;Maine-et-Loire;4ème circonscription;Parti communiste français;PCF / NFP
+49-4905;Maine-et-Loire;5ème circonscription;La France insoumise;LFI / NFP
+49-4906;Maine-et-Loire;6ème circonscription;La France insoumise;LFI / NFP
+49-4907;Maine-et-Loire;7ème circonscription;Parti socialiste;PS / NFP
+50-5001;Manche;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+50-5002;Manche;2ème circonscription;La France insoumise;LFI / NFP
+50-5003;Manche;3ème circonscription;Parti communiste français;PCF / NFP
+50-5004;Manche;4ème circonscription;Parti socialiste;PS / NFP
+51-5101;Marne;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+51-5102;Marne;2ème circonscription;La France insoumise;LFI / NFP
+51-5103;Marne;3ème circonscription;Parti communiste français;PCF / NFP
+51-5104;Marne;4ème circonscription;La France insoumise;LFI / NFP
+51-5105;Marne;5ème circonscription;Parti socialiste;PS / NFP
+52-5201;Haute-Marne;1ère circonscription;Parti socialiste;PS / NFP
+52-5202;Haute-Marne;2ème circonscription;La France insoumise;LFI / NFP
+53-5301;Mayenne;1ère circonscription;Parti socialiste;PS / NFP
+53-5302;Mayenne;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+53-5303;Mayenne;3ème circonscription;Parti socialiste;PS / NFP
+54-5401;Meurthe-et-Moselle;1ère circonscription;Parti socialiste;PS / NFP
+54-5402;Meurthe-et-Moselle;2ème circonscription;Parti socialiste;PS / NFP
+54-5403;Meurthe-et-Moselle;3ème circonscription;La France insoumise;LFI / NFP
+54-5404;Meurthe-et-Moselle;4ème circonscription;Les Ecologistes - EELV;EELV / NFP
+54-5405;Meurthe-et-Moselle;5ème circonscription;Parti socialiste;PS / NFP
+54-5406;Meurthe-et-Moselle;6ème circonscription;La France insoumise;LFI / NFP
+55-5501;Meuse;1ère circonscription;Parti socialiste;PS / NFP
+55-5502;Meuse;2ème circonscription;Parti socialiste;PS / NFP
+56-5601;Morbihan;1ère circonscription;Parti socialiste;PS / NFP
+56-5602;Morbihan;2ème circonscription;La France insoumise;LFI / NFP
+56-5603;Morbihan;3ème circonscription;La France insoumise;LFI / NFP
+56-5604;Morbihan;4ème circonscription;Parti communiste français;PCF / NFP
+56-5605;Morbihan;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+56-5606;Morbihan;6ème circonscription;La France insoumise;LFI / NFP
+57-5701;Moselle;1ère circonscription;La France insoumise;LFI / NFP
+57-5702;Moselle;2ème circonscription;Parti socialiste;PS / NFP
+57-5703;Moselle;3ème circonscription;La France insoumise;LFI / NFP
+57-5704;Moselle;4ème circonscription;Parti communiste français;PCF / NFP
+57-5705;Moselle;5ème circonscription;La France insoumise;LFI / NFP
+57-5706;Moselle;6ème circonscription;La France insoumise;LFI / NFP
+57-5707;Moselle;7ème circonscription;Les Ecologistes - EELV;EELV / NFP
+57-5708;Moselle;8ème circonscription;La France insoumise;LFI / NFP
+57-5709;Moselle;9ème circonscription;Parti socialiste;PS / NFP
+58-5801;Nièvre;1ère circonscription;La France insoumise;LFI / NFP
+58-5802;Nièvre;2ème circonscription;Parti socialiste;PS / NFP
+59-5901;Nord;1ère circonscription;La France insoumise;LFI / NFP
+59-5902;Nord;2ème circonscription;La France insoumise;LFI / NFP
+59-5904;Nord;4ème circonscription;Parti socialiste;PS / NFP
+59-5905;Nord;5ème circonscription;La France insoumise;LFI / NFP
+59-5906;Nord;6ème circonscription;La France insoumise;LFI / NFP
+59-5907;Nord;7ème circonscription;Les Ecologistes - EELV;EELV / NFP
+59-5908;Nord;8ème circonscription;La France insoumise;LFI / NFP
+59-5909;Nord;9ème circonscription;Les Ecologistes - EELV;EELV / NFP
+59-5910;Nord;10ème circonscription;La France insoumise;LFI / NFP
+59-5911;Nord;11ème circonscription;Parti socialiste;PS / NFP
+59-5912;Nord;12ème circonscription;Parti communiste français;PCF / NFP
+59-5913;Nord;13ème circonscription;La France insoumise;LFI / NFP
+59-5914;Nord;14ème circonscription;La France insoumise;LFI / NFP
+59-5915;Nord;15ème circonscription;Les Ecologistes - EELV;EELV / NFP
+59-5916;Nord;16ème circonscription;Parti communiste français;PCF / NFP
+59-5917;Nord;17ème circonscription;Parti socialiste;PS / NFP
+59-5918;Nord;18ème circonscription;La France insoumise;LFI / NFP
+59-5919;Nord;19ème circonscription;La France insoumise;LFI / NFP
+59-5920;Nord;20ème circonscription;Parti communiste français;PCF / NFP
+59-5921;Nord;21ème circonscription;La France insoumise;LFI / NFP
+60-6001;Oise;1ère circonscription;Parti communiste français;PCF / NFP
+60-6002;Oise;2ème circonscription;La France insoumise;LFI / NFP
+60-6003;Oise;3ème circonscription;La France insoumise;LFI / NFP
+60-6004;Oise;4ème circonscription;La France insoumise;LFI / NFP
+60-6005;Oise;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+60-6006;Oise;6ème circonscription;Parti socialiste;PS / NFP
+60-6007;Oise;7ème circonscription;Parti communiste français;PCF / NFP
+61-6101;Orne;1ère circonscription;Parti socialiste;PS / NFP
+61-6102;Orne;2ème circonscription;Parti socialiste;PS / NFP
+61-6103;Orne;3ème circonscription;Parti socialiste;PS / NFP
+62-6201;Pas-de-Calais;1ère circonscription;La France insoumise;LFI / NFP
+62-6202;Pas-de-Calais;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+62-6203;Pas-de-Calais;3ème circonscription;Parti communiste français;PCF / NFP
+62-6204;Pas-de-Calais;4ème circonscription;Parti socialiste;PS / NFP
+62-6205;Pas-de-Calais;5ème circonscription;Parti socialiste;PS / NFP
+62-6206;Pas-de-Calais;6ème circonscription;Parti socialiste;PS / NFP
+62-6207;Pas-de-Calais;7ème circonscription;Les Ecologistes - EELV;EELV / NFP
+62-6208;Pas-de-Calais;8ème circonscription;Parti socialiste;PS / NFP
+62-6209;Pas-de-Calais;9ème circonscription;Parti socialiste;PS / NFP
+62-6210;Pas-de-Calais;10ème circonscription;Parti socialiste;PS / NFP
+62-6211;Pas-de-Calais;11ème circonscription;Parti socialiste;PS / NFP
+62-6212;Pas-de-Calais;12ème circonscription;Parti socialiste;PS / NFP
+63-6301;Puy-de-Dôme;1ère circonscription;La France insoumise;LFI / NFP
+63-6302;Puy-de-Dôme;2ème circonscription;Parti socialiste;PS / NFP
+63-6303;Puy-de-Dôme;3ème circonscription;Les Ecologistes - EELV;EELV / NFP
+63-6304;Puy-de-Dôme;4ème circonscription;La France insoumise;LFI / NFP
+63-6305;Puy-de-Dôme;5ème circonscription;Parti communiste français;PCF / NFP
+64-6401;Pyrénées-Atlantiques;1ère circonscription;Parti socialiste;PS / NFP
+64-6402;Pyrénées-Atlantiques;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+64-6403;Pyrénées-Atlantiques;3ème circonscription;Parti socialiste;PS / NFP
+64-6404;Pyrénées-Atlantiques;4ème circonscription;Parti socialiste;PS / NFP
+64-6405;Pyrénées-Atlantiques;5ème circonscription;La France insoumise;LFI / NFP
+64-6406;Pyrénées-Atlantiques;6ème circonscription;Parti socialiste;PS / NFP
+65-6501;Hautes-Pyrénées;1ère circonscription;La France insoumise;LFI / NFP
+65-6502;Hautes-Pyrénées;2ème circonscription;Parti socialiste;PS / NFP
+66-6601;Pyrénées-Orientales;1ère circonscription;Parti socialiste;PS / NFP
+66-6602;Pyrénées-Orientales;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+66-6603;Pyrénées-Orientales;3ème circonscription;La France insoumise;LFI / NFP
+66-6604;Pyrénées-Orientales;4ème circonscription;La France insoumise;LFI / NFP
+67-6701;Bas-Rhin;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+67-6702;Bas-Rhin;2ème circonscription;La France insoumise;LFI / NFP
+67-6703;Bas-Rhin;3ème circonscription;Parti socialiste;PS / NFP
+67-6704;Bas-Rhin;4ème circonscription;La France insoumise;LFI / NFP
+67-6705;Bas-Rhin;5ème circonscription;Parti socialiste;PS / NFP
+67-6706;Bas-Rhin;6ème circonscription;Les Ecologistes - EELV;EELV / NFP
+67-6707;Bas-Rhin;7ème circonscription;La France insoumise;LFI / NFP
+67-6708;Bas-Rhin;8ème circonscription;La France insoumise;LFI / NFP
+67-6709;Bas-Rhin;9ème circonscription;Parti socialiste;PS / NFP
+68-6801;Haut-Rhin;1ère circonscription;Parti socialiste;PS / NFP
+68-6802;Haut-Rhin;2ème circonscription;La France insoumise;LFI / NFP
+68-6803;Haut-Rhin;3ème circonscription;La France insoumise;LFI / NFP
+68-6804;Haut-Rhin;4ème circonscription;La France insoumise;LFI / NFP
+68-6805;Haut-Rhin;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+68-6806;Haut-Rhin;6ème circonscription;La France insoumise;LFI / NFP
+69-6901;Rhône;1ère circonscription;La France insoumise;LFI / NFP
+69-6902;Rhône;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+69-6903;Rhône;3ème circonscription;Les Ecologistes - EELV;EELV / NFP
+69-6904;Rhône;4ème circonscription;Parti socialiste;PS / NFP
+69-6905;Rhône;5ème circonscription;Parti socialiste;PS / NFP
+69-6906;Rhône;6ème circonscription;La France insoumise;LFI / NFP
+69-6907;Rhône;7ème circonscription;La France insoumise;LFI / NFP
+69-6908;Rhône;8ème circonscription;Parti socialiste;PS / NFP
+69-6909;Rhône;9ème circonscription;Parti socialiste;PS / NFP
+69-6910;Rhône;10ème circonscription;Parti socialiste;PS / NFP
+69-6911;Rhône;11ème circonscription;Parti communiste français;PCF / NFP
+69-6912;Rhône;12ème circonscription;Les Ecologistes - EELV;EELV / NFP
+69-6913;Rhône;13ème circonscription;La France insoumise;LFI / NFP
+69-6914;Rhône;14ème circonscription;La France insoumise;LFI / NFP
+70-7001;Haute-Saône;1ère circonscription;La France insoumise;LFI / NFP
+70-7002;Haute-Saône;2ème circonscription;Parti socialiste;PS / NFP
+71-7101;Saône-et-Loire;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+71-7102;Saône-et-Loire;2ème circonscription;Parti communiste français;PCF / NFP
+71-7103;Saône-et-Loire;3ème circonscription;La France insoumise;LFI / NFP
+71-7104;Saône-et-Loire;4ème circonscription;Parti socialiste;PS / NFP
+71-7105;Saône-et-Loire;5ème circonscription;La France insoumise;LFI / NFP
+72-7201;Sarthe;1ère circonscription;La France insoumise;LFI / NFP
+72-7202;Sarthe;2ème circonscription;Parti socialiste;PS / NFP
+72-7203;Sarthe;3ème circonscription;La France insoumise;LFI / NFP
+72-7204;Sarthe;4ème circonscription;La France insoumise;LFI / NFP
+72-7205;Sarthe;5ème circonscription;Parti socialiste;PS / NFP
+73-7301;Savoie;1ère circonscription;Parti communiste français;PCF / NFP
+73-7302;Savoie;2ème circonscription;Parti socialiste;PS / NFP
+73-7303;Savoie;3ème circonscription;La France insoumise;LFI / NFP
+73-7304;Savoie;4ème circonscription;La France insoumise;LFI / NFP
+74-7401;Haute-Savoie;1ère circonscription;La France insoumise;LFI / NFP
+74-7402;Haute-Savoie;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+74-7403;Haute-Savoie;3ème circonscription;La France insoumise;LFI / NFP
+74-7404;Haute-Savoie;4ème circonscription;Parti socialiste;PS / NFP
+74-7405;Haute-Savoie;5ème circonscription;Parti socialiste;PS / NFP
+74-7406;Haute-Savoie;6ème circonscription;Parti socialiste;PS / NFP
+75-7501;Paris;1ère circonscription;La France insoumise;LFI / NFP
+75-7502;Paris;2ème circonscription;Parti socialiste;PS / NFP
+75-7503;Paris;3ème circonscription;Les Ecologistes - EELV;EELV / NFP
+75-7504;Paris;4ème circonscription;Parti socialiste;PS / NFP
+75-7505;Paris;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+75-7506;Paris;6ème circonscription;La France insoumise;LFI / NFP
+75-7507;Paris;7ème circonscription;Parti socialiste;PS / NFP
+75-7508;Paris;8ème circonscription;Les Ecologistes - EELV;EELV / NFP
+75-7509;Paris;9ème circonscription;Les Ecologistes - EELV;EELV / NFP
+75-7510;Paris;10ème circonscription;La France insoumise;LFI / NFP
+75-7511;Paris;11ème circonscription;Parti socialiste;PS / NFP
+75-7512;Paris;12ème circonscription;Parti communiste français;PCF / NFP
+75-7513;Paris;13ème circonscription;Les Ecologistes - EELV;EELV / NFP
+75-7514;Paris;14ème circonscription;La France insoumise;LFI / NFP
+75-7515;Paris;15ème circonscription;La France insoumise;LFI / NFP
+75-7516;Paris;16ème circonscription;La France insoumise;LFI / NFP
+75-7517;Paris;17ème circonscription;La France insoumise;LFI / NFP
+75-7518;Paris;18ème circonscription;La France insoumise;LFI / NFP
+76-7601;Seine-Maritime;1ère circonscription;Parti socialiste;PS / NFP
+76-7602;Seine-Maritime;2ème circonscription;Parti socialiste;PS / NFP
+76-7603;Seine-Maritime;3ème circonscription;Parti communiste français;PCF / NFP
+76-7604;Seine-Maritime;4ème circonscription;La France insoumise;LFI / NFP
+76-7605;Seine-Maritime;5ème circonscription;Parti socialiste;PS / NFP
+76-7606;Seine-Maritime;6ème circonscription;Parti communiste français;PCF / NFP
+76-7607;Seine-Maritime;7ème circonscription;Parti socialiste;PS / NFP
+76-7608;Seine-Maritime;8ème circonscription;Parti communiste français;PCF / NFP
+76-7609;Seine-Maritime;9ème circonscription;La France insoumise;LFI / NFP
+76-7610;Seine-Maritime;10ème circonscription;Les Ecologistes - EELV;EELV / NFP
+77-7701;Seine-et-Marne;1ère circonscription;La France insoumise;LFI / NFP
+77-7702;Seine-et-Marne;2ème circonscription;La France insoumise;LFI / NFP
+77-7703;Seine-et-Marne;3ème circonscription;La France insoumise;LFI / NFP
+77-7704;Seine-et-Marne;4ème circonscription;La France insoumise;LFI / NFP
+77-7705;Seine-et-Marne;5ème circonscription;La France insoumise;LFI / NFP
+77-7706;Seine-et-Marne;6ème circonscription;La France insoumise;LFI / NFP
+77-7707;Seine-et-Marne;7ème circonscription;La France insoumise;LFI / NFP
+77-7708;Seine-et-Marne;8ème circonscription;Les Ecologistes - EELV;EELV / NFP
+77-7709;Seine-et-Marne;9ème circonscription;Parti socialiste;PS / NFP
+77-7710;Seine-et-Marne;10ème circonscription;La France insoumise;LFI / NFP
+77-7711;Seine-et-Marne;11ème circonscription;Parti socialiste;PS / NFP
+78-7801;Yvelines;1ère circonscription;La France insoumise;LFI / NFP
+78-7802;Yvelines;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+78-7803;Yvelines;3ème circonscription;Parti socialiste;PS / NFP
+78-7804;Yvelines;4ème circonscription;La France insoumise;LFI / NFP
+78-7805;Yvelines;5ème circonscription;La France insoumise;LFI / NFP
+78-7806;Yvelines;6ème circonscription;La France insoumise;LFI / NFP
+78-7807;Yvelines;7ème circonscription;Parti socialiste;PS / NFP
+78-7808;Yvelines;8ème circonscription;Les Ecologistes - EELV;EELV / NFP
+78-7809;Yvelines;9ème circonscription;Parti socialiste;PS / NFP
+78-7810;Yvelines;10ème circonscription;La France insoumise;LFI / NFP
+78-7811;Yvelines;11ème circonscription;La France insoumise;LFI / NFP
+78-7812;Yvelines;12ème circonscription;Les Ecologistes - EELV;EELV / NFP
+79-7901;Deux-Sèvres;1ère circonscription;Parti socialiste;PS / NFP
+79-7903;Deux-Sèvres;3ème circonscription;La France insoumise;LFI / NFP
+80-8001;Somme;1ère circonscription;La France insoumise;LFI / NFP
+80-8002;Somme;2ème circonscription;La France insoumise;LFI / NFP
+80-8003;Somme;3ème circonscription;Parti communiste français;PCF / NFP
+80-8004;Somme;4ème circonscription;Les Ecologistes - EELV;EELV / NFP
+80-8005;Somme;5ème circonscription;La France insoumise;LFI / NFP
+81-8101;Tarn;1ère circonscription;Parti socialiste;PS / NFP
+81-8102;Tarn;2ème circonscription;La France insoumise;LFI / NFP
+81-8103;Tarn;3ème circonscription;La France insoumise;LFI / NFP
+82-8201;Tarn-et-Garonne;1ère circonscription;Parti socialiste;PS / NFP
+82-8202;Tarn-et-Garonne;2ème circonscription;La France insoumise;LFI / NFP
+83-8301;Var;1ère circonscription;La France insoumise;LFI / NFP
+83-8302;Var;2ème circonscription;La France insoumise;LFI / NFP
+83-8303;Var;3ème circonscription;Parti socialiste;PS / NFP
+83-8304;Var;4ème circonscription;La France insoumise;LFI / NFP
+83-8305;Var;5ème circonscription;La France insoumise;LFI / NFP
+83-8306;Var;6ème circonscription;Parti communiste français;PCF / NFP
+83-8307;Var;7ème circonscription;Les Ecologistes - EELV;EELV / NFP
+83-8308;Var;8ème circonscription;Parti socialiste;PS / NFP
+84-8401;Vaucluse;1ère circonscription;La France insoumise;LFI / NFP
+84-8402;Vaucluse;2ème circonscription;Parti socialiste;PS / NFP
+84-8403;Vaucluse;3ème circonscription;Parti communiste français;PCF / NFP
+84-8404;Vaucluse;4ème circonscription;La France insoumise;LFI / NFP
+84-8405;Vaucluse;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+85-8501;Vendée;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+85-8502;Vendée;2ème circonscription;La France insoumise;LFI / NFP
+85-8503;Vendée;3ème circonscription;La France insoumise;LFI / NFP
+85-8504;Vendée;4ème circonscription;Parti communiste français;PCF / NFP
+85-8505;Vendée;5ème circonscription;Parti socialiste;PS / NFP
+86-8601;Vienne;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+86-8602;Vienne;2ème circonscription;La France insoumise;LFI / NFP
+86-8603;Vienne;3ème circonscription;Parti socialiste;PS / NFP
+86-8604;Vienne;4ème circonscription;Parti socialiste;PS / NFP
+87-8701;Haute-Vienne;1ère circonscription;La France insoumise;LFI / NFP
+87-8702;Haute-Vienne;2ème circonscription;Parti socialiste;PS / NFP
+87-8703;Haute-Vienne;3ème circonscription;La France insoumise;LFI / NFP
+88-8801;Vosges;1ère circonscription;La France insoumise;LFI / NFP
+88-8802;Vosges;2ème circonscription;La France insoumise;LFI / NFP
+88-8803;Vosges;3ème circonscription;Parti socialiste;PS / NFP
+88-8804;Vosges;4ème circonscription;La France insoumise;LFI / NFP
+89-8901;Yonne;1ère circonscription;Les Ecologistes - EELV;EELV / NFP
+89-8902;Yonne;2ème circonscription;La France insoumise;LFI / NFP
+89-8903;Yonne;3ème circonscription;Parti socialiste;PS / NFP
+90-9001;Territoire de Belfort;1ère circonscription;Parti socialiste;PS / NFP
+90-9002;Territoire de Belfort;2ème circonscription;La France insoumise;LFI / NFP
+91-9101;Essonne;1ère circonscription;La France insoumise;LFI / NFP
+91-9102;Essonne;2ème circonscription;La France insoumise;LFI / NFP
+91-9103;Essonne;3ème circonscription;Les Ecologistes - EELV;EELV / NFP
+91-9104;Essonne;4ème circonscription;Parti communiste français;PCF / NFP
+91-9105;Essonne;5ème circonscription;Les Ecologistes - EELV;EELV / NFP
+91-9106;Essonne;6ème circonscription;Parti socialiste;PS / NFP
+91-9107;Essonne;7ème circonscription;La France insoumise;LFI / NFP
+91-9108;Essonne;8ème circonscription;La France insoumise;LFI / NFP
+91-9109;Essonne;9ème circonscription;Les Ecologistes - EELV;EELV / NFP
+91-9110;Essonne;10ème circonscription;La France insoumise;LFI / NFP
+92-9201;Hauts-de-Seine;1ère circonscription;Parti communiste français;PCF / NFP
+92-9202;Hauts-de-Seine;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+92-9203;Hauts-de-Seine;3ème circonscription;Parti socialiste;PS / NFP
+92-9204;Hauts-de-Seine;4ème circonscription;Les Ecologistes - EELV;EELV / NFP
+92-9205;Hauts-de-Seine;5ème circonscription;Parti socialiste;PS / NFP
+92-9206;Hauts-de-Seine;6ème circonscription;La France insoumise;LFI / NFP
+92-9207;Hauts-de-Seine;7ème circonscription;La France insoumise;LFI / NFP
+92-9208;Hauts-de-Seine;8ème circonscription;Parti socialiste;PS / NFP
+92-9209;Hauts-de-Seine;9ème circonscription;Les Ecologistes - EELV;EELV / NFP
+92-9210;Hauts-de-Seine;10ème circonscription;Parti socialiste;PS / NFP
+92-9211;Hauts-de-Seine;11ème circonscription;La France insoumise;LFI / NFP
+92-9212;Hauts-de-Seine;12ème circonscription;Parti socialiste;PS / NFP
+92-9213;Hauts-de-Seine;13ème circonscription;Parti socialiste;PS / NFP
+93-9301;Seine-Saint-Denis;1ère circonscription;La France insoumise;LFI / NFP
+93-9302;Seine-Saint-Denis;2ème circonscription;Parti communiste français;PCF / NFP
+93-9303;Seine-Saint-Denis;3ème circonscription;La France insoumise;LFI / NFP
+93-9304;Seine-Saint-Denis;4ème circonscription;Parti communiste français;PCF / NFP
+93-9305;Seine-Saint-Denis;5ème circonscription;La France insoumise;LFI / NFP
+93-9306;Seine-Saint-Denis;6ème circonscription;La France insoumise;LFI / NFP
+93-9307;Seine-Saint-Denis;7ème circonscription;La France insoumise;LFI / NFP
+93-9308;Seine-Saint-Denis;8ème circonscription;Parti socialiste;PS / NFP
+93-9309;Seine-Saint-Denis;9ème circonscription;La France insoumise;LFI / NFP
+93-9310;Seine-Saint-Denis;10ème circonscription;La France insoumise;LFI / NFP
+93-9311;Seine-Saint-Denis;11ème circonscription;La France insoumise;LFI / NFP
+93-9312;Seine-Saint-Denis;12ème circonscription;La France insoumise;LFI / NFP
+94-9401;Val-de-Marne;1ère circonscription;La France insoumise;LFI / NFP
+94-9402;Val-de-Marne;2ème circonscription;La France insoumise;LFI / NFP
+94-9403;Val-de-Marne;3ème circonscription;La France insoumise;LFI / NFP
+94-9404;Val-de-Marne;4ème circonscription;La France insoumise;LFI / NFP
+94-9405;Val-de-Marne;5ème circonscription;Parti communiste français;PCF / NFP
+94-9406;Val-de-Marne;6ème circonscription;Les Ecologistes - EELV;EELV / NFP
+94-9407;Val-de-Marne;7ème circonscription;La France insoumise;LFI / NFP
+94-9408;Val-de-Marne;8ème circonscription;Parti socialiste;PS / NFP
+94-9409;Val-de-Marne;9ème circonscription;Parti socialiste;PS / NFP
+94-9410;Val-de-Marne;10ème circonscription;La France insoumise;LFI / NFP
+94-9411;Val-de-Marne;11ème circonscription;Les Ecologistes - EELV;EELV / NFP
+95-9501;Val-d'Oise;1ère circonscription;La France insoumise;LFI / NFP
+95-9502;Val-d'Oise;2ème circonscription;Parti socialiste;PS / NFP
+95-9503;Val-d'Oise;3ème circonscription;Parti communiste français;PCF / NFP
+95-9504;Val-d'Oise;4ème circonscription;La France insoumise;LFI / NFP
+95-9505;Val-d'Oise;5ème circonscription;La France insoumise;LFI / NFP
+95-9506;Val-d'Oise;6ème circonscription;La France insoumise;LFI / NFP
+95-9507;Val-d'Oise;7ème circonscription;Parti socialiste;PS / NFP
+95-9508;Val-d'Oise;8ème circonscription;La France insoumise;LFI / NFP
+95-9509;Val-d'Oise;9ème circonscription;La France insoumise;LFI / NFP
+ZZ-ZZ01;Français établis hors de France;1ere circonscription;Les Ecologistes - EELV;EELV / NFP
+ZZ-ZZ02;Français établis hors de France;2ème circonscription;Les Ecologistes - EELV;EELV / NFP
+ZZ-ZZ03;Français établis hors de France;3ème circonscription;Les Ecologistes - EELV;EELV / NFP
+ZZ-ZZ04;Français établis hors de France;4ème circonscription;Parti socialiste;PS / NFP
+ZZ-ZZ05;Français établis hors de France;5ème circonscription;La France insoumise;LFI / NFP
+ZZ-ZZ06;Français établis hors de France;6ème circonscription;Parti socialiste;PS / NFP
+ZZ-ZZ07;Français établis hors de France;7ème circonscription;La France insoumise;LFI / NFP
+ZZ-ZZ08;Français établis hors de France;8ème circonscription;La France insoumise;LFI / NFP
+ZZ-ZZ09;Français établis hors de France;9ème circonscription;Les Ecologistes - EELV;EELV / NFP
+ZZ-ZZ10;Français établis hors de France;10ème circonscription;Parti socialiste;PS / NFP
+ZZ-ZZ11;Français établis hors de France;11ème circonscription;Parti socialiste;PS / NFP
