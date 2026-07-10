@@ -27,8 +27,8 @@ PARTY_LOGO_FILENAMES: dict[str, str] = {
     "RN": "Logo Rassemblement National - Cropped.svg",
     "LR": "Les Républicains - logo (France, 2023) (cropped).svg",
     "PS": "Le Parti socialiste wordmark.svg",
-    "PS-PP": "Le Parti socialiste wordmark.svg",
     "PP": "Logo Place publique.svg",
+    "LE": "Logo Les Écologistes (France).png",
     "EELV": "Logo Les Écologistes (France).png",
     "PCF": "PCF LOGO.svg",
     "DLF": "Debout la France logo (2022).png",
@@ -36,14 +36,72 @@ PARTY_LOGO_FILENAMES: dict[str, str] = {
     "RE": "Renaissance parti logo.svg",
     "ENS": "Groupe EPR.png",
     "HOR": "Logo Horizons.svg",
+    "MoDem": "Logo du MoDem.svg",
+    "MODEM": "Logo du MoDem.svg",
     "NFP": "Logo Nouveau Front Populaire 2024.svg",
     "UDR": "UDR logo.svg",
     "D!": "DemsFrance.png",
 }
 
+PARTY_DISPLAY_LABELS: dict[str, str] = {
+    "RN": "Rassemblement national",
+    "REC": "Reconquête",
+    "LFI": "La France insoumise",
+    "PS": "Parti socialiste",
+    "PP": "Place publique",
+    "PCF": "Parti communiste français",
+    "LE": "Les Écologistes",
+    "EELV": "Les Écologistes",
+    "RE": "Renaissance",
+    "REN": "Renaissance",
+    "ENS": "Ensemble",
+    "EPR": "Ensemble pour la République",
+    "HOR": "Horizons",
+    "LFH": "La France humaniste",
+    "LR": "Les Républicains",
+    "DLF": "Debout la France",
+    "RES": "Résistons",
+    "LO": "Lutte ouvrière",
+    "NPA-A": "NPA anticapitaliste",
+    "MoDem": "MoDem",
+    "MODEM": "MoDem",
+    "NFP": "Nouveau Front populaire",
+    "UDR": "Union de l'extrême droite",
+}
+
+FAMILY_DISPLAY_LABELS: dict[str, str] = {
+    "far_left": "Extrême gauche",
+    "extrême_gauche": "Extrême gauche",
+    "left": "Gauche",
+    "gauche": "Gauche",
+    "gauche_radicale": "Gauche radicale",
+    "centre_left": "Centre gauche",
+    "centre_gauche": "Centre gauche",
+    "greens": "Écologistes",
+    "green": "Écologistes",
+    "écologistes": "Écologistes",
+    "centre": "Centre",
+    "centre_droit": "Centre droit",
+    "gaullist_right": "Droite gaulliste",
+    "droite_gaulliste": "Droite gaulliste",
+    "right": "Droite",
+    "droite": "Droite",
+    "sovereigntist_right": "Droite souverainiste",
+    "droite_souverainiste": "Droite souverainiste",
+    "nationalist_right": "Extrême droite",
+    "droite_nationale": "Extrême droite",
+    "far_right": "Extrême droite",
+    "extrême_droite": "Extrême droite",
+    "other": "Autre",
+    "hors_champ": "Hors champ",
+    "generic_bloc": "Bloc générique",
+}
+
 CANDIDATE_LOGO_FILENAMES: dict[tuple[str, str], str] = {
     ("PS-PP", "Raphaël Glucksmann"): "Logo Place publique.svg",
     ("PS-PP", "François Hollande"): "Le Parti socialiste wordmark.svg",
+    ("PS-PP", "Olivier Faure"): "Le Parti socialiste wordmark.svg",
+    ("PS-PP", "Boris Vallaud"): "Le Parti socialiste wordmark.svg",
     ("PP", "Raphaël Glucksmann"): "Logo Place publique.svg",
 }
 
@@ -62,6 +120,8 @@ def resolve_party_logo_filename(
         filename = CANDIDATE_LOGO_FILENAMES.get((normalized_party, normalized_candidate))
         if filename is not None:
             return filename
+    if normalized_party in {"REN", "EPR"}:
+        normalized_party = "RE"
     return PARTY_LOGO_FILENAMES.get(normalized_party)
 
 
@@ -70,6 +130,20 @@ def get_party_logo_url(candidate_party: object | None, candidate_name: object | 
     if filename is None:
         return PLACEHOLDER_LOGO_PATH
     return f"{COMMONS_SPECIAL_FILEPATH}{quote(filename, safe='()')}"
+
+
+def get_party_display_label(candidate_party: object | None) -> str:
+    if candidate_party in (None, "", "nan"):
+        return "Sans étiquette"
+    normalized_party = str(candidate_party).strip()
+    return PARTY_DISPLAY_LABELS.get(normalized_party, normalized_party)
+
+
+def get_family_display_label(political_family: object | None) -> str:
+    if political_family in (None, "", "nan"):
+        return "Non renseigné"
+    normalized_family = str(political_family).strip()
+    return FAMILY_DISPLAY_LABELS.get(normalized_family, normalized_family)
 
 
 def render_app_header() -> str:
@@ -197,13 +271,18 @@ def build_force_summary_table(
     else:
         latest["party_logo"] = None
     latest["value_display"] = latest[value_column].map(lambda x: f"{x:.1f}%" if pd.notna(x) else "n.d.")
+    latest["force_display"] = latest[force_column].map(get_party_display_label)
+    if party_column in latest.columns:
+        latest["party_display"] = latest[party_column].map(get_party_display_label)
+    if family_column in latest.columns:
+        latest["family_display"] = latest[family_column].map(get_family_display_label)
     latest = latest.sort_values(value_column, ascending=False)
-
-    columns = {
-        force_column: "force_name",
-        party_column: "candidate_party",
-        family_column: "political_family",
-    }
-    latest = latest.rename(columns=columns)
-    available = [column for column in ["party_logo", "force_name", "candidate_party", "political_family", "value_display"] if column in latest.columns]
-    return latest[available]
+    result = pd.DataFrame(index=latest.index)
+    result["party_logo"] = latest["party_logo"] if "party_logo" in latest.columns else None
+    result["force_name"] = latest["force_display"] if "force_display" in latest.columns else latest[force_column]
+    if "party_display" in latest.columns:
+        result["candidate_party"] = latest["party_display"]
+    if "family_display" in latest.columns:
+        result["political_family"] = latest["family_display"]
+    result["value_display"] = latest["value_display"]
+    return result.reset_index(drop=True)

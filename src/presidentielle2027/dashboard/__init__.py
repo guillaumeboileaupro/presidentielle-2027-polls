@@ -1,4 +1,3 @@
-from presidentielle2027.dashboard.app import main
+from __future__ import annotations
 
-__all__ = ["main"]
-
+__all__: list[str] = []

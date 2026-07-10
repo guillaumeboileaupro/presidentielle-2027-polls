@@ -21,11 +21,14 @@ USER_VALUE_REPLACEMENTS = {
     "left": "Gauche",
     "centre_left": "Centre-gauche",
     "center_left": "Centre-gauche",
+    "centre_gauche": "Centre-gauche",
     "green": "Écologistes",
     "greens": "Écologistes",
     "centre": "Centre",
     "center": "Centre",
     "right": "Droite",
+    "gaullist_right": "Droite gaulliste",
+    "droite_gaulliste": "Droite gaulliste",
     "far_right": "Extrême droite",
     "far_left": "Extrême gauche",
     "sovereigntist_right": "Droite souverainiste",
@@ -38,6 +41,8 @@ USER_VALUE_REPLACEMENTS = {
     "31_90": "31 à 90 jours",
     "91_180": "91 à 180 jours",
     "181_plus": "181 jours et plus",
+    "historical_2022": "Calcul automatique 2022",
+    "manual_override": "Surcharge manuelle",
 }
 
 USER_COLUMN_LABELS = {
@@ -80,6 +85,7 @@ USER_COLUMN_LABELS = {
     "total_bias": "Correction totale",
     "status": "Statut",
     "years_used": "Années",
+    "bias_source": "Source du biais",
 }
 
 

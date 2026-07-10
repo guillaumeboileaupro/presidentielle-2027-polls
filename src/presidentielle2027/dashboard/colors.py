@@ -1,22 +1,27 @@
 from __future__ import annotations
 
-from typing import Any
-
 PARTY_COLORS: dict[str, str] = {
-    "LFI": "#C62828",
-    "PCF": "#B71C1C",
-    "PS": "#E91E63",
-    "PS-PP": "#E91E63",
-    "PP": "#E91E63",
-    "EELV": "#2E7D32",
-    "RE": "#F4A300",
-    "ENS": "#F4A300",
-    "HOR": "#C88B00",
-    "LR": "#1565C0",
-    "DLF": "#5D6D7E",
+    "LO": "#BB0000",
+    "LFI": "#CC2443",
+    "PCF": "#DD0000",
+    "PS": "#FF4D56",
+    "PS-PP": "#FF4D56",
+    "PP": "#FFC0C0",
+    "LE": "#00C000",
+    "EELV": "#00C000",
+    "ECO": "#00C666",
+    "RE": "#FFEB00",
+    "ENS": "#FED700",
+    "HOR": "#0001B8",
+    "LFH": "#ADC1FD",
+    "MoDem": "#FFB74D",
+    "MODEM": "#FFB74D",
+    "LR": "#0066CC",
+    "DLF": "#0082C4",
     "UDR": "#3949AB",
-    "RN": "#0D47A1",
-    "REC": "#00ACC1",
+    "RN": "#0D378A",
+    "REC": "#333333",
+    "NPA-A": "#8E244D",
     "NFP": "#C62828",
     "DVG": "#F8A5B6",
     "ECO": "#39D353",
@@ -28,7 +33,7 @@ PARTY_COLORS: dict[str, str] = {
 }
 
 FAMILY_COLORS: dict[str, str] = {
-    "far_left": "#AD1457",
+    "far_left": "#F80606",
     "extrême_gauche": "#AD1457",
     "left": "#D32F2F",
     "gauche": "#D32F2F",
@@ -58,7 +63,7 @@ FAMILY_COLORS: dict[str, str] = {
 DEFAULT_CANDIDATE_COLOR = "#616161"
 
 
-def get_political_color(candidate_party: Any = None, political_family: Any = None) -> str:
+def get_political_color(candidate_party: object = None, political_family: object = None) -> str:
     party = str(candidate_party).strip() if candidate_party not in (None, "") else ""
     family = str(political_family).strip() if political_family not in (None, "") else ""
     if party in PARTY_COLORS:

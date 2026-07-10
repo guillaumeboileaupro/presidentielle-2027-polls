@@ -9,6 +9,7 @@ import streamlit as st
 
 from presidentielle2027.analytics.historical_corrections import (
     CURRENT_ELECTION_DATE,
+    apply_second_round_coalition_2024_correction,
     apply_second_round_legislative_correction,
     apply_first_round_historical_correction,
     get_reference_dir,
@@ -225,11 +226,16 @@ def _build_second_round_export_table(frame: pd.DataFrame) -> pd.DataFrame:
         lambda row: approximate_margin_of_error(row.get("sample_size"), row.get("estimate_percent", 50.0)),
         axis=1,
     )
+    score_column = "legislatively_corrected_estimate"
+    score_label = "Score corrigé"
+    if "selected_second_round_method" in export_frame.columns and export_frame["selected_second_round_method"].eq("coalitions_2024").any():
+        score_column = "coalition_2024_corrected_estimate"
+        score_label = "Score corrigé (coalitions 2024)"
     export_frame["intervalle_bas_95"] = (
-        export_frame["legislatively_corrected_estimate"] - export_frame["marge_erreur_95"].fillna(0.0)
+        export_frame[score_column] - export_frame["marge_erreur_95"].fillna(0.0)
     ).clip(lower=0.0)
     export_frame["intervalle_haut_95"] = (
-        export_frame["legislatively_corrected_estimate"] + export_frame["marge_erreur_95"].fillna(0.0)
+        export_frame[score_column] + export_frame["marge_erreur_95"].fillna(0.0)
     ).clip(upper=100.0)
     return export_frame[
         [
@@ -242,9 +248,10 @@ def _build_second_round_export_table(frame: pd.DataFrame) -> pd.DataFrame:
             "broad_bloc",
             "estimate_percent",
             "legislative_benchmark",
+            "coalition_2024_benchmark",
             "legislative_poll_bias",
             "legislative_seat_premium",
-            "legislatively_corrected_estimate",
+            score_column,
             "sample_size",
             "marge_erreur_95",
             "intervalle_bas_95",
@@ -262,9 +269,10 @@ def _build_second_round_export_table(frame: pd.DataFrame) -> pd.DataFrame:
             "broad_bloc": "Bloc",
             "estimate_percent": "Score brut",
             "legislative_benchmark": "Benchmark 2024",
+            "coalition_2024_benchmark": "Benchmark coalitions 2024",
             "legislative_poll_bias": "Biais de bloc",
             "legislative_seat_premium": "Prime sièges",
-            "legislatively_corrected_estimate": "Score corrigé",
+            score_column: score_label,
             "sample_size": "Échantillon",
             "marge_erreur_95": "Marge d’erreur 95",
             "intervalle_bas_95": "Intervalle bas 95",
@@ -476,12 +484,17 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
     candidate_b_options = [label for label in candidate_labels if label != candidate_a]
     candidate_b = c2.selectbox("Candidat B", candidate_b_options, index=0, key="corrected_second_round_candidate_b")
 
-    c3, c4, c5, c6, c7 = st.columns([1.0, 1.0, 1.4, 0.8, 0.7])
+    c3, c4, c5, c6, c7, c8 = st.columns([1.0, 1.0, 1.2, 1.4, 0.8, 0.7])
     scenario_filter = c3.selectbox("Hypothèse", scenarios, key="corrected_second_round_scenario")
     pollster = c4.selectbox("Institut", pollsters, key="corrected_second_round_pollster")
-    period = c5.date_input("Période", value=(min_date, max_date), min_value=min_date, max_value=max_date, key="corrected_second_round_period")
-    polynomial_order = c6.selectbox("Ordre", [1, 2, 3, 4, 5, 6], index=3, key="corrected_second_round_order")
-    show_extension = c7.checkbox("Pointillé", value=True, key="corrected_second_round_extension")
+    method_label = c5.selectbox(
+        "Méthode",
+        ["Benchmark blocs 2024", "Essai coalitions 2024"],
+        key="corrected_second_round_method",
+    )
+    period = c6.date_input("Période", value=(min_date, max_date), min_value=min_date, max_value=max_date, key="corrected_second_round_period")
+    polynomial_order = c7.selectbox("Ordre", [1, 2, 3, 4, 5, 6], index=3, key="corrected_second_round_order")
+    show_extension = c8.checkbox("Pointillé", value=True, key="corrected_second_round_extension")
 
     filtered = working.loc[working["candidate_label"].isin([candidate_a, candidate_b])].copy()
     if scenario_filter != "Toutes":
@@ -510,7 +523,20 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
         st.warning("Aucun duel complet correspondant n’existe dans le dataset pour ces deux candidats.")
         return
 
-    corrected = apply_second_round_legislative_correction(filtered, get_reference_dir(Path.cwd()))
+    reference_dir = get_reference_dir(Path.cwd())
+    first_round_context = frame.copy()
+    if pollster != "Tous":
+        first_round_context = first_round_context.loc[first_round_context["polling_company"] == pollster]
+    if isinstance(period, tuple) and len(period) == 2:
+        first_round_context = first_round_context.loc[
+            first_round_context["publication_date"].between(pd.Timestamp(period[0]), pd.Timestamp(period[1]), inclusive="both")
+        ]
+
+    corrected = apply_second_round_legislative_correction(filtered, reference_dir)
+    corrected = apply_second_round_coalition_2024_correction(corrected, first_round_context, reference_dir)
+    selected_method = "coalitions_2024" if method_label == "Essai coalitions 2024" else "benchmark_2024"
+    value_column = "coalition_2024_corrected_estimate" if selected_method == "coalitions_2024" else "legislatively_corrected_estimate"
+    corrected["selected_second_round_method"] = selected_method
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Duel", f"{candidate_a.split(' · ')[0]} vs {candidate_b.split(' · ')[0]}")
@@ -518,7 +544,7 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
     col3.metric("Instituts", int(corrected["polling_company"].nunique()))
     col4.metric("Scénarios", int(corrected["scenario_name"].nunique()))
 
-    summary = build_candidate_summary_table(corrected, "legislatively_corrected_estimate")
+    summary = build_candidate_summary_table(corrected, value_column)
     if not summary.empty:
         st.dataframe(
             summary,
@@ -554,7 +580,7 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
         )
         smoothed = build_lowess_curve(
             ordered,
-            "legislatively_corrected_estimate",
+            value_column,
             frac=0.32,
             degree=polynomial_order,
             method="polynomial",
@@ -578,7 +604,7 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
             extension = exploratory_extension(
                 ordered,
                 election_date=CURRENT_ELECTION_DATE,
-                value_column="legislatively_corrected_estimate",
+                value_column=value_column,
                 recent_days=30,
                 degree=polynomial_order,
                 method="polynomial",
@@ -597,7 +623,7 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
                 )
 
     figure.update_layout(
-        title="Second tour 2027 corrigé · benchmark 2024 et tendance lissée",
+        title=f"Second tour 2027 corrigé · {method_label.lower()} et tendance lissée",
         xaxis_title="Date de publication",
         yaxis_title="Intentions de vote corrigées (%)",
         **PLOT_LAYOUT_THEME,
@@ -610,7 +636,7 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
         st.caption("Tendance non calculée pour certaines séries : données insuffisantes ou scénarios non comparables.")
 
     latest_summary = (
-        corrected.sort_values(["publication_date", "legislatively_corrected_estimate"], ascending=[False, False])
+        corrected.sort_values(["publication_date", value_column], ascending=[False, False])
         .groupby("candidate_name", dropna=False)
         .head(1)[
             [
@@ -619,9 +645,10 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
                 "broad_bloc",
                 "estimate_percent",
                 "legislative_benchmark",
+                "coalition_2024_benchmark",
                 "legislative_poll_bias",
                 "legislative_seat_premium",
-                "legislatively_corrected_estimate",
+                value_column,
             ]
         ]
         .rename(
@@ -631,9 +658,10 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
                 "broad_bloc": "Bloc",
                 "estimate_percent": "Brut",
                 "legislative_benchmark": "Benchmark 2024",
+                "coalition_2024_benchmark": "Benchmark coalitions 2024",
                 "legislative_poll_bias": "Biais de bloc",
                 "legislative_seat_premium": "Prime sièges",
-                "legislatively_corrected_estimate": "Corrigé second tour",
+                value_column: "Corrigé second tour",
             }
         )
     )
@@ -643,11 +671,12 @@ def _render_corrected_second_round_section(frame: pd.DataFrame) -> None:
         width="stretch",
         hide_index=True,
         column_config={
-            "Brut": st.column_config.NumberColumn("Brut", format="%.1f %%"),
-            "Benchmark 2024": st.column_config.NumberColumn("Benchmark 2024", format="%.1f %%"),
-            "Biais de bloc": st.column_config.NumberColumn("Biais de bloc", format="%.2f"),
-            "Prime sièges": st.column_config.NumberColumn("Prime sièges", format="%.2f"),
-            "Corrigé second tour": st.column_config.NumberColumn("Corrigé second tour", format="%.1f %%"),
+                "Brut": st.column_config.NumberColumn("Brut", format="%.1f %%"),
+                "Benchmark 2024": st.column_config.NumberColumn("Benchmark 2024", format="%.1f %%"),
+                "Benchmark coalitions 2024": st.column_config.NumberColumn("Benchmark coalitions 2024", format="%.1f %%"),
+                "Biais de bloc": st.column_config.NumberColumn("Biais de bloc", format="%.2f"),
+                "Prime sièges": st.column_config.NumberColumn("Prime sièges", format="%.2f"),
+                "Corrigé second tour": st.column_config.NumberColumn("Corrigé second tour", format="%.1f %%"),
         },
     )
 
@@ -733,16 +762,33 @@ def _render_2022_ui(context, selected_period: tuple[date, date] | None = None) -
 
     historical_2022["publication_date"] = pd.to_datetime(historical_2022["fieldwork_end_date"], errors="coerce")
     historical_2022["force_name"] = historical_2022["force_label"].fillna("Autre")
-    if isinstance(selected_period, tuple) and len(selected_period) == 2:
+    historical_2022 = historical_2022.loc[historical_2022["publication_date"].notna()].copy()
+    if historical_2022.empty:
+        st.info("Aucune donnée 2022 datée n’est disponible pour l’audit.")
+        return
+
+    min_date = historical_2022["publication_date"].min().date()
+    max_date = historical_2022["publication_date"].max().date()
+    default_period = (min_date, max_date)
+
+    st.caption("L’audit 2022 utilise sa propre période historique. Il n’est plus vidé par une fenêtre 2027.")
+    audit_period = st.date_input(
+        "Période de l’audit 2022",
+        value=default_period,
+        min_value=min_date,
+        max_value=max_date,
+        key="corrected_dataset_audit_2022_period",
+    )
+    if isinstance(audit_period, tuple) and len(audit_period) == 2:
         historical_2022 = historical_2022.loc[
             historical_2022["publication_date"].between(
-                pd.Timestamp(selected_period[0]),
-                pd.Timestamp(selected_period[1]),
+                pd.Timestamp(audit_period[0]),
+                pd.Timestamp(audit_period[1]),
                 inclusive="both",
             )
         ].copy()
     if historical_2022.empty:
-        st.info("Aucune donnée 2022 disponible pour cette période.")
+        st.info("Aucune donnée 2022 disponible sur la période d’audit choisie.")
         return
 
     summary_source = (

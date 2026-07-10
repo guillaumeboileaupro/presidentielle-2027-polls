@@ -11,12 +11,18 @@ from presidentielle2027.dashboard.metadata import (
     build_pollster_registry_view,
     load_csv_if_exists,
 )
+from presidentielle2027.dashboard.table_views import USER_VALUE_REPLACEMENTS
 from presidentielle2027.dashboard.wiki_complete_zip import (
     WIKI_COMPLETE_FILES,
     build_complete_zip_registry,
     load_complete_layout_lines,
     load_complete_visual_rows,
 )
+
+
+def _display_source_label(value: object) -> str:
+    text = str(value).strip() if value not in (None, "") else "unknown_source"
+    return USER_VALUE_REPLACEMENTS.get(text, text)
 
 
 def _render_imported_wiki_zip_section(imported_zip_dir: Path) -> None:
@@ -188,7 +194,12 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
     )
 
     source_options = ["Tous"] + sorted(working["source_name"].dropna().astype(str).unique().tolist())
-    selected_source = st.selectbox("Dataset / source", source_options, key="sources_metadata_source")
+    selected_source = st.selectbox(
+        "Dataset / source",
+        source_options,
+        key="sources_metadata_source",
+        format_func=_display_source_label,
+    )
     visible = working if selected_source == "Tous" else working.loc[working["source_name"] == selected_source].copy()
 
     col1, col2, col3, col4 = st.columns(4)
@@ -327,12 +338,16 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
         .reset_index()
         .sort_values(["rows", "last_publication"], ascending=[False, False])
     )
+    source_summary["source_name"] = source_summary["source_name"].map(_display_source_label)
+    source_summary["round"] = source_summary["round"].map(lambda value: USER_VALUE_REPLACEMENTS.get(str(value), str(value)))
     st.markdown("**Résumé par source et par tour**")
     st.dataframe(
         source_summary,
         width="stretch",
         hide_index=True,
         column_config={
+            "source_name": st.column_config.TextColumn("Source"),
+            "round": st.column_config.TextColumn("Tour"),
             "rows": st.column_config.NumberColumn("Lignes", format="%d"),
             "scenarios": st.column_config.NumberColumn("Scénarios", format="%d"),
             "pollsters": st.column_config.NumberColumn("Instituts", format="%d"),
@@ -361,6 +376,10 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
         | visible["publication_date"].isna()
         | visible.get("fieldwork_start_date", pd.Series(index=visible.index, dtype="datetime64[ns]")).isna()
     ].copy()
+    if "source_name" in missing_rows.columns:
+        missing_rows["source_name"] = missing_rows["source_name"].map(_display_source_label)
+    if "round" in missing_rows.columns:
+        missing_rows["round"] = missing_rows["round"].map(lambda value: USER_VALUE_REPLACEMENTS.get(str(value), str(value)))
     existing_columns = [column for column in columns if column in missing_rows.columns]
     st.markdown("**Lignes avec métadonnées critiques manquantes**")
     st.dataframe(

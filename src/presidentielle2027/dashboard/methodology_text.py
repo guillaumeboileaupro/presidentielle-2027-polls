@@ -9,6 +9,13 @@ def first_round_methodology_html() -> str:
             Les sondages de 2027 sont lus ici par <strong>force politique</strong>, avec regroupement possible par parti ou par famille.
             La courbe affichée est un <strong>ajustement polynomial paramétrable</strong> sur les points comparables disponibles, pas une droite linéaire.
         </p>
+        <p class="wiki-muted" style="margin-bottom:0.5rem;">
+            <strong>Prudence d’interprétation</strong> : les sondages mesurés longtemps avant le scrutin restent fragiles.
+            Depuis 1995, les sondages conduits environ un an avant l’élection présidentielle se sont révélés peu fiables.
+            En 2022, Jean-Luc Mélenchon était encore souvent mesuré autour de 9&nbsp;% avant de finir à 21,95&nbsp;%,
+            tandis que le Rassemblement national pouvait être mesuré autour de 29&nbsp;% avant de finir à 23,15&nbsp;%.
+            En pratique, les erreurs ont tendance à diminuer à mesure que l’échéance électorale approche.
+        </p>
         <ul style="margin-top:0.4rem; line-height:1.55;">
             <li><strong>Lecture brute</strong> : chaque point correspond à une mesure publiée, sans redressement.</li>
             <li><strong>Regroupement politique</strong> : les scénarios nominaux sont ramenés à des forces comparables.</li>
@@ -51,6 +58,7 @@ def second_round_methodology_html() -> str:
         <ul style="margin-top:0.2rem; line-height:1.55;">
             <li><strong>Base brute</strong> : nuage de points publié pour le duel sélectionné.</li>
             <li><strong>Réserve de blocs 2024</strong> : les rapports de forces observés aux législatives 2024 servent de correction de base.</li>
+            <li><strong>Essai coalitions 2024</strong> : une méthode alternative relit le premier tour 2027 par blocs, puis applique une logique de reports inspirée des désistements et coalitions observés aux législatives 2024.</li>
             <li><strong>Projection exploratoire</strong> : un bouton séparé permet, si besoin, d’afficher une prolongation courte à partir de la dynamique récente ajustée, hors méthode centrale.</li>
         </ul>
     </div>

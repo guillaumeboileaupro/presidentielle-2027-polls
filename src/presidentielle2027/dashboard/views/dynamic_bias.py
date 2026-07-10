@@ -35,7 +35,7 @@ def render_dynamic_bias_page(frame: pd.DataFrame) -> None:
                 <li><strong>Biais calibré</strong> : `résultat réel 2022 - sondage historique 2022`.</li>
                 <li><strong>Dynamique temporelle</strong> : le biais est modélisé selon le <strong>nombre de jours avant le scrutin</strong>, pas par moyenne brute.</li>
                 <li><strong>Hiérarchie des modèles</strong> : `institut + force`, sinon `force seule`, sinon `institut seul`, sinon `global`.</li>
-                <li><strong>Overrides manuels</strong> : si `manual_first_round_biases.csv` définit une force, cette valeur remplace la projection automatique.</li>
+                <li><strong>Overrides manuels</strong> : si `manual_first_round_biases.csv` définit une force, cette valeur ne sert qu’en <strong>secours</strong> quand aucun modèle dynamique exploitable n’est disponible.</li>
                 <li><strong>Application 2027</strong> : `score corrigé 2027 = score brut 2027 + biais projeté 2027 au même temps électoral`.</li>
             </ul>
         </div>

@@ -154,6 +154,21 @@ WIKI_DASHBOARD_CSS = """
         overflow-wrap: anywhere !important;
         word-break: break-word !important;
     }
+    .stMarkdown :not(pre) > code,
+    .wiki-panel :not(pre) > code,
+    .wiki-note :not(pre) > code,
+    .stCaption code,
+    li code,
+    p code {
+        font-family: inherit !important;
+        font-size: inherit !important;
+        color: inherit !important;
+        background: transparent !important;
+        border: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        font-weight: 600 !important;
+    }
     [data-testid="stMetric"] {
         background: #fff !important;
         border: 1px solid var(--fi-border) !important;

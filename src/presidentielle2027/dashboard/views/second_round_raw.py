@@ -9,8 +9,10 @@ import streamlit as st
 
 from presidentielle2027.analytics.historical_corrections import (
     CURRENT_ELECTION_DATE,
+    apply_second_round_coalition_2024_correction,
     apply_first_round_historical_correction,
     apply_second_round_legislative_correction,
+    get_second_round_coalition_2024_transfer_map,
     get_second_round_transfer_map,
     get_reference_dir,
     normalize_broad_bloc,
@@ -58,6 +60,7 @@ def _build_corrected_transfer_analysis(
     pollster: str,
     period: object,
     reference_dir: Path,
+    transfer_mode: str = "benchmark_2024",
 ) -> tuple[pd.DataFrame, dict[str, float]] | tuple[None, None]:
     first_round = full_frame.loc[(full_frame["round"] == "first_round") & (~full_frame["is_generic_bloc"])].copy()
     if first_round.empty:
@@ -110,7 +113,11 @@ def _build_corrected_transfer_analysis(
     for _, bloc_row in latest_blocs.sort_values("corrected_share", ascending=False).iterrows():
         source_bloc = str(bloc_row["broad_bloc"])
         corrected_share = float(bloc_row["corrected_share"])
-        transfer_map = get_second_round_transfer_map(source_bloc, candidate_a_bloc, candidate_b_bloc)
+        transfer_map = (
+            get_second_round_coalition_2024_transfer_map(source_bloc, candidate_a_bloc, candidate_b_bloc)
+            if transfer_mode == "coalitions_2024"
+            else get_second_round_transfer_map(source_bloc, candidate_a_bloc, candidate_b_bloc)
+        )
         to_a = float(transfer_map.get(candidate_a_bloc, 0.0))
         to_b = float(transfer_map.get(candidate_b_bloc, 0.0))
         contribution_a = corrected_share * to_a
@@ -183,7 +190,11 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
     c3, c4, c5, c6, c7, c8, c9 = st.columns([0.9, 0.9, 0.9, 1.2, 0.8, 0.8, 0.7])
     scenario_filter = c3.selectbox("Hypothèse", scenarios, key="second_round_scenario_filter")
     pollster = c4.selectbox("Institut", pollsters, key="second_round_pollster")
-    display_mode = c5.selectbox("Série affichée", ["Brut", "Corrigé 2024"], key="second_round_mode")
+    display_mode = c5.selectbox(
+        "Série affichée",
+        ["Brut", "Corrigé 2024 blocs", "Essai coalitions 2024"],
+        key="second_round_mode",
+    )
     period = c6.date_input("Période", value=(min_date, max_date), min_value=min_date, max_value=max_date, key="second_round_period")
     trend_method = c7.selectbox("Modèle", ["Polynomial", "Bins"], index=0, key="second_round_trend_method")
     polynomial_order = c8.selectbox("Ordre", [1, 2, 3, 4, 5, 6], index=3, key="second_round_polynomial_order")
@@ -221,8 +232,23 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
         st.warning("Aucun duel complet correspondant n’existe dans le dataset pour ces deux candidats.")
         return
 
-    filtered = apply_second_round_legislative_correction(filtered, get_reference_dir(Path.cwd()))
-    value_column = "legislatively_corrected_estimate" if display_mode == "Corrigé 2024" else "estimate_percent"
+    reference_dir = get_reference_dir(Path.cwd())
+    first_round_context = frame.copy()
+    if pollster != "Tous":
+        first_round_context = first_round_context.loc[first_round_context["polling_company"] == pollster]
+    if isinstance(period, tuple) and len(period) == 2:
+        first_round_context = first_round_context.loc[
+            first_round_context["publication_date"].between(pd.Timestamp(period[0]), pd.Timestamp(period[1]), inclusive="both")
+        ]
+
+    filtered = apply_second_round_legislative_correction(filtered, reference_dir)
+    filtered = apply_second_round_coalition_2024_correction(filtered, first_round_context, reference_dir)
+    value_column_map = {
+        "Brut": "estimate_percent",
+        "Corrigé 2024 blocs": "legislatively_corrected_estimate",
+        "Essai coalitions 2024": "coalition_2024_corrected_estimate",
+    }
+    value_column = value_column_map[display_mode]
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Duel libre", f"{candidate_a.split(' · ')[0]} vs {candidate_b.split(' · ')[0]}")
@@ -308,7 +334,12 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
                         showlegend=False,
                     )
                 )
-    title_suffix = "corrigé 2024" if display_mode == "Corrigé 2024" else "brut"
+    title_suffix_map = {
+        "Brut": "brut",
+        "Corrigé 2024 blocs": "corrigé 2024 blocs",
+        "Essai coalitions 2024": "essai coalitions 2024",
+    }
+    title_suffix = title_suffix_map[display_mode]
     model_label = "modèle par bins" if trend_method == "Bins" else f"ajustement polynomial d'ordre {polynomial_order}"
     figure.update_layout(
         title=f"Second tour 2027 · points, {model_label} et prolongation exploratoire {title_suffix}",
@@ -360,6 +391,46 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
             },
         )
 
+    if "coalition_2024_benchmark" in filtered.columns and filtered["coalition_2024_benchmark"].notna().any():
+        coalition_view = (
+            filtered.sort_values(["publication_date", "coalition_2024_corrected_estimate"], ascending=[False, False])
+            .groupby("candidate_name", dropna=False)
+            .head(1)[
+                [
+                    "candidate_name",
+                    "candidate_party",
+                    "broad_bloc",
+                    "estimate_percent",
+                    "coalition_2024_benchmark",
+                    "coalition_2024_corrected_estimate",
+                    "coalition_2024_snapshot_date",
+                ]
+            ]
+            .rename(
+                columns={
+                    "candidate_name": "Candidat",
+                    "candidate_party": "Parti",
+                    "broad_bloc": "Bloc",
+                    "estimate_percent": "Brut",
+                    "coalition_2024_benchmark": "Benchmark coalitions 2024",
+                    "coalition_2024_corrected_estimate": "Essai coalitions 2024",
+                    "coalition_2024_snapshot_date": "Snapshot 1er tour",
+                }
+            )
+        )
+        coalition_view["Bloc"] = coalition_view["Bloc"].map(lambda value: FRENCH_BLOC_LABELS.get(value, value))
+        st.dataframe(
+            coalition_view,
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "Brut": st.column_config.NumberColumn("Brut", format="%.1f %%"),
+                "Benchmark coalitions 2024": st.column_config.NumberColumn("Benchmark coalitions 2024", format="%.1f %%"),
+                "Essai coalitions 2024": st.column_config.NumberColumn("Essai coalitions 2024", format="%.1f %%"),
+                "Snapshot 1er tour": st.column_config.DateColumn("Snapshot 1er tour", format="DD/MM/YYYY"),
+            },
+        )
+
     transfer_table, transfer_totals = _build_corrected_transfer_analysis(
         full_frame=frame,
         filtered_second_round=filtered,
@@ -367,7 +438,8 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
         candidate_b=candidate_b,
         pollster=pollster,
         period=period,
-        reference_dir=get_reference_dir(Path.cwd()),
+        reference_dir=reference_dir,
+        transfer_mode="coalitions_2024" if display_mode == "Essai coalitions 2024" else "benchmark_2024",
     )
     if transfer_table is not None and transfer_totals is not None:
         st.markdown("**Analyse des reports de voix depuis le premier tour corrigé**")
@@ -414,7 +486,8 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
         )
         st.caption(
             "Cette lecture prend le dernier premier tour corrigé disponible par bloc sur la période filtrée, "
-            "puis applique la matrice de reports entre blocs pour le duel sélectionné."
+            "puis applique une matrice de reports entre blocs. En mode `Essai coalitions 2024`, "
+            "la matrice est durcie par la logique de désistement observée en 2024 face au RN."
         )
 
     detailed = filtered.sort_values(["publication_date", "estimate_percent"], ascending=[False, False]).copy()
