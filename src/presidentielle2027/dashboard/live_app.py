@@ -51,32 +51,30 @@ def load_live_dashboard_data() -> pd.DataFrame:
     return pd.read_csv(sample_path)
 
 
-def _refresh_live_data() -> None:
+def _refresh_live_data() -> str | None:
     settings = get_settings()
     try:
-        with st.spinner("Mise à jour des sondages Wikipédia 2027…"):
-            frame, output_path = refresh_wikipedia_2027_dataset(
-                raw_dir=settings.raw_dir,
-                processed_dir=settings.processed_dir,
-            )
+        refresh_wikipedia_2027_dataset(
+            raw_dir=settings.raw_dir,
+            processed_dir=settings.processed_dir,
+        )
         load_live_dashboard_data.clear()
-        st.success(
-            f"Wikipédia actualisé au lancement : {len(frame)} lignes normalisées · {output_path.name}",
-            icon="✓",
-        )
-    except Exception as exc:  # noqa: BLE001 - the dashboard must keep its last auditable snapshot available
-        st.warning(
-            "La mise à jour Wikipédia au lancement a échoué. "
-            f"Le dernier snapshot local est utilisé. Détail : {exc}"
-        )
+        return None
+    except Exception as exc:  # noqa: BLE001 - keep the last auditable local snapshot available
+        return str(exc)
 
 
 def main() -> None:
+    refresh_error = _refresh_live_data()
     if not any(config["label"] == WIKIPEDIA_PAGE["label"] for config in dashboard_app.PAGE_CONFIG):
         dashboard_app.PAGE_CONFIG.insert(0, WIKIPEDIA_PAGE)
     dashboard_app.load_dashboard_data = load_live_dashboard_data
-    _refresh_live_data()
     dashboard_app.main()
+    if refresh_error:
+        st.warning(
+            "La mise à jour Wikipédia au lancement a échoué. "
+            f"Le dernier snapshot local est utilisé. Détail : {refresh_error}"
+        )
 
 
 if __name__ == "__main__":
