@@ -16,6 +16,7 @@ Le projet est conçu comme une base de travail maintenable plutôt qu'un script 
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Démarrage rapide](#démarrage-rapide)
+- [Scraping automatique](#scraping-automatique)
 - [Notebooks](#notebooks)
 - [Utilisation détaillée de la CLI](#utilisation-détaillée-de-la-cli)
 - [Pipeline de données](#pipeline-de-données)
@@ -110,7 +111,7 @@ presidentielle-2027-polls/
     interim/
     processed/
     exports/
-    historical/
+    reference/
   notebooks/
   src/presidentielle2027/
     adjustments/
@@ -136,7 +137,7 @@ presidentielle-2027-polls/
 - `data/interim/` : zone tampon pour transformations intermédiaires.
 - `data/processed/` : tables normalisées ou enrichies prêtes pour analyses.
 - `data/exports/` : sorties analytiques exportées, par exemple moyennes pondérées.
-- `data/historical/` : futurs datasets historiques 2017/2022 pour backtesting et correction de biais.
+- `data/reference/` : référentiels historiques, métadonnées d'instituts, facteurs de représentativité et fichiers d'appui méthodologique.
 
 ### Modules applicatifs
 
@@ -304,6 +305,8 @@ WIKIPEDIA_EN_URL=...
 - `APP_ENV` : environnement logique de l'application.
 - `WIKIPEDIA_FR_URL` : source FR par défaut.
 - `WIKIPEDIA_EN_URL` : source EN par défaut.
+- `AUTO_INGEST_INTERVAL_MINUTES` : fréquence de relance du pipeline automatique.
+- `AUTO_INGEST_MAX_RUNS` : nombre maximal de cycles ; `0` signifie boucle infinie.
 
 ## Démarrage rapide
 
@@ -338,6 +341,14 @@ Le dashboard utilisera :
 make dashboard
 ```
 
+### Option 2 bis : lancer le pipeline automatique
+
+```bash
+make auto-refresh
+```
+
+Par défaut, la commande relance tout le pipeline toutes les 60 minutes et continue indéfiniment.
+
 ### Option 3 : ouvrir les notebooks avec le bon kernel
 
 ```bash
@@ -349,6 +360,61 @@ jupyter lab notebooks
 Dans Jupyter, choisir le kernel :
 
 - `Présidentielle 2027 (.venv)`
+
+## Scraping automatique
+
+Le dépôt expose maintenant une boucle périodique qui relance le pipeline utile en chaîne :
+
+1. ingestion Wikipédia ;
+2. reconstruction des datasets Wikipédia ;
+3. initialisation de la base si nécessaire ;
+4. normalisation à partir de la meilleure source disponible ;
+5. recalcul du rapport de couverture ;
+6. recalcul des moyennes pondérées.
+
+### Via Makefile
+
+```bash
+make auto-refresh
+```
+
+### Via CLI
+
+```bash
+.venv/bin/python -m presidentielle2027.cli auto-refresh-pipeline
+```
+
+Exemple avec un intervalle explicite de 30 minutes :
+
+```bash
+.venv/bin/python -m presidentielle2027.cli auto-refresh-pipeline --interval-minutes 30
+```
+
+Exemple pour lancer seulement 2 cycles :
+
+```bash
+.venv/bin/python -m presidentielle2027.cli auto-refresh-pipeline --interval-minutes 30 --max-runs 2
+```
+
+### Exécuter un cycle complet une seule fois
+
+```bash
+make refresh
+```
+
+Ou :
+
+```bash
+.venv/bin/python -m presidentielle2027.cli refresh-pipeline
+```
+
+### Via Docker Compose
+
+```bash
+docker compose --profile scraper up scraper
+```
+
+Le service `scraper` installe le projet dans le conteneur puis lance la boucle complète avec les variables de `.env`.
 
 ## Notebooks
 
@@ -388,6 +454,8 @@ Crée les tables SQLAlchemy dans la base configurée.
 .venv/bin/python -m presidentielle2027.cli ingest-wikipedia
 ```
 
+Cette étape peut être lancée une fois via la CLI ou `make ingest`, ou de manière périodique via le pipeline automatique.
+
 Effet :
 
 - télécharge les pages Wikipédia FR et EN ;
@@ -412,12 +480,17 @@ Ou via `make` :
 make wiki-datasets
 ```
 
+Ce script est appelé par le pipeline automatique, et peut aussi être relancé séparément à la demande.
+
 Fichiers générés :
 
 - `sondages_presidentielle_2027_wikipedia_tables.csv`
 - `sondages_presidentielle_2022_wikipedia_tables.csv`
 - `sondages_legislatives_2024_wikipedia_tables.csv`
 - `wikipedia_sondages_2022_2024_2027_tables.xlsx`
+- `sondages_presidentielle_2027_wikipedia_content_blocks.csv`
+- `sondages_presidentielle_2022_wikipedia_content_blocks.csv`
+- `sondages_legislatives_2024_wikipedia_content_blocks.csv`
 
 Le script conserve aussi les URLs sources et les liens trouvés dans chaque ligne via `row_links_json`.
 
@@ -545,13 +618,15 @@ Cette commande enregistre le kernel utilisateur `Présidentielle 2027 (.venv)`.
 
 Le pipeline logique est le suivant :
 
-1. acquisition de sources brutes ;
+1. acquisition des sources brutes via une commande CLI, `make`, ou la boucle automatique ;
 2. stockage des artefacts dans `data/raw/` ;
 3. parsing ou éclatement des formats semi-structurés ;
 4. normalisation vers le schéma commun ;
 5. persistance en base ;
 6. calculs analytiques et exports ;
 7. visualisation interactive.
+
+Le dépôt embarque désormais une boucle périodique via `auto-refresh-pipeline`. En revanche, elle ne démarre pas toute seule tant qu'aucun process long-vivant n'est lancé.
 
 ### Champs normalisés cibles
 
@@ -598,28 +673,21 @@ L’habillage de l’application reprend désormais une partie de la charte grap
 
 ### Vues actuelles
 
-- `Premier tour`
-  - tous les sondages de premier tour ;
-  - regroupement par `Parti politique` ou `Famille politique` ;
-  - nuage brut des points ;
-  - une seule ligne de tendance par force ;
-  - bouton de prolongation de dynamique jusqu’au scrutin.
-- `Premier tour corrigé`
-  - correction historique fondée sur 2022 ;
-  - biais institut ;
-  - biais temporel selon la distance au scrutin ;
-  - modulation de représentativité ;
-  - comparaison brute / corrigée par force politique.
-- `Second tour`
-  - duel par duel ;
-  - ligne brute et ligne corrigée ;
-  - benchmark expérimental construit à partir des blocs observés aux législatives 2024.
-- `Sources`
-  - datasets disponibles ;
-  - couverture des métadonnées ;
-  - résumé par source et par institut ;
-  - références historiques chargées pour la correction ;
-  - lignes critiques incomplètes.
+Le dashboard est aujourd'hui structuré par pages métier :
+
+- `Sources et métadonnées`
+- `Sondages 2027 - premier tour brut`
+- `Sondages 2027 - second tour brut`
+- `Barres d’erreur brutes`
+- `Analyse historique 2022`
+- `Comparaison 2022 sondages vs résultat`
+- `Analyse législatives 2024`
+- `Biais calculés`
+- `Projection corrigée 2027`
+- `Dataset corrigé 2027`
+- `Scénarios exploratoires`
+
+La navigation réelle est définie dans [app.py](/home/gboileau/Documents/Presidentielle/presidentielle-2027-polls/src/presidentielle2027/dashboard/app.py).
 
 ### Règles de lecture imposées
 
@@ -727,6 +795,8 @@ Pour rendre ce module utile, il faudra ajouter des datasets dans `data/historica
 .venv/bin/python -m pytest -q
 ```
 
+Les tests supposent un environnement projet compatible avec `pyproject.toml`, en particulier Python 3.10+ et les dépendances installées via `pip install -e ".[dev]"`.
+
 Tests présents :
 
 - normalisation CSV ;
@@ -755,6 +825,8 @@ Commandes disponibles :
 - `make install`
 - `make init-db`
 - `make ingest`
+- `make refresh`
+- `make auto-refresh`
 - `make normalize`
 - `make dashboard`
 - `make test`
