@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 import pandas as pd
 from sqlalchemy import select
@@ -14,14 +13,26 @@ from presidentielle2027.extraction.canonicalization import canonicalize_candidat
 from presidentielle2027.extraction.table_parser import clean_table
 from presidentielle2027.extraction.validators import NormalizedPollRecord
 
+CANONICAL_NORMALIZED_COLUMNS: set[str] = {
+    "poll_id",
+    "source_url",
+    "source_name",
+    "polling_company",
+    "publication_date",
+    "round",
+    "scenario_name",
+    "candidate_name",
+    "estimate_percent",
+}
 
-def _parse_date(value: Any) -> datetime | None:
+
+def _parse_date(value: object) -> datetime | None:
     if value is None or value == "" or pd.isna(value):
         return None
     return pd.to_datetime(value, errors="coerce").to_pydatetime() if pd.notna(pd.to_datetime(value, errors="coerce")) else None
 
 
-def _parse_bool(value: Any) -> bool | None:
+def _parse_bool(value: object) -> bool | None:
     if value is None or value == "" or pd.isna(value):
         return None
     normalized = str(value).strip().lower()
@@ -32,14 +43,14 @@ def _parse_bool(value: Any) -> bool | None:
     return None
 
 
-def _parse_quota_method(value: Any) -> str:
+def _parse_quota_method(value: object) -> str:
     parsed = _parse_bool(value)
     if parsed is None:
         return "unknown"
     return "true" if parsed else "false"
 
 
-def _parse_float(value: Any) -> float | None:
+def _parse_float(value: object) -> float | None:
     if value is None or value == "" or pd.isna(value):
         return None
     text = str(value).replace("%", "").replace(",", ".").strip()
@@ -49,18 +60,18 @@ def _parse_float(value: Any) -> float | None:
         return None
 
 
-def _parse_int(value: Any) -> int | None:
+def _parse_int(value: object) -> int | None:
     number = _parse_float(value)
     return int(number) if number is not None else None
 
 
-def _none_if_na(value: Any) -> Any:
+def _none_if_na(value: object) -> object | None:
     if value is None or value == "" or pd.isna(value):
         return None
     return value
 
 
-def normalize_row(row: dict[str, Any]) -> NormalizedPollRecord:
+def normalize_row(row: dict[str, object]) -> NormalizedPollRecord:
     candidate_name, candidate_party, political_family = canonicalize_candidate_fields(
         row["candidate_name"],
         _none_if_na(row.get("candidate_party")),
@@ -101,7 +112,10 @@ def normalize_row(row: dict[str, Any]) -> NormalizedPollRecord:
 
 
 def normalize_dataframe(frame: pd.DataFrame) -> list[NormalizedPollRecord]:
-    cleaned = clean_table(frame)
+    if CANONICAL_NORMALIZED_COLUMNS.issubset(set(str(column) for column in frame.columns)):
+        cleaned = frame.copy()
+    else:
+        cleaned = clean_table(frame)
     return [normalize_row(record) for record in cleaned.to_dict(orient="records")]
 
 
@@ -178,6 +192,24 @@ def normalize_to_database(records: Iterable[NormalizedPollRecord], session: Sess
             )
             session.add(poll)
             session.flush()
+        else:
+            poll.source_id = source.id
+            poll.polling_company_id = company.id
+            poll.commissioner = record.commissioner
+            poll.media_partner = record.media_partner
+            poll.fieldwork_start_date = record.fieldwork_start_date
+            poll.fieldwork_end_date = record.fieldwork_end_date
+            poll.publication_date = record.publication_date
+            poll.sample_size = record.sample_size
+            poll.population = record.population
+            poll.collection_method = record.collection_method
+            poll.quota_method = record.quota_method
+            poll.round = record.round
+            poll.undecided_percent = record.undecided_percent
+            poll.abstention_estimate = record.abstention_estimate
+            poll.registered_voters_basis = record.registered_voters_basis
+            poll.raw_text_context = record.raw_text_context
+            poll.extraction_confidence = record.extraction_confidence
         poll_cache[record.poll_id] = poll
 
         scenario_key = (record.poll_id, record.scenario_name)
@@ -210,6 +242,11 @@ def normalize_to_database(records: Iterable[NormalizedPollRecord], session: Sess
                 margin_of_error=record.margin_of_error,
             )
             session.add(existing)
-            persisted_rows += 1
+        else:
+            existing.estimate_percent = record.estimate_percent
+            existing.lower_bound_percent = record.lower_bound_percent
+            existing.upper_bound_percent = record.upper_bound_percent
+            existing.margin_of_error = record.margin_of_error
+        persisted_rows += 1
     session.commit()
     return persisted_rows
