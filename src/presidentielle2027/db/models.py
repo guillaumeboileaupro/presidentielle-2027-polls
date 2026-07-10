@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
 
 from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
+JsonObject = dict[str, object]
+
 
 class Base(DeclarativeBase):
-    type_annotation_map = {dict[str, Any]: JSON}
+    type_annotation_map = {JsonObject: JSON}
 
 
 class TimestampMixin:
@@ -128,7 +129,7 @@ class Adjustment(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     poll_id: Mapped[int] = mapped_column(ForeignKey("polls.id"), nullable=False)
     adjustment_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    parameters: Mapped[dict[str, Any] | None]
+    parameters: Mapped[JsonObject | None]
     notes: Mapped[str | None] = mapped_column(Text)
 
     poll: Mapped[Poll] = relationship(back_populates="adjustments")
@@ -141,7 +142,7 @@ class ModelRun(Base, TimestampMixin):
     run_name: Mapped[str] = mapped_column(String(255), nullable=False)
     model_type: Mapped[str] = mapped_column(String(100), nullable=False)
     target_name: Mapped[str] = mapped_column(String(255), default="poll_bias", nullable=False)
-    metrics: Mapped[dict[str, Any] | None]
+    metrics: Mapped[JsonObject | None]
     artifact_path: Mapped[str | None] = mapped_column(String(512))
     training_data_path: Mapped[str | None] = mapped_column(String(512))
     notes: Mapped[str | None] = mapped_column(Text)
@@ -158,7 +159,7 @@ class ForecastOrSmoothedEstimate(Base, TimestampMixin):
     estimate_percent: Mapped[float] = mapped_column(Float, nullable=False)
     uncertainty_low: Mapped[float | None] = mapped_column(Float)
     uncertainty_high: Mapped[float | None] = mapped_column(Float)
-    metadata_json: Mapped[dict[str, Any] | None]
+    metadata_json: Mapped[JsonObject | None]
 
     scenario: Mapped[PollScenario] = relationship(back_populates="smoothed_estimates")
     candidate: Mapped[Candidate] = relationship(back_populates="smoothed_estimates")
@@ -171,5 +172,5 @@ class IngestionLog(Base, TimestampMixin):
     source_id: Mapped[int | None] = mapped_column(ForeignKey("sources.id"))
     action: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
-    details: Mapped[dict[str, Any] | None]
+    details: Mapped[JsonObject | None]
     message: Mapped[str | None] = mapped_column(Text)
