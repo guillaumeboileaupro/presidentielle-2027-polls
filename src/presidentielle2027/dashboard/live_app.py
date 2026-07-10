@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from presidentielle2027.config import get_settings
 from presidentielle2027.dashboard import app as dashboard_app
+from presidentielle2027.dashboard.data_quality import repair_scaled_first_round_scenarios
 from presidentielle2027.dashboard.views.first_round_raw import render_first_round_raw_page
 from presidentielle2027.dashboard.views.wikipedia_2027 import render_candidate_trace_chart
 from presidentielle2027.db.session import get_session_factory
@@ -9,8 +10,9 @@ from presidentielle2027.ingestion.pipeline import run_refresh_pipeline
 
 
 def _render_first_round_with_candidate_chart(frame) -> None:
-    render_first_round_raw_page(frame)
-    render_candidate_trace_chart(frame)
+    repaired_frame = repair_scaled_first_round_scenarios(frame)
+    render_first_round_raw_page(repaired_frame)
+    render_candidate_trace_chart(repaired_frame)
 
 
 def _refresh_wikipedia_before_dashboard() -> None:
