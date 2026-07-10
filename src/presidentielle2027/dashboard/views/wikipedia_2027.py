@@ -6,9 +6,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from presidentielle2027.analytics.adjustment_core import build_polynomial_curve, select_auto_polynomial_degree
 from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
+from presidentielle2027.dashboard.views.first_round_raw import GITLAB_LOESS_SPANS
 
 
 CANDIDATE_SPECS = [
@@ -63,6 +65,33 @@ def _select_primary_scenarios(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.merge(primary, on=["poll_id", "scenario_name"], how="inner")
 
 
+def _build_candidate_curve(frame: pd.DataFrame, party: str) -> pd.DataFrame | None:
+    trend_method = str(st.session_state.get("first_round_trend_method", "Polynôme auto"))
+    polynomial_order = int(st.session_state.get("first_round_polynomial_order", 4))
+
+    if trend_method == "Polynôme auto":
+        resolved_order = select_auto_polynomial_degree(
+            frame,
+            "estimate_percent",
+            max_degree=polynomial_order,
+        )
+        return build_polynomial_curve(
+            frame,
+            "estimate_percent",
+            degree=resolved_order,
+        )
+
+    loess_frac = GITLAB_LOESS_SPANS.get(party, 0.25)
+    method = "loess" if trend_method == "LOESS GitLab" else ("bins" if trend_method == "Bins" else "polynomial")
+    return build_lowess_curve(
+        frame,
+        "estimate_percent",
+        frac=loess_frac,
+        degree=polynomial_order,
+        method=method,
+    )
+
+
 def _add_candidate_trace(
     figure: go.Figure,
     frame: pd.DataFrame,
@@ -93,13 +122,7 @@ def _add_candidate_trace(
         )
     )
 
-    curve = build_lowess_curve(
-        ordered,
-        "estimate_percent",
-        frac=0.25,
-        degree=3,
-        method="loess",
-    )
+    curve = _build_candidate_curve(ordered, party)
     if curve is None or curve.empty:
         return
 
@@ -122,6 +145,17 @@ def render_candidate_trace_chart(frame: pd.DataFrame) -> None:
     working["publication_date"] = pd.to_datetime(working["publication_date"], errors="coerce")
     working["estimate_percent"] = pd.to_numeric(working["estimate_percent"], errors="coerce")
     working = working.dropna(subset=["publication_date", "estimate_percent"])
+
+    pollster = st.session_state.get("first_round_pollster", "Tous")
+    if pollster != "Tous":
+        working = working.loc[working["polling_company"] == pollster].copy()
+
+    period = st.session_state.get("first_round_period")
+    if isinstance(period, tuple) and len(period) == 2:
+        working = working.loc[
+            working["publication_date"].between(pd.Timestamp(period[0]), pd.Timestamp(period[1]), inclusive="both")
+        ].copy()
+
     working = _select_primary_scenarios(working)
     if working.empty:
         return
