@@ -10,3 +10,17 @@ services:
       - .env
     command: sleep infinity
 
+  scraper:
+    image: mcr.microsoft.com/devcontainers/python:1-3.11-bullseye
+    working_dir: /workspace/presidentielle-2027-polls
+    volumes:
+      - ./:/workspace/presidentielle-2027-polls
+    env_file:
+      - .env
+    command: >
+      bash -lc "pip install -e '.[dev]' &&
+      python -m presidentielle2027.cli auto-refresh-pipeline
+      --interval-minutes ${AUTO_INGEST_INTERVAL_MINUTES:-60}
+      ${AUTO_INGEST_MAX_RUNS:+--max-runs ${AUTO_INGEST_MAX_RUNS}}"
+    profiles:
+      - scraper

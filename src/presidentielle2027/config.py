@@ -33,9 +33,10 @@ class Settings(BaseSettings):
     dashboard_port: int = 8501
     recency_lambda: float = 0.03
     default_election_date: str = "2027-04-11"
+    auto_ingest_interval_minutes: int = Field(default=60, alias="AUTO_INGEST_INTERVAL_MINUTES")
+    auto_ingest_max_runs: int = Field(default=0, alias="AUTO_INGEST_MAX_RUNS")
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()
-
