@@ -21,33 +21,47 @@ CURRENT_ELECTION_DATE = pd.Timestamp("2027-04-11")
 LEGISLATIVE_2024_ELECTION_DATE = pd.Timestamp("2024-06-30")
 FIRST_ROUND_2022_BACKGROUND_WEIGHT = 0.40
 FIRST_ROUND_2024_ANCHOR_WEIGHT = 1.00
+FORCE_SPECIFIC_2022_BACKGROUND_WEIGHT: dict[str, float] = {
+    "LFI": 0.75,
+}
+FORCE_SPECIFIC_2024_ANCHOR_WEIGHT: dict[str, float] = {
+    "LFI": 0.50,
+}
 
 PARTY_FORCE_MAP: dict[str, str] = {
     "LFI": "LFI",
     "NFP": "LFI",
-    "PS": "PS-PP",
+    "PS": "PS",
     "PS-PP": "PS-PP",
-    "PP": "PS-PP",
+    "PP": "PP",
+    "LE": "EELV",
     "EELV": "EELV",
     "PCF": "PCF",
     "ENS": "ENS",
     "RE": "ENS",
     "HOR": "ENS",
     "MDM": "ENS",
+    "MoDem": "ENS",
     "MODEM": "ENS",
+    "LFH": "LR",
+    "LO": "EXG",
     "LR": "LR",
     "RN": "RN",
     "UDR": "RN",
     "REC": "REC",
     "DLF": "DLF",
+    "NPA-A": "EXG",
     "EXG": "EXG",
     "DIV": "DIV",
 }
 
 BROAD_BLOC_MAP: dict[str, str] = {
     "LFI": "gauche",
-    "PS-PP": "gauche",
+    "PS-PP": "centre_gauche",
+    "PS": "centre_gauche",
+    "PP": "centre_gauche",
     "PCF": "gauche",
+    "LE": "gauche",
     "EELV": "gauche",
     "NFP": "gauche",
     "EXG": "gauche",
@@ -55,9 +69,13 @@ BROAD_BLOC_MAP: dict[str, str] = {
     "RE": "centre",
     "HOR": "centre",
     "MDM": "centre",
+    "MoDem": "centre",
     "MODEM": "centre",
+    "LFH": "droite",
+    "LO": "gauche",
     "LR": "droite",
     "DLF": "droite",
+    "NPA-A": "gauche",
     "DIV": "autres",
     "RN": "extrême_droite",
     "REC": "extrême_droite",
@@ -98,6 +116,13 @@ SECOND_ROUND_TRANSFER_MATRIX: dict[str, dict[str, float]] = {
     "autres": {"gauche": 0.12, "centre": 0.20, "droite": 0.15, "extrême_droite": 0.15, "autres": 1.00},
 }
 
+COALITION_2024_FRONT_REPUBLICAIN_BONUS: dict[str, float] = {
+    "gauche": 0.22,
+    "centre": 0.28,
+    "droite": 0.14,
+    "autres": 0.10,
+}
+
 DUEL_SPECIFIC_SECOND_ROUND_OVERRIDES: dict[frozenset[str], dict[str, dict[str, float]]] = {
     frozenset({"gauche", "extrême_droite"}): {
         "centre": {"gauche": 0.82, "extrême_droite": 0.03},
@@ -107,7 +132,14 @@ DUEL_SPECIFIC_SECOND_ROUND_OVERRIDES: dict[frozenset[str], dict[str, dict[str, f
 LEGISLATIVE_BLOC_NORMALIZATION: dict[str, str] = {
     "left": "gauche",
     "gauche": "gauche",
+    "centre_left": "gauche",
+    "centre_gauche": "gauche",
+    "green": "gauche",
+    "greens": "gauche",
+    "écologistes": "gauche",
     "centre": "centre",
+    "centre_right": "centre",
+    "centre_droit": "centre",
     "right": "droite",
     "droite": "droite",
     "far_right": "extrême_droite",
@@ -211,6 +243,57 @@ def get_second_round_transfer_map(
     if source_override:
         base.update(source_override)
     return base
+
+
+def get_second_round_coalition_2024_transfer_map(
+    source_bloc: str,
+    candidate_a_bloc: str,
+    candidate_b_bloc: str,
+) -> dict[str, float]:
+    base = SECOND_ROUND_TRANSFER_MATRIX.get(source_bloc, SECOND_ROUND_TRANSFER_MATRIX["autres"]).copy()
+
+    if candidate_a_bloc == candidate_b_bloc:
+        return {candidate_a_bloc: 1.0, candidate_b_bloc: 0.0}
+
+    if "extrême_droite" in {candidate_a_bloc, candidate_b_bloc}:
+        non_far_bloc = candidate_a_bloc if candidate_b_bloc == "extrême_droite" else candidate_b_bloc
+        if source_bloc == "extrême_droite":
+            weights = {non_far_bloc: 0.03, "extrême_droite": 0.94}
+        elif source_bloc == non_far_bloc:
+            weights = {non_far_bloc: 0.96, "extrême_droite": 0.02}
+        else:
+            base_non_far = float(base.get(non_far_bloc, 0.18))
+            base_far = float(base.get("extrême_droite", 0.12))
+            bonus = COALITION_2024_FRONT_REPUBLICAIN_BONUS.get(source_bloc, 0.08)
+            non_far_weight = min(0.95, base_non_far + bonus)
+            far_weight = max(0.02, base_far * (0.60 if source_bloc in {"gauche", "centre"} else 0.75))
+            weights = {non_far_bloc: non_far_weight, "extrême_droite": far_weight}
+        return {
+            candidate_a_bloc: float(weights.get(candidate_a_bloc, 0.0)),
+            candidate_b_bloc: float(weights.get(candidate_b_bloc, 0.0)),
+        }
+
+    weight_a = max(0.02, float(base.get(candidate_a_bloc, 0.12)))
+    weight_b = max(0.02, float(base.get(candidate_b_bloc, 0.12)))
+
+    if frozenset({candidate_a_bloc, candidate_b_bloc}) == frozenset({"gauche", "centre"}) and source_bloc == "droite":
+        if candidate_a_bloc == "centre":
+            weight_a += 0.08
+        else:
+            weight_b += 0.08
+    if frozenset({candidate_a_bloc, candidate_b_bloc}) == frozenset({"centre", "droite"}) and source_bloc == "gauche":
+        if candidate_a_bloc == "centre":
+            weight_a += 0.08
+        else:
+            weight_b += 0.08
+    if source_bloc == "extrême_droite":
+        weight_a *= 0.65
+        weight_b *= 0.65
+
+    return {
+        candidate_a_bloc: weight_a,
+        candidate_b_bloc: weight_b,
+    }
 
 
 def compute_days_bucket(days_until_election: pd.Series) -> pd.Series:
@@ -551,6 +634,7 @@ def load_manual_first_round_biases(reference_dir: Path) -> pd.DataFrame:
         return pd.DataFrame(
             columns=[
                 "force_label",
+                "apply_override",
                 "structural_bias",
                 "temporal_bias",
                 "trajectory_bias",
@@ -559,14 +643,25 @@ def load_manual_first_round_biases(reference_dir: Path) -> pd.DataFrame:
                 "notes",
             ]
         )
+    if "apply_override" not in frame.columns:
+        frame["apply_override"] = False
+    frame["apply_override"] = (
+        frame["apply_override"]
+        .fillna(False)
+        .astype(str)
+        .str.strip()
+        .str.lower()
+        .isin({"true", "1", "yes", "oui"})
+    )
     for column in ["structural_bias", "temporal_bias", "trajectory_bias", "legislative_2024_bias_override"]:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
     frame["force_label"] = frame["force_label"].fillna("").astype(str).str.strip()
-    frame["manual_total_bias"] = (
+    frame["manual_total_bias_raw"] = (
         frame["structural_bias"].fillna(0.0)
         + frame["temporal_bias"].fillna(0.0)
         + frame["trajectory_bias"].fillna(0.0)
     )
+    frame["manual_total_bias"] = np.where(frame["apply_override"], frame["manual_total_bias_raw"], np.nan)
     return frame
 
 
@@ -899,15 +994,33 @@ def apply_first_round_historical_correction(frame: pd.DataFrame, reference_dir: 
     working["has_legislative_2024_anchor"] = (
         working["broad_bloc"].isin(legislative_bias_map.keys()) | override_mask
     )
-    working["historical_2022_weight"] = np.where(
+    default_historical_weight = np.where(
         working["has_legislative_2024_anchor"],
         FIRST_ROUND_2022_BACKGROUND_WEIGHT,
         1.0,
     )
-    working["legislative_2024_weight"] = np.where(
+    default_legislative_weight = np.where(
         working["has_legislative_2024_anchor"],
         FIRST_ROUND_2024_ANCHOR_WEIGHT,
         0.0,
+    )
+    force_specific_historical_weight = pd.to_numeric(
+        working["force_label"].map(FORCE_SPECIFIC_2022_BACKGROUND_WEIGHT),
+        errors="coerce",
+    )
+    force_specific_legislative_weight = pd.to_numeric(
+        working["force_label"].map(FORCE_SPECIFIC_2024_ANCHOR_WEIGHT),
+        errors="coerce",
+    )
+    working["historical_2022_weight"] = np.where(
+        working["has_legislative_2024_anchor"] & force_specific_historical_weight.notna(),
+        force_specific_historical_weight,
+        default_historical_weight,
+    )
+    working["legislative_2024_weight"] = np.where(
+        working["has_legislative_2024_anchor"] & force_specific_legislative_weight.notna(),
+        force_specific_legislative_weight,
+        default_legislative_weight,
     )
     working["structural_bias_component"] = working["structural_bias_component_raw"] * working["historical_2022_weight"]
     working["temporal_bias_component"] = working["temporal_bias_component_raw"] * working["historical_2022_weight"]
@@ -963,6 +1076,9 @@ def compute_second_round_legislative_benchmark(
     if legislative_frame.empty:
         return 50.0, 50.0
 
+    normalized_candidate_a_bloc = LEGISLATIVE_BLOC_NORMALIZATION.get(candidate_a_bloc, candidate_a_bloc)
+    normalized_candidate_b_bloc = LEGISLATIVE_BLOC_NORMALIZATION.get(candidate_b_bloc, candidate_b_bloc)
+
     latest_round = legislative_frame.loc[legislative_frame["election_round"] == "second_round"].copy()
     if latest_round.empty:
         latest_round = legislative_frame.loc[legislative_frame["election_round"] == "first_round"].copy()
@@ -973,13 +1089,160 @@ def compute_second_round_legislative_benchmark(
     score_b = 0.0
     for source_bloc, share in bloc_shares.items():
         normalized_source_bloc = LEGISLATIVE_BLOC_NORMALIZATION.get(str(source_bloc), "autres")
-        transfer_map = get_second_round_transfer_map(normalized_source_bloc, candidate_a_bloc, candidate_b_bloc)
-        score_a += share * transfer_map.get(candidate_a_bloc, 0.0)
-        score_b += share * transfer_map.get(candidate_b_bloc, 0.0)
+        transfer_map = get_second_round_transfer_map(
+            normalized_source_bloc,
+            normalized_candidate_a_bloc,
+            normalized_candidate_b_bloc,
+        )
+        score_a += share * transfer_map.get(normalized_candidate_a_bloc, 0.0)
+        score_b += share * transfer_map.get(normalized_candidate_b_bloc, 0.0)
     total = score_a + score_b
     if total <= 0:
         return 50.0, 50.0
     return score_a / total * 100.0, score_b / total * 100.0
+
+
+def compute_second_round_coalition_2024_benchmark(
+    candidate_a_bloc: str,
+    candidate_b_bloc: str,
+    bloc_shares: dict[str, float],
+) -> tuple[float, float]:
+    if not bloc_shares:
+        return 50.0, 50.0
+
+    score_a = 0.0
+    score_b = 0.0
+    for source_bloc, share in bloc_shares.items():
+        normalized_source_bloc = LEGISLATIVE_BLOC_NORMALIZATION.get(str(source_bloc), str(source_bloc))
+        transfer_map = get_second_round_coalition_2024_transfer_map(
+            normalized_source_bloc,
+            candidate_a_bloc,
+            candidate_b_bloc,
+        )
+        score_a += float(share) * float(transfer_map.get(candidate_a_bloc, 0.0))
+        score_b += float(share) * float(transfer_map.get(candidate_b_bloc, 0.0))
+    total = score_a + score_b
+    if total <= 0:
+        return 50.0, 50.0
+    return score_a / total * 100.0, score_b / total * 100.0
+
+
+def apply_second_round_coalition_2024_correction(
+    frame: pd.DataFrame,
+    full_frame: pd.DataFrame,
+    reference_dir: Path,
+) -> pd.DataFrame:
+    if frame.empty:
+        return frame.copy()
+
+    working = frame.copy()
+    working["publication_date"] = pd.to_datetime(working["publication_date"], errors="coerce")
+    if "broad_bloc" not in working.columns:
+        working["broad_bloc"] = working.apply(
+            lambda row: normalize_broad_bloc(row.get("candidate_party"), row.get("political_family")),
+            axis=1,
+        )
+
+    generic_mask = (
+        full_frame["is_generic_bloc"].fillna(False).astype(bool)
+        if "is_generic_bloc" in full_frame.columns
+        else pd.Series(False, index=full_frame.index)
+    )
+    first_round = full_frame.loc[(full_frame["round"] == "first_round") & (~generic_mask)].copy()
+    if first_round.empty:
+        working["coalition_2024_benchmark"] = np.nan
+        working["coalition_2024_snapshot_date"] = pd.NaT
+        working["coalition_2024_corrected_estimate"] = pd.to_numeric(working["estimate_percent"], errors="coerce")
+        return working
+
+    corrected_first_round, _ = apply_first_round_historical_correction(first_round, reference_dir)
+    corrected_first_round["broad_bloc"] = corrected_first_round.apply(
+        lambda row: normalize_broad_bloc(row.get("candidate_party"), row.get("political_family")),
+        axis=1,
+    )
+    corrected_first_round["publication_date"] = pd.to_datetime(corrected_first_round["publication_date"], errors="coerce")
+    bloc_time_series = (
+        corrected_first_round.groupby(["publication_date", "broad_bloc"], dropna=False)
+        .agg(corrected_share=("historically_corrected_estimate", "mean"))
+        .reset_index()
+        .sort_values(["publication_date", "broad_bloc"])
+    )
+    if bloc_time_series.empty:
+        working["coalition_2024_benchmark"] = np.nan
+        working["coalition_2024_snapshot_date"] = pd.NaT
+        working["coalition_2024_corrected_estimate"] = pd.to_numeric(working["estimate_percent"], errors="coerce")
+        return working
+
+    latest_overall = (
+        bloc_time_series.sort_values(["publication_date", "corrected_share"], ascending=[False, False])
+        .groupby("broad_bloc", dropna=False)
+        .head(1)
+    )
+
+    benchmark_rows: list[dict[str, object]] = []
+    group_keys = ["scenario_name", "publication_date"]
+    for (scenario_name, publication_date), scenario_frame in working.groupby(group_keys, dropna=False):
+        scenario_candidates = (
+            scenario_frame[["candidate_name", "candidate_party", "political_family", "broad_bloc"]]
+            .drop_duplicates()
+            .reset_index(drop=True)
+        )
+        if len(scenario_candidates.index) != 2:
+            continue
+
+        snapshot = bloc_time_series.loc[bloc_time_series["publication_date"] <= publication_date].copy()
+        if snapshot.empty:
+            snapshot = latest_overall.copy()
+        else:
+            snapshot = (
+                snapshot.sort_values(["publication_date", "corrected_share"], ascending=[False, False])
+                .groupby("broad_bloc", dropna=False)
+                .head(1)
+            )
+        bloc_shares = snapshot.groupby("broad_bloc", dropna=False)["corrected_share"].sum().to_dict()
+
+        first = scenario_candidates.iloc[0]
+        second = scenario_candidates.iloc[1]
+        first_share, second_share = compute_second_round_coalition_2024_benchmark(
+            str(first["broad_bloc"]),
+            str(second["broad_bloc"]),
+            bloc_shares,
+        )
+        snapshot_date = snapshot["publication_date"].max() if not snapshot.empty else pd.NaT
+        benchmark_rows.extend(
+            [
+                {
+                    "scenario_name": scenario_name,
+                    "publication_date": publication_date,
+                    "candidate_name": first["candidate_name"],
+                    "coalition_2024_benchmark": first_share,
+                    "coalition_2024_snapshot_date": snapshot_date,
+                },
+                {
+                    "scenario_name": scenario_name,
+                    "publication_date": publication_date,
+                    "candidate_name": second["candidate_name"],
+                    "coalition_2024_benchmark": second_share,
+                    "coalition_2024_snapshot_date": snapshot_date,
+                },
+            ]
+        )
+
+    benchmarks = pd.DataFrame(benchmark_rows)
+    if benchmarks.empty:
+        working["coalition_2024_benchmark"] = np.nan
+        working["coalition_2024_snapshot_date"] = pd.NaT
+        working["coalition_2024_corrected_estimate"] = pd.to_numeric(working["estimate_percent"], errors="coerce")
+        return working
+
+    working = working.merge(benchmarks, on=["scenario_name", "publication_date", "candidate_name"], how="left")
+    working["coalition_2024_benchmark"] = pd.to_numeric(working["coalition_2024_benchmark"], errors="coerce")
+    raw_estimate = pd.to_numeric(working["estimate_percent"], errors="coerce")
+    working["coalition_2024_corrected_estimate"] = (
+        0.55 * raw_estimate
+        + 0.45 * working["coalition_2024_benchmark"].fillna(raw_estimate)
+    ).clip(lower=0.0, upper=100.0)
+    return working
 
 
 def apply_second_round_legislative_correction(frame: pd.DataFrame, reference_dir: Path) -> pd.DataFrame:

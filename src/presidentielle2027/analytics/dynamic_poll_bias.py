@@ -8,10 +8,14 @@ import pandas as pd
 
 from presidentielle2027.analytics.historical_corrections import (
     CURRENT_ELECTION_DATE,
+    FIRST_ROUND_2022_BACKGROUND_WEIGHT,
+    FIRST_ROUND_2024_ANCHOR_WEIGHT,
     compute_days_bucket,
+    compute_legislative_2024_poll_bias,
     load_historical_2022_polls,
     load_historical_2022_results,
     load_manual_first_round_biases,
+    normalize_broad_bloc,
     normalize_force_label,
 )
 
@@ -127,6 +131,10 @@ def apply_dynamic_poll_bias_correction(frame: pd.DataFrame, reference_dir: Path)
         lambda row: normalize_force_label(row.get("candidate_party"), row.get("political_family")),
         axis=1,
     )
+    working["broad_bloc"] = working.apply(
+        lambda row: normalize_broad_bloc(row.get("candidate_party"), row.get("political_family")),
+        axis=1,
+    )
     working["publication_date"] = pd.to_datetime(working["publication_date"], errors="coerce")
     working["days_until_election"] = (CURRENT_ELECTION_DATE - working["publication_date"]).dt.days
 
@@ -140,12 +148,30 @@ def apply_dynamic_poll_bias_correction(frame: pd.DataFrame, reference_dir: Path)
         axis=1,
     )
     working["dynamic_model_source"] = predictions.map(lambda item: item[1])
-    working["dynamic_bias_2027"] = predictions.map(lambda item: item[0] if item[0] is not None else 0.0).astype(float)
+    working["dynamic_bias_2027_raw"] = predictions.map(lambda item: item[0] if item[0] is not None else 0.0).astype(float)
+    working["dynamic_bias_2027"] = working["dynamic_bias_2027_raw"]
+
+    legislative_2024_bias = compute_legislative_2024_poll_bias(reference_dir)
+    legislative_bias_map = (
+        legislative_2024_bias.set_index("bloc_label")["poll_bias_2024"].to_dict()
+        if not legislative_2024_bias.empty
+        else {}
+    )
+    working["dynamic_2024_anchor"] = -pd.to_numeric(working["broad_bloc"].map(legislative_bias_map), errors="coerce")
+    has_2024_anchor = working["dynamic_2024_anchor"].notna()
+    working["dynamic_2022_weight"] = np.where(has_2024_anchor, FIRST_ROUND_2022_BACKGROUND_WEIGHT, 1.0)
+    working["dynamic_2024_weight"] = np.where(has_2024_anchor, FIRST_ROUND_2024_ANCHOR_WEIGHT, 0.0)
+    working["dynamic_bias_2027"] = np.where(
+        has_2024_anchor,
+        working["dynamic_bias_2027_raw"] * working["dynamic_2022_weight"] + working["dynamic_2024_anchor"] * working["dynamic_2024_weight"],
+        working["dynamic_bias_2027_raw"],
+    )
+
     manual_biases = load_manual_first_round_biases(reference_dir)
     if not manual_biases.empty:
         manual_map = manual_biases.set_index("force_label")["manual_total_bias"].to_dict()
         manual_values = working["force_label"].map(manual_map)
-        manual_mask = manual_values.notna()
+        manual_mask = manual_values.notna() & (working["dynamic_model_source"] == "unavailable")
         working.loc[manual_mask, "dynamic_bias_2027"] = manual_values.loc[manual_mask].astype(float)
         working.loc[manual_mask, "dynamic_model_source"] = "manual_override"
     working["dynamically_corrected_estimate"] = (

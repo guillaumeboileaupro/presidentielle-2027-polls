@@ -1,3 +1,4 @@
+
 import pandas as pd
 import pytest
 from pathlib import Path
@@ -9,9 +10,12 @@ from presidentielle2027.adjustments.sample_size_weighting import compute_sample_
 from presidentielle2027.analytics.trends import exploratory_extension
 from presidentielle2027.analytics.historical_corrections import (
     apply_first_round_historical_correction,
+    apply_second_round_coalition_2024_correction,
     apply_second_round_legislative_correction,
+    compute_second_round_coalition_2024_benchmark,
     compute_second_round_legislative_benchmark,
     compute_legislative_2024_poll_bias,
+    get_second_round_coalition_2024_transfer_map,
     get_second_round_transfer_map,
     load_legislative_2024_results,
 )
@@ -70,11 +74,11 @@ def test_first_round_historical_correction_exposes_components() -> None:
     assert corrected.loc[0, "historical_correction"] == total
     assert corrected.loc[0, "historically_corrected_estimate"] > corrected.loc[0, "estimate_percent"]
     assert corrected.loc[0, "status"] in {"calculé", "à vérifier", "données insuffisantes"}
-    assert corrected.loc[0, "historical_2022_weight"] == pytest.approx(0.4)
-    assert corrected.loc[0, "legislative_2024_weight"] == pytest.approx(1.0)
+    assert corrected.loc[0, "historical_2022_weight"] == pytest.approx(0.75)
+    assert corrected.loc[0, "legislative_2024_weight"] == pytest.approx(0.5)
 
 
-def test_first_round_historical_correction_neutralizes_manual_override_for_rn() -> None:
+def test_first_round_historical_correction_uses_automatic_bias_for_rn_when_no_manual_override_is_enabled() -> None:
     frame = pd.DataFrame(
         [
             {
@@ -90,14 +94,56 @@ def test_first_round_historical_correction_neutralizes_manual_override_for_rn() 
         ]
     )
     corrected, _ = apply_first_round_historical_correction(frame, Path("data/reference"))
-    assert corrected.loc[0, "structural_bias_component"] == pytest.approx(0.0)
-    assert corrected.loc[0, "temporal_bias_component"] == pytest.approx(0.0)
-    assert corrected.loc[0, "trajectory_bias_component"] == pytest.approx(0.0)
+    assert corrected.loc[0, "structural_bias_component"] != pytest.approx(0.0)
     assert corrected.loc[0, "legislative_2024_bias_component"] == pytest.approx(-5.24, abs=1e-5)
-    assert corrected.loc[0, "historical_correction"] == pytest.approx(-5.24, abs=1e-5)
-    assert corrected.loc[0, "historically_corrected_estimate"] == pytest.approx(28.76, abs=1e-5)
+    assert corrected.loc[0, "historically_corrected_estimate"] != pytest.approx(corrected.loc[0, "estimate_percent"])
     assert corrected.loc[0, "historical_2022_weight"] == pytest.approx(0.4)
     assert corrected.loc[0, "legislative_2024_weight"] == pytest.approx(1.0)
+
+
+def test_first_round_historical_correction_keeps_stronger_2022_weight_for_lfi() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "polling_company": "Ifop",
+                "publication_date": "2026-05-21",
+                "candidate_party": "LFI",
+                "political_family": "left",
+                "estimate_percent": 16.0,
+                "collection_method": "online",
+                "quota_method": "unknown",
+                "sample_size": 1000,
+            }
+        ]
+    )
+    corrected, _ = apply_first_round_historical_correction(frame, Path("data/reference"))
+    assert corrected.loc[0, "historical_2022_weight"] == pytest.approx(0.75)
+    assert corrected.loc[0, "legislative_2024_weight"] == pytest.approx(0.5)
+    assert corrected.loc[0, "historical_correction"] > 8.0
+
+
+def test_dynamic_poll_bias_correction_anchors_rn_with_2024_overestimation_signal() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "round": "first_round",
+                "is_generic_bloc": False,
+                "polling_company": "Ifop",
+                "poll_id": "V2-FR-IFOP-095",
+                "scenario_name": "March 2025 onwards - scenario 1 - Ifop",
+                "candidate_name": "Jordan Bardella",
+                "candidate_party": "RN",
+                "political_family": "far_right",
+                "estimate_percent": 34.0,
+                "publication_date": "2026-05-29",
+            }
+        ]
+    )
+    corrected, _ = apply_dynamic_poll_bias_correction(frame, Path("data/reference"))
+    assert corrected.loc[0, "dynamic_bias_2027_raw"] > 0.0
+    assert corrected.loc[0, "dynamic_2024_anchor"] < 0.0
+    assert corrected.loc[0, "dynamic_bias_2027"] < 0.0
+    assert corrected.loc[0, "dynamically_corrected_estimate"] < corrected.loc[0, "estimate_percent"]
 
 
 def test_second_round_legislative_benchmark_uses_2024_bloc_labels() -> None:
@@ -112,6 +158,22 @@ def test_second_round_transfer_map_strengthens_centre_to_left_against_far_right(
     transfer_map = get_second_round_transfer_map("centre", "gauche", "extrême_droite")
     assert transfer_map["gauche"] == pytest.approx(0.82)
     assert transfer_map["extrême_droite"] == pytest.approx(0.03)
+
+
+def test_second_round_coalition_2024_transfer_map_keeps_front_republicain_bias() -> None:
+    transfer_map = get_second_round_coalition_2024_transfer_map("centre", "gauche", "extrême_droite")
+    assert transfer_map["gauche"] > transfer_map["extrême_droite"]
+    assert transfer_map["gauche"] >= 0.35
+
+
+def test_second_round_coalition_2024_benchmark_favors_non_far_right_bloc_when_front_is_active() -> None:
+    left, far_right = compute_second_round_coalition_2024_benchmark(
+        "gauche",
+        "extrême_droite",
+        {"gauche": 31.0, "centre": 23.0, "droite": 10.0, "extrême_droite": 34.0, "autres": 2.0},
+    )
+    assert round(left + far_right, 5) == 100.0
+    assert left > far_right
 
 
 def test_compute_legislative_2024_poll_bias_uses_national_wiki_table() -> None:
@@ -146,6 +208,94 @@ def test_second_round_legislative_correction_penalizes_far_right_with_manual_sea
     corrected = apply_second_round_legislative_correction(frame, Path("data/reference"))
     rn_row = corrected.loc[corrected["candidate_party"] == "RN"].iloc[0]
     assert rn_row["legislatively_corrected_estimate"] < rn_row["estimate_percent"]
+
+
+def test_second_round_coalition_2024_correction_adds_experimental_estimate() -> None:
+    full_frame = pd.DataFrame(
+        [
+            {
+                "round": "first_round",
+                "is_generic_bloc": False,
+                "polling_company": "Ifop",
+                "publication_date": "2026-05-10",
+                "candidate_name": "Jean-Luc Mélenchon",
+                "candidate_party": "LFI",
+                "political_family": "left",
+                "estimate_percent": 28.0,
+                "collection_method": "online",
+                "quota_method": "unknown",
+                "sample_size": 1000,
+            },
+            {
+                "round": "first_round",
+                "is_generic_bloc": False,
+                "polling_company": "Ifop",
+                "publication_date": "2026-05-10",
+                "candidate_name": "Gabriel Attal",
+                "candidate_party": "ENS",
+                "political_family": "centre",
+                "estimate_percent": 22.0,
+                "collection_method": "online",
+                "quota_method": "unknown",
+                "sample_size": 1000,
+            },
+            {
+                "round": "first_round",
+                "is_generic_bloc": False,
+                "polling_company": "Ifop",
+                "publication_date": "2026-05-10",
+                "candidate_name": "Bruno Retailleau",
+                "candidate_party": "LR",
+                "political_family": "right",
+                "estimate_percent": 10.0,
+                "collection_method": "online",
+                "quota_method": "unknown",
+                "sample_size": 1000,
+            },
+            {
+                "round": "first_round",
+                "is_generic_bloc": False,
+                "polling_company": "Ifop",
+                "publication_date": "2026-05-10",
+                "candidate_name": "Jordan Bardella",
+                "candidate_party": "RN",
+                "political_family": "far_right",
+                "estimate_percent": 36.0,
+                "collection_method": "online",
+                "quota_method": "unknown",
+                "sample_size": 1000,
+            },
+        ]
+    )
+    second_round = pd.DataFrame(
+        [
+            {
+                "scenario_name": "Test duel",
+                "publication_date": "2026-05-21",
+                "candidate_name": "Jordan Bardella",
+                "candidate_party": "RN",
+                "political_family": "far_right",
+                "estimate_percent": 50.0,
+            },
+            {
+                "scenario_name": "Test duel",
+                "publication_date": "2026-05-21",
+                "candidate_name": "Jean-Luc Mélenchon",
+                "candidate_party": "LFI",
+                "political_family": "left",
+                "estimate_percent": 50.0,
+            },
+        ]
+    )
+
+    corrected = apply_second_round_coalition_2024_correction(second_round, full_frame, Path("data/reference"))
+    rn_row = corrected.loc[corrected["candidate_party"] == "RN"].iloc[0]
+    left_row = corrected.loc[corrected["candidate_party"] == "LFI"].iloc[0]
+
+    assert "coalition_2024_benchmark" in corrected.columns
+    assert "coalition_2024_corrected_estimate" in corrected.columns
+    assert rn_row["coalition_2024_corrected_estimate"] < rn_row["estimate_percent"]
+    assert left_row["coalition_2024_corrected_estimate"] > left_row["estimate_percent"]
 
 
 def test_exploratory_extension_falls_back_to_last_five_polls_when_recent_window_is_sparse() -> None:
@@ -305,11 +455,11 @@ def test_dynamic_poll_bias_correction_targets_all_rows_with_model_fallbacks() ->
     assert rn_row["dynamic_model_source"] in {"pollster_force", "force_only", "pollster_only", "global", "manual_override"}
     assert non_ifop_row["dynamic_model_source"] in {"pollster_force", "force_only", "pollster_only", "global", "manual_override"}
     assert lfi_row["dynamically_corrected_estimate"] != pytest.approx(12.0)
-    assert rn_row["dynamically_corrected_estimate"] == pytest.approx(36.0)
+    assert rn_row["dynamically_corrected_estimate"] != pytest.approx(36.0)
     assert bool(non_ifop_row["dynamic_correction_applied"]) is True
 
 
-def test_dynamic_poll_bias_correction_applies_manual_override_for_rn() -> None:
+def test_dynamic_poll_bias_correction_uses_model_for_rn_when_no_manual_override_is_enabled() -> None:
     frame = pd.DataFrame(
         [
             {
@@ -327,6 +477,27 @@ def test_dynamic_poll_bias_correction_applies_manual_override_for_rn() -> None:
 
     corrected, _ = apply_dynamic_poll_bias_correction(frame, Path("data/reference"))
     rn_row = corrected.iloc[0]
-    assert rn_row["dynamic_model_source"] == "manual_override"
-    assert rn_row["dynamic_bias_2027"] == pytest.approx(0.0)
-    assert rn_row["dynamically_corrected_estimate"] == pytest.approx(rn_row["estimate_percent"])
+    assert rn_row["dynamic_model_source"] != "manual_override"
+    assert bool(rn_row["dynamic_correction_applied"]) is True
+
+
+def test_dynamic_poll_bias_correction_does_not_flatten_lfi_to_manual_12_when_model_exists() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "poll_id": "ifop-lfi",
+                "polling_company": "Ifop",
+                "round": "first_round",
+                "candidate_name": "Jean-Luc Mélenchon",
+                "candidate_party": "LFI",
+                "estimate_percent": 12.0,
+                "publication_date": "2026-05-29",
+                "political_family": "left",
+            }
+        ]
+    )
+
+    corrected, _ = apply_dynamic_poll_bias_correction(frame, Path("data/reference"))
+    lfi_row = corrected.iloc[0]
+    assert lfi_row["dynamic_model_source"] != "manual_override"
+    assert lfi_row["dynamic_bias_2027"] != pytest.approx(12.0)
