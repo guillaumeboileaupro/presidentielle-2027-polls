@@ -43,7 +43,6 @@ CANDIDATE_SPECS = [
     ("Zemmour — REC", "REC", ("zemmour",), "solid"),
 ]
 
-
 SCREENSHOT_COLORS = {
     "PCF": "#d00000",
     "LFI": "#d7193f",
@@ -219,14 +218,6 @@ def _load_2022_party_history() -> pd.DataFrame:
 
 
 def _render_party_chart(working: pd.DataFrame) -> None:
-    st.markdown("### Intentions de vote par parti politique")
-    selected_parties = st.multiselect(
-        "Partis affichés",
-        DEFAULT_PARTIES,
-        default=DEFAULT_PARTIES,
-        key="wikipedia_2027_default_parties",
-    )
-
     current = working.copy()
     current["display_party"] = current["candidate_party"].map(_party_group)
     historical = _load_2022_party_history()
@@ -237,7 +228,7 @@ def _render_party_chart(working: pd.DataFrame) -> None:
     else:
         party_frame = current
 
-    party_frame = party_frame.loc[party_frame["display_party"].isin(selected_parties)].copy()
+    party_frame = party_frame.loc[party_frame["display_party"].isin(DEFAULT_PARTIES)].copy()
     party_frame = (
         party_frame.groupby(
             ["poll_id", "scenario_name", "publication_date", "display_party"],
@@ -251,7 +242,7 @@ def _render_party_chart(working: pd.DataFrame) -> None:
     )
 
     figure = _screenshot_figure(x_start="2022-04-01", x_end="2027-07-01")
-    for party in selected_parties:
+    for party in DEFAULT_PARTIES:
         _add_series(
             figure,
             party_frame.loc[party_frame["display_party"] == party],
@@ -259,25 +250,25 @@ def _render_party_chart(working: pd.DataFrame) -> None:
             party=party,
             color=SCREENSHOT_COLORS[party],
         )
-    st.plotly_chart(figure, width="stretch", config={"displayModeBar": False, "responsive": True})
+    st.plotly_chart(
+        figure,
+        width="stretch",
+        key="wikipedia_2027_party_trace_chart",
+        config={"displayModeBar": False, "responsive": True},
+    )
 
 
 def _render_candidate_chart(working: pd.DataFrame) -> None:
-    st.markdown("### Intentions de vote par candidat")
-    labels = [spec[0] for spec in CANDIDATE_SPECS]
-    selected_candidates = st.multiselect(
-        "Candidats affichés",
-        labels,
-        default=labels,
-        key="wikipedia_2027_default_candidates",
-    )
     figure = _screenshot_figure(x_start="2026-02-01", x_end="2027-05-01")
     for label, party, aliases, dash in CANDIDATE_SPECS:
-        if label not in selected_candidates:
-            continue
         current = working.loc[_candidate_mask(working, aliases)].copy()
         _add_series(figure, current, label=label, party=party, dash=dash)
-    st.plotly_chart(figure, width="stretch", config={"displayModeBar": False, "responsive": True})
+    st.plotly_chart(
+        figure,
+        width="stretch",
+        key="wikipedia_2027_candidate_trace_chart",
+        config={"displayModeBar": False, "responsive": True},
+    )
 
 
 def _render_latest_values_table(working: pd.DataFrame) -> None:
@@ -313,10 +304,6 @@ def render_wikipedia_2027_page(frame: pd.DataFrame) -> None:
         st.info("Aucune donnée Wikipédia 2027 exploitable.")
         return
 
-    st.caption(
-        "Données Wikipédia rafraîchies au démarrage. Les deux graphiques reprennent la structure visuelle "
-        "des références fournies : points de sondage, courbes lissées, fond gris et légende à droite."
-    )
     _render_party_chart(working)
     _render_candidate_chart(working)
     _render_latest_values_table(working)
