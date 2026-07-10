@@ -131,7 +131,7 @@ def train_model(
 
 @app.command("run-dashboard")
 def run_dashboard() -> None:
-    dashboard_path = Path(__file__).parent / "dashboard" / "app.py"
+    dashboard_path = Path(__file__).parent / "dashboard" / "live_app.py"
     run(
         str(dashboard_path),
         False,
