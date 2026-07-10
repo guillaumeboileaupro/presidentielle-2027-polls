@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from datetime import date
 import re
 from pathlib import Path
+from typing import Iterable
 
 from openpyxl import load_workbook
 import pandas as pd
@@ -24,7 +26,7 @@ def load_workbook_sheets(workbook_path: Path) -> dict[str, pd.DataFrame]:
     return sheets
 
 
-def _parse_fieldwork_dates(value: str) -> tuple[str | None, str | None]:
+def _parse_fieldwork_dates(value: str, fallback_year: int | None = None) -> tuple[str | None, str | None]:
     if not isinstance(value, str) or not value.strip():
         return None, None
     normalized_value = value.replace("–", "-").replace("—", "-").strip()
@@ -42,20 +44,25 @@ def _parse_fieldwork_dates(value: str) -> tuple[str | None, str | None]:
         "novembre": 11, "november": 11, "nov": 11,
         "decembre": 12, "décembre": 12, "december": 12, "dec": 12,
     }
-    match = re.search(r"(\d{1,2})-(\d{1,2})\s+([A-Za-zéûôîàç]+)\s+(\d{4})", normalized_value, flags=re.IGNORECASE)
+    year_match = re.search(r"(20\d{2})", normalized_value)
+    inferred_year = int(year_match.group(1)) if year_match else fallback_year
+
+    match = re.search(r"(\d{1,2})-(\d{1,2})\s+([A-Za-zéûôîàç]+)(?:\s+(20\d{2}))?", normalized_value, flags=re.IGNORECASE)
     if match:
         start_day, end_day, month_name, year = match.groups()
         month = month_map.get(month_name.lower())
-        if month is not None:
-            start = pd.Timestamp(year=int(year), month=month, day=int(start_day)).date().isoformat()
-            end = pd.Timestamp(year=int(year), month=month, day=int(end_day)).date().isoformat()
+        resolved_year = int(year) if year is not None else inferred_year
+        if month is not None and resolved_year is not None:
+            start = pd.Timestamp(year=int(resolved_year), month=month, day=int(start_day)).date().isoformat()
+            end = pd.Timestamp(year=int(resolved_year), month=month, day=int(end_day)).date().isoformat()
             return start, end
-    match = re.search(r"(\d{1,2})\s+([A-Za-zéûôîàç]+)\s+(\d{4})", normalized_value, flags=re.IGNORECASE)
+    match = re.search(r"(\d{1,2})\s+([A-Za-zéûôîàç]+)(?:\s+(20\d{2}))?", normalized_value, flags=re.IGNORECASE)
     if match:
         day, month_name, year = match.groups()
         month = month_map.get(month_name.lower())
-        if month is not None:
-            iso = pd.Timestamp(year=int(year), month=month, day=int(day)).date().isoformat()
+        resolved_year = int(year) if year is not None else inferred_year
+        if month is not None and resolved_year is not None:
+            iso = pd.Timestamp(year=int(resolved_year), month=month, day=int(day)).date().isoformat()
             return iso, iso
     parsed = pd.to_datetime(normalized_value, errors="coerce", dayfirst=True)
     if pd.notna(parsed):
@@ -71,6 +78,13 @@ def _extract_publication_date_from_poll_id(poll_id: str) -> str | None:
         return None
     year, month, day = match.groups()
     return f"{year}-{month}-{day}"
+
+
+def _publication_year_from_poll_id(poll_id: object) -> int | None:
+    publication_date = _extract_publication_date_from_poll_id(str(poll_id or ""))
+    if not publication_date:
+        return None
+    return int(publication_date[:4])
 
 
 def _normalize_company_name(name: str) -> str:
@@ -136,6 +150,281 @@ def _clean_candidate_name(name: str) -> str:
         .replace("É", "E")
         .strip()
     )
+
+
+def _strip_wikipedia_annotations(text: object) -> str:
+    return re.sub(r"\[[^\]]+\]", "", str(text or "")).strip()
+
+
+def _extract_candidate_and_party_from_label(label: str, header_hint: str | None = None) -> tuple[str, str | None, str | None]:
+    cleaned = _clean_candidate_name(_strip_wikipedia_annotations(label))
+    party_hint = None
+    match = re.match(r"^(.*?)\s*\(([^)]+)\)$", cleaned)
+    if match:
+        cleaned = match.group(1).strip()
+        party_hint = match.group(2).strip()
+    if header_hint:
+        header_hint = header_hint.strip()
+        if header_hint.startswith("Candidat "):
+            party_hint = header_hint.replace("Candidat ", "").strip()
+    candidate_name, candidate_party, political_family = canonicalize_candidate_fields(cleaned, party_hint, None)
+    return candidate_name, candidate_party, political_family
+
+
+def _parse_raw_poll_percent(value: object) -> float | None:
+    text = str(value or "").replace("\xa0", " ").strip()
+    if not text or text in {"—", "-", "nan", "NaN"}:
+        return None
+    match = re.search(r"(\d+(?:[.,]\d+)?)", text)
+    if not match:
+        return None
+    try:
+        return float(match.group(1).replace(",", "."))
+    except ValueError:
+        return None
+
+def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame.copy()
+    corrected = frame.copy()
+    numeric = pd.to_numeric(corrected["estimate_percent"], errors="coerce")
+    corrected.loc[numeric.notna(), "estimate_percent"] = numeric.loc[numeric.notna()]
+    scenario_columns = ["poll_id", "round", "scenario_name"]
+    for _, indexes in corrected.groupby(scenario_columns, dropna=False).groups.items():
+        indexes = list(indexes)
+        values = pd.to_numeric(corrected.loc[indexes, "estimate_percent"], errors="coerce")
+        total = values.sum(min_count=1)
+        scale = 1.0
+        if pd.notna(total):
+            while total / scale > 110.0:
+                scale *= 10.0
+        if scale > 1.0:
+            corrected.loc[indexes, "estimate_percent"] = values / scale
+    return corrected
+
+
+def _row_looks_like_poll(pollster: object, date_text: object, sample_size: object) -> bool:
+    if _parse_sample_size(sample_size) is None:
+        return False
+    pollster_text = str(pollster or "").strip()
+    date_label = str(date_text or "").strip()
+    if not pollster_text or not date_label:
+        return False
+    if len(pollster_text) > 40 and " " in pollster_text:
+        return False
+    return True
+
+
+def _latest_wikipedia_fr_2027_table_files(raw_dir: Path) -> list[Path]:
+    pattern = re.compile(r"wikipedia-fr-2027-polls-(\d{8}T\d{6}Z)-table-(\d+)\.csv$")
+    grouped: dict[str, list[Path]] = {}
+    for path in raw_dir.glob("wikipedia-fr-2027-polls-*-table-*.csv"):
+        match = pattern.match(path.name)
+        if not match:
+            continue
+        grouped.setdefault(match.group(1), []).append(path)
+    if not grouped:
+        return []
+    latest_key = sorted(grouped.keys())[-1]
+    return sorted(grouped[latest_key], key=lambda path: int(pattern.match(path.name).group(2)))
+
+
+def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int) -> pd.DataFrame:
+    frame = pd.read_csv(table_path, header=None, dtype=str, keep_default_na=False)
+    if frame.shape[1] < 10 or str(frame.iat[0, 0]).strip() != "Sondeur":
+        return pd.DataFrame()
+    candidate_headers = [_strip_wikipedia_annotations(value) for value in frame.iloc[1, 3:].tolist()]
+    rows: list[dict[str, object]] = []
+    scenario_counters: dict[tuple[str, str], int] = {}
+    table_match = re.search(r"table-(\d+)\.csv$", table_path.name)
+    table_index = table_match.group(1) if table_match else "00"
+    for row_index in range(4, len(frame)):
+        pollster = frame.iat[row_index, 0]
+        date_text = frame.iat[row_index, 1]
+        sample_size = frame.iat[row_index, 2]
+        if not _row_looks_like_poll(pollster, date_text, sample_size):
+            continue
+        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(date_text), fallback_year=fallback_year)
+        if fieldwork_start_date is None and fieldwork_end_date is None:
+            continue
+        pollster_label = _normalize_company_name(str(pollster))
+        key = (pollster_label, str(date_text))
+        scenario_counters[key] = scenario_counters.get(key, 0) + 1
+        scenario_index = scenario_counters[key]
+        scenario_name = f"{pollster_label} · {date_text} · scénario {scenario_index}"
+        poll_id = f"RAW-FR-{pollster_label.upper().replace(' ', '-')}-{table_index}-{row_index:03d}"
+
+        for column_index, header_label in enumerate(candidate_headers, start=3):
+            cell_text = str(frame.iat[row_index, column_index] or "").strip()
+            estimate = _parse_raw_poll_percent(cell_text)
+            if estimate is None:
+                continue
+            generic_header = header_label.startswith("Candidat ") or header_label in {"Autre", "Autres"}
+            candidate_fragment = re.sub(r"^\s*\d+(?:[.,]\d+)?\s*", "", _strip_wikipedia_annotations(cell_text)).strip()
+            candidate_label = candidate_fragment if generic_header and candidate_fragment and candidate_fragment not in {"—", "-"} else header_label
+            candidate_name, candidate_party, political_family = _extract_candidate_and_party_from_label(candidate_label, header_label if generic_header else None)
+            rows.append(
+                {
+                    "poll_id": poll_id,
+                    "source_url": "https://fr.wikipedia.org/wiki/Liste_de_sondages_sur_l%27%C3%A9lection_pr%C3%A9sidentielle_fran%C3%A7aise_de_2027",
+                    "source_name": "wikipedia_fr_raw_tables",
+                    "polling_company": pollster_label,
+                    "commissioner": None,
+                    "media_partner": None,
+                    "fieldwork_start_date": fieldwork_start_date,
+                    "fieldwork_end_date": fieldwork_end_date,
+                    "publication_date": fieldwork_end_date or fieldwork_start_date,
+                    "sample_size": _parse_sample_size(sample_size),
+                    "population": "unknown",
+                    "collection_method": "unknown",
+                    "quota_method": "unknown",
+                    "round": "first_round",
+                    "scenario_name": scenario_name,
+                    "candidate_name": candidate_name,
+                    "candidate_party": candidate_party,
+                    "political_family": political_family,
+                    "estimate_percent": estimate,
+                    "lower_bound_percent": None,
+                    "upper_bound_percent": None,
+                    "margin_of_error": None,
+                    "undecided_percent": None,
+                    "abstention_estimate": None,
+                    "registered_voters_basis": None,
+                    "raw_text_context": cell_text,
+                    "extraction_confidence": 0.55,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def _parse_second_round_raw_wikipedia_table(table_path: Path, fallback_year: int) -> pd.DataFrame:
+    frame = pd.read_csv(table_path, header=None, dtype=str, keep_default_na=False)
+    if frame.shape[1] != 5 or str(frame.iat[0, 0]).strip() != "Sondeur":
+        return pd.DataFrame()
+    candidate_headers = [_strip_wikipedia_annotations(value) for value in frame.iloc[0, 3:5].tolist()]
+    if any(str(header).startswith("Unnamed:") for header in candidate_headers):
+        return pd.DataFrame()
+    rows: list[dict[str, object]] = []
+    table_match = re.search(r"table-(\d+)\.csv$", table_path.name)
+    table_index = table_match.group(1) if table_match else "00"
+    for row_index in range(3, len(frame)):
+        pollster = frame.iat[row_index, 0]
+        date_text = frame.iat[row_index, 1]
+        sample_size = frame.iat[row_index, 2]
+        if not _row_looks_like_poll(pollster, date_text, sample_size):
+            continue
+        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(date_text), fallback_year=fallback_year)
+        if fieldwork_start_date is None and fieldwork_end_date is None:
+            continue
+        pollster_label = _normalize_company_name(str(pollster))
+        scenario_name = f"{candidate_headers[0]} / {candidate_headers[1]}"
+        poll_id = f"RAW-SR-{pollster_label.upper().replace(' ', '-')}-{table_index}-{row_index:03d}"
+        for offset, candidate_label in enumerate(candidate_headers, start=3):
+            estimate = _parse_raw_poll_percent(frame.iat[row_index, offset])
+            if estimate is None:
+                continue
+            candidate_name, candidate_party, political_family = _extract_candidate_and_party_from_label(candidate_label)
+            rows.append(
+                {
+                    "poll_id": poll_id,
+                    "source_url": "https://fr.wikipedia.org/wiki/Liste_de_sondages_sur_l%27%C3%A9lection_pr%C3%A9sidentielle_fran%C3%A7aise_de_2027",
+                    "source_name": "wikipedia_fr_raw_tables",
+                    "polling_company": pollster_label,
+                    "commissioner": None,
+                    "media_partner": None,
+                    "fieldwork_start_date": fieldwork_start_date,
+                    "fieldwork_end_date": fieldwork_end_date,
+                    "publication_date": fieldwork_end_date or fieldwork_start_date,
+                    "sample_size": _parse_sample_size(sample_size),
+                    "population": "unknown",
+                    "collection_method": "unknown",
+                    "quota_method": "unknown",
+                    "round": "second_round",
+                    "scenario_name": scenario_name,
+                    "candidate_name": candidate_name,
+                    "candidate_party": candidate_party,
+                    "political_family": political_family,
+                    "estimate_percent": estimate,
+                    "lower_bound_percent": None,
+                    "upper_bound_percent": None,
+                    "margin_of_error": None,
+                    "undecided_percent": None,
+                    "abstention_estimate": None,
+                    "registered_voters_basis": None,
+                    "raw_text_context": str(frame.iat[row_index, offset]),
+                    "extraction_confidence": 0.65,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def raw_wikipedia_2027_tables_to_normalized_dataframe(raw_dir: Path) -> pd.DataFrame:
+    table_files = _latest_wikipedia_fr_2027_table_files(raw_dir)
+    if not table_files:
+        return pd.DataFrame()
+    timestamp_match = re.search(r"wikipedia-fr-2027-polls-(\d{4})", table_files[0].name)
+    fallback_year = int(timestamp_match.group(1)) if timestamp_match else None
+    frames: list[pd.DataFrame] = []
+    for table_path in table_files:
+        parsed_first_round = _parse_first_round_raw_wikipedia_table(table_path, fallback_year or 2026)
+        if not parsed_first_round.empty:
+            frames.append(parsed_first_round)
+            continue
+        parsed_second_round = _parse_second_round_raw_wikipedia_table(table_path, fallback_year or 2026)
+        if not parsed_second_round.empty:
+            frames.append(parsed_second_round)
+    if not frames:
+        return pd.DataFrame()
+    normalized = pd.concat(frames, ignore_index=True)
+    normalized = _correct_poll_units_by_scenario(normalized)
+    normalized = _rewrite_first_round_scenario_names(normalized)
+    publication_dates = pd.to_datetime(normalized["publication_date"], errors="coerce")
+    normalized = normalized.loc[publication_dates.notna()].copy()
+    normalized["_publication_date"] = publication_dates.loc[normalized.index]
+    normalized = normalized.loc[normalized["_publication_date"].dt.date <= date.today()].copy()
+    normalized = normalized.drop(columns="_publication_date")
+    normalized = normalized.drop_duplicates(
+        subset=[
+            "round",
+            "polling_company",
+            "fieldwork_start_date",
+            "fieldwork_end_date",
+            "scenario_name",
+            "candidate_name",
+            "estimate_percent",
+        ],
+        keep="last",
+    )
+    ordered_columns = [
+        "poll_id",
+        "source_url",
+        "source_name",
+        "polling_company",
+        "commissioner",
+        "media_partner",
+        "fieldwork_start_date",
+        "fieldwork_end_date",
+        "publication_date",
+        "sample_size",
+        "population",
+        "collection_method",
+        "quota_method",
+        "round",
+        "scenario_name",
+        "candidate_name",
+        "candidate_party",
+        "political_family",
+        "estimate_percent",
+        "lower_bound_percent",
+        "upper_bound_percent",
+        "margin_of_error",
+        "undecided_percent",
+        "abstention_estimate",
+        "registered_voters_basis",
+        "raw_text_context",
+        "extraction_confidence",
+    ]
+    return normalized.reindex(columns=ordered_columns)
 
 
 def _candidate_order_from_sheet(frame: pd.DataFrame) -> list[str]:
@@ -229,8 +518,11 @@ def parse_first_round_sheet(frame: pd.DataFrame) -> pd.DataFrame:
         scenario_match = re.search(r"Scenario\s+([^:]+):", raw_summary, flags=re.IGNORECASE)
         scenario_name = scenario_match.group(1).strip() if scenario_match else f"Scenario {record.get('poll_id')}"
         after_colon = raw_summary.split(":", 1)[1] if ":" in raw_summary else raw_summary
-        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(record.get("fieldwork_dates") or ""))
         publication_date = _extract_publication_date_from_poll_id(str(record.get("poll_id") or ""))
+        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(
+            str(record.get("fieldwork_dates") or ""),
+            fallback_year=_publication_year_from_poll_id(record.get("poll_id")),
+        )
 
         for chunk in after_colon.split(";"):
             piece = chunk.strip()
@@ -278,8 +570,11 @@ def parse_first_round_sheet(frame: pd.DataFrame) -> pd.DataFrame:
 def parse_second_round_sheet(frame: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     for record in frame.to_dict(orient="records"):
-        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(record.get("fieldwork_dates") or ""))
         publication_date = _extract_publication_date_from_poll_id(str(record.get("poll_id") or ""))
+        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(
+            str(record.get("fieldwork_dates") or ""),
+            fallback_year=_publication_year_from_poll_id(record.get("poll_id")),
+        )
         scenario_name = str(record.get("hypothesis") or f"Second round {record.get('poll_id')}")
         candidates = [
             (record.get("candidate_a"), record.get("candidate_a_percent")),
@@ -324,7 +619,10 @@ def parse_second_round_sheet(frame: pd.DataFrame) -> pd.DataFrame:
 def parse_second_round_structured_sheet(frame: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     for index, record in enumerate(frame.to_dict(orient="records"), start=1):
-        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(record.get("fieldwork") or ""))
+        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(
+            str(record.get("fieldwork") or ""),
+            fallback_year=_publication_year_from_poll_id(record.get("poll_id")),
+        )
         scenario_name = str(record.get("scenario") or f"second_round_{index}")
         poll_id = f"V2-SR-{_normalize_company_name(str(record.get('pollster') or 'unknown')).upper().replace(' ', '-')}-{index:03d}"
         for prefix in ("a", "b"):
@@ -378,7 +676,10 @@ def parse_first_round_raw_vectors_sheet(
         section = str(record.get("source_section") or "first_round")
         order = candidate_order_2025plus if "2025" in section or "March 2025 onwards" in section else candidate_order_until_2025
         tokens = _tokenize_score_vector(str(record.get("scores_raw_vector") or ""))
-        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(record.get("fieldwork") or ""))
+        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(
+            str(record.get("fieldwork") or ""),
+            fallback_year=_publication_year_from_poll_id(record.get("poll_id")),
+        )
         poll_id = f"V2-FR-{_normalize_company_name(str(record.get('pollster') or 'unknown')).upper().replace(' ', '-')}-{index:03d}"
         scenario_name = _scenario_name_from_v2_row(section, str(record.get("pollster") or ""), record.get("scenario_index"))
         for candidate_name, token in zip(order, tokens):
@@ -436,7 +737,10 @@ def parse_scenario_polling_raw_sheet(frame: pd.DataFrame) -> pd.DataFrame:
         else:
             order = []
         tokens = _tokenize_score_vector(str(record.get("scores_raw_vector") or ""))
-        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(record.get("fieldwork") or ""))
+        fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(
+            str(record.get("fieldwork") or ""),
+            fallback_year=_publication_year_from_poll_id(record.get("poll_id")),
+        )
         poll_id = f"V2-SP-{_normalize_company_name(str(record.get('pollster') or 'unknown')).upper().replace(' ', '-')}-{index:03d}"
         scenario_name = _scenario_name_from_v2_row(str(record.get("section") or "scenario"), str(record.get("pollster") or ""), record.get("scenario_index"))
         for candidate_name, token in zip(order, tokens):
@@ -506,6 +810,7 @@ def workbook_to_normalized_dataframe(workbook_path: Path) -> pd.DataFrame:
     if not frames:
         return pd.DataFrame()
     normalized = pd.concat(frames, ignore_index=True)
+    normalized = _correct_poll_units_by_scenario(normalized)
     normalized = _rewrite_first_round_scenario_names(normalized)
     ordered_columns = [
         "poll_id",
