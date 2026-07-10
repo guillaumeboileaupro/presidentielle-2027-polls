@@ -6,6 +6,7 @@ import streamlit as st
 
 from presidentielle2027.config import get_settings
 from presidentielle2027.dashboard import app as dashboard_app
+from presidentielle2027.dashboard.data_quality import repair_scaled_first_round_scenarios
 from presidentielle2027.dashboard.party_assets import render_app_header
 from presidentielle2027.dashboard.styles import apply_browser_chrome_overrides, apply_dashboard_styles
 from presidentielle2027.dashboard.views.wikipedia_2027 import render_wikipedia_2027_page
@@ -63,7 +64,9 @@ def main() -> None:
     st.markdown(render_app_header(), unsafe_allow_html=True)
     st.caption(refresh_status)
 
-    frame = dashboard_app.prepare_dashboard_frame(dashboard_app.load_dashboard_data())
+    raw_frame = dashboard_app.load_dashboard_data()
+    repaired_frame = repair_scaled_first_round_scenarios(raw_frame)
+    frame = dashboard_app.prepare_dashboard_frame(repaired_frame)
     if frame.empty:
         st.warning("Aucune donnée disponible.")
         return
