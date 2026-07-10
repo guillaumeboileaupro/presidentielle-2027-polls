@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+import re
+import warnings
 
 import pandas as pd
 import streamlit as st
@@ -13,6 +15,7 @@ from presidentielle2027.config import get_settings
 from presidentielle2027.db.session import get_engine
 from presidentielle2027.dashboard.views.analysis_2022 import render_analysis_2022_comparison_page, render_analysis_2022_page
 from presidentielle2027.dashboard.views.analysis_2024 import render_analysis_2024_page
+from presidentielle2027.dashboard.views.analysis_2024_projection_logic import render_analysis_2024_projection_logic_page
 from presidentielle2027.dashboard.views.biases import render_biases_page
 from presidentielle2027.dashboard.views.corrected_dataset import render_corrected_dataset_page
 from presidentielle2027.dashboard.views.error_bars_raw import render_error_bars_raw_page
@@ -24,6 +27,15 @@ from presidentielle2027.dashboard.views.sources_metadata import render_sources_m
 from presidentielle2027.dashboard.party_assets import render_app_header
 from presidentielle2027.dashboard.styles import apply_browser_chrome_overrides, apply_dashboard_styles
 from presidentielle2027.extraction.canonicalization import canonicalize_candidate_fields, is_generic_bloc_label
+from presidentielle2027.extraction.excel_parser import raw_wikipedia_2027_tables_to_normalized_dataframe
+
+
+warnings.filterwarnings(
+    "ignore",
+    message="remove second argument of ws_handler",
+    category=DeprecationWarning,
+    module="websockets\\.legacy\\.server",
+)
 
 
 PAGE_CONFIG = [
@@ -110,16 +122,32 @@ Ici, les dernières mesures disponibles sont confrontées au résultat réelleme
 """,
     },
     {
-        "label": "Analyse législatives 2024",
+        "label": "Législatives 2024 - sondages et blocs",
         "renderer": lambda _frame: render_analysis_2024_page(),
         "help": """
-### Législatives 2024
+### Législatives 2024 - sondages et blocs
 
-Cette vue traite 2024 comme une boussole récente sur les écarts entre sondages, blocs et sièges.
+Cette vue reste centrée sur les sondages nationaux 2024, les blocs et les sièges.
 
 - les violons montrent la dispersion des mesures dans le temps ;
 - les graphiques sièges vs résultat servent à visualiser les erreurs d'atterrissage ;
 - l'objectif est d'ancrer les corrections dans un précédent plus proche de 2027 que 2022.
+
+Cette page n'est pas la page d'analyse détaillée circonscription par circonscription.
+""",
+    },
+    {
+        "label": "Législatives 2024 - circonscriptions et logique 2027",
+        "renderer": lambda frame: render_analysis_2024_projection_logic_page(frame),
+        "help": """
+### Législatives 2024 - circonscriptions et logique 2027
+
+Cette vue est la page d'analyse détaillée par circonscription et par force politique.
+
+- premier tour relu circonscription par circonscription ;
+- qualifiés, maintiens et désistements au second tour ;
+- lecture par force politique, y compris à l'intérieur du NFP ;
+- base de travail pour la logique de projection 2027.
 """,
     },
     {
@@ -177,22 +205,61 @@ Cette vue teste des hypothèses alternatives plutôt qu'un scénario central uni
 ]
 
 
+def _page_slug(label: str) -> str:
+    slug = label.lower()
+    slug = slug.replace("é", "e").replace("è", "e").replace("ê", "e").replace("à", "a").replace("ù", "u").replace("ô", "o")
+    slug = re.sub(r"[^a-z0-9]+", "-", slug).strip("-")
+    return slug or "page"
+
+
 @st.cache_data(show_spinner=False)
 def load_dashboard_data() -> pd.DataFrame:
-    normalized_v2_path = get_settings().processed_dir / "wikipedia_2027_polls_normalized_v2.csv"
-    normalized_path = get_settings().processed_dir / "wikipedia_2027_polls_normalized.csv"
-    sample_path = get_settings().processed_dir / "sample_polls.csv"
+    settings = get_settings()
+    normalized_v2_path = settings.processed_dir / "wikipedia_2027_polls_normalized_v2.csv"
+    normalized_path = settings.processed_dir / "wikipedia_2027_polls_normalized.csv"
+    sample_path = settings.processed_dir / "sample_polls.csv"
+    base_frame = pd.DataFrame()
     try:
         frame = load_results_dataframe(get_engine())
         if not frame.empty:
-            return frame
+            base_frame = frame
     except SQLAlchemyError:
-        pass
-    if normalized_v2_path.exists():
-        return pd.read_csv(normalized_v2_path)
-    if normalized_path.exists():
-        return pd.read_csv(normalized_path)
-    return pd.read_csv(sample_path)
+        base_frame = pd.DataFrame()
+    if base_frame.empty and normalized_v2_path.exists():
+        base_frame = pd.read_csv(normalized_v2_path)
+    if base_frame.empty and normalized_path.exists():
+        base_frame = pd.read_csv(normalized_path)
+    if base_frame.empty:
+        base_frame = pd.read_csv(sample_path)
+
+    raw_frame = raw_wikipedia_2027_tables_to_normalized_dataframe(settings.raw_dir)
+    return _merge_dashboard_with_latest_raw_frame(base_frame, raw_frame)
+
+
+def _merge_dashboard_with_latest_raw_frame(base_frame: pd.DataFrame, raw_frame: pd.DataFrame) -> pd.DataFrame:
+    if base_frame.empty:
+        return raw_frame
+    if raw_frame.empty:
+        return base_frame
+
+    cleaned_base = base_frame.copy()
+    if "poll_id" in cleaned_base.columns:
+        raw_poll_mask = cleaned_base["poll_id"].fillna("").astype(str).str.startswith(("RAW-FR-", "RAW-SR-"))
+        cleaned_base = cleaned_base.loc[~raw_poll_mask].copy()
+
+    merged = pd.concat([cleaned_base, raw_frame], ignore_index=True, sort=False)
+    merged = merged.drop_duplicates(
+        subset=[
+            "round",
+            "polling_company",
+            "fieldwork_start_date",
+            "fieldwork_end_date",
+            "scenario_name",
+            "candidate_name",
+        ],
+        keep="last",
+    )
+    return merged
 
 
 @st.cache_data(show_spinner=False)
@@ -233,6 +300,19 @@ def main() -> None:
 
     page_labels = [config["label"] for config in PAGE_CONFIG]
     page_lookup = {config["label"]: config for config in PAGE_CONFIG}
+    slug_to_label = {_page_slug(config["label"]): config["label"] for config in PAGE_CONFIG}
+    default_page = page_labels[0]
+    requested_page = default_page
+    query_params = {}
+    if hasattr(st, "query_params"):
+        query_params = dict(st.query_params)
+    elif hasattr(st, "experimental_get_query_params"):
+        query_params = st.experimental_get_query_params()
+    page_param = query_params.get("page")
+    if isinstance(page_param, list):
+        page_param = page_param[0] if page_param else None
+    if page_param in slug_to_label:
+        requested_page = slug_to_label[page_param]
 
     nav_col, help_col = st.columns([16, 1.4])
     with nav_col:
@@ -240,9 +320,20 @@ def main() -> None:
             "Vue",
             page_labels,
             horizontal=True,
-            key="dashboard_page",
+            index=page_labels.index(requested_page),
+            key="dashboard_page_radio",
             label_visibility="collapsed",
         )
+        page_slug = _page_slug(page)
+        if hasattr(st, "query_params"):
+            if st.query_params.get("page") != page_slug:
+                st.query_params["page"] = page_slug
+        elif hasattr(st, "experimental_set_query_params"):
+            current_page_param = query_params.get("page")
+            if isinstance(current_page_param, list):
+                current_page_param = current_page_param[0] if current_page_param else None
+            if current_page_param != page_slug:
+                st.experimental_set_query_params(page=page_slug)
     with help_col:
         with st.popover("?", help="Aide pour la vue active", use_container_width=True):
             st.markdown(page_lookup[page]["help"])

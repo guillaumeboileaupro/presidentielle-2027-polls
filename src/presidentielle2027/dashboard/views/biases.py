@@ -42,10 +42,34 @@ def render_biases_page(frame: pd.DataFrame) -> None:
     if not temporal_frame.empty:
         bias_catalog = bias_catalog.merge(temporal_frame, on="force_label", how="left")
 
+    display_columns = [
+        "force_label",
+        "years_used",
+        "n_polls_used",
+        "current_poll_count",
+        "result_percent",
+        "mean_error",
+        "uncertainty",
+        "current_days_bucket",
+        "polls_in_matching_bucket",
+        "structural_bias",
+        "temporal_bias",
+        "trajectory_bias",
+        "total_bias",
+        "status",
+        "bias_source",
+        "temporal_bias_18m",
+        "temporal_bias_12m",
+        "temporal_bias_6m",
+        "temporal_bias_3m",
+        "temporal_bias_1m",
+    ]
+    visible_bias_catalog = bias_catalog[[column for column in display_columns if column in bias_catalog.columns]].copy()
+
     st.dataframe(
         clean_user_facing_frame(
             rename_user_facing_columns(
-                bias_catalog,
+                visible_bias_catalog,
                 {
                     "temporal_bias_18m": "Biais temporel 18m",
                     "temporal_bias_12m": "Biais temporel 12m",
@@ -71,6 +95,7 @@ def render_biases_page(frame: pd.DataFrame) -> None:
             "Biais temporel 1m": st.column_config.NumberColumn("Biais temporel 1m", format="%.2f"),
             "Biais trajectoire": st.column_config.NumberColumn("Biais trajectoire", format="%.2f"),
             "Correction totale": st.column_config.NumberColumn("Correction totale", format="%.2f"),
+            "Source du biais": st.column_config.TextColumn("Source du biais"),
         },
     )
 

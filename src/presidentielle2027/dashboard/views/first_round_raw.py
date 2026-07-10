@@ -7,13 +7,225 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from presidentielle2027.analytics.adjustment_core import (
+    build_adaptive_polynomial_curve,
+    build_polynomial_curve,
+    select_auto_polynomial_degree,
+)
 from presidentielle2027.analytics.historical_corrections import CURRENT_ELECTION_DATE
 from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.methodology_text import first_round_methodology_html
-from presidentielle2027.dashboard.party_assets import build_force_summary_table
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
-from presidentielle2027.dashboard.table_views import render_poll_results_table
+from presidentielle2027.dashboard.table_views import USER_VALUE_REPLACEMENTS, clean_user_facing_frame, render_poll_results_table
+
+PARTY_SOURCE_ORDER = [
+    "LO",
+    "LFI",
+    "PCF",
+    "LE",
+    "PS",
+    "PP",
+    "RE",
+    "HOR",
+    "LR",
+    "LFH",
+    "DLF",
+    "RN",
+    "REC",
+]
+
+PARTY_DISPLAY_ORDER = [
+    "LO",
+    "LFI",
+    "PCF",
+    "ECO",
+    "PS",
+    "PP",
+    "RE",
+    "HOR",
+    "LR",
+    "LFH",
+    "DLF",
+    "RN",
+    "REC",
+]
+
+GITLAB_LOESS_SPANS: dict[str, float] = {
+    "PCF": 0.25,
+    "LFI": 0.25,
+    "LE": 0.25,
+    "ECO": 0.25,
+    "PS": 0.25,
+    "PP": 0.25,
+    "RE": 0.25,
+    "ENS": 0.25,
+    "HOR": 0.25,
+    "LR": 0.25,
+    "RN": 0.25,
+    "REC": 0.30,
+    "LFH": 0.35,
+    "DLF": 0.35,
+    "LO": 0.35,
+}
+
+PARTY_GRAPH_LABELS: dict[str, str] = {
+    "LE": "ECO",
+    "EELV": "ECO",
+    "RE": "RE",
+    "HOR": "HOR",
+    "LFH": "LFH",
+    "DLF": "DLF",
+    "PP": "PP",
+    "PS": "PS",
+    "PCF": "PCF",
+    "LFI": "LFI",
+    "LO": "LO",
+    "RN": "RN",
+    "REC": "REC",
+    "ENS": "ENS",
+}
+
+PARTY_FULL_LABELS: dict[str, str] = {
+    "LO": "Lutte ouvrière",
+    "LFI": "La France insoumise",
+    "PCF": "Parti communiste français",
+    "LE": "Les Écologistes",
+    "PS": "Parti socialiste",
+    "PP": "Place publique",
+    "RE": "Renaissance",
+    "HOR": "Horizons",
+    "LFH": "La France humaniste",
+    "LR": "Les Républicains",
+    "DLF": "Debout la France",
+    "RN": "Rassemblement national",
+    "REC": "Reconquête",
+    "ENS": "Ensemble",
+}
+
+def _evaluate_curve_fit_local(
+    observed_frame: pd.DataFrame,
+    curve_frame: pd.DataFrame,
+    value_column: str,
+    date_column: str = "publication_date",
+) -> dict[str, float] | None:
+    observed = pd.DataFrame(
+        {
+            "date": pd.to_datetime(observed_frame[date_column], errors="coerce"),
+            "value": pd.to_numeric(observed_frame[value_column], errors="coerce"),
+        }
+    ).dropna()
+    if observed.empty or curve_frame.empty:
+        return None
+
+    curve = pd.DataFrame(
+        {
+            "date": pd.to_datetime(curve_frame["publication_date"], errors="coerce"),
+            "value": pd.to_numeric(curve_frame["score_smooth"], errors="coerce"),
+        }
+    ).dropna()
+    if len(curve.index) < 2:
+        return None
+
+    observed = observed.sort_values("date").drop_duplicates(subset=["date"], keep="last")
+    curve = curve.sort_values("date").drop_duplicates(subset=["date"], keep="last")
+    base_date = pd.Timestamp(observed["date"].iloc[0])
+    observed["date_num"] = ((observed["date"] - base_date) / pd.Timedelta(days=1)).astype(float)
+    curve["date_num"] = ((curve["date"] - base_date) / pd.Timedelta(days=1)).astype(float)
+    interpolated = np.interp(
+        observed["date_num"].to_numpy(dtype=float),
+        curve["date_num"].to_numpy(dtype=float),
+        curve["value"].to_numpy(dtype=float),
+    )
+    errors = observed["value"].to_numpy(dtype=float) - interpolated
+    absolute_errors = np.abs(errors)
+    return {
+        "rmse": float(np.sqrt(np.mean(np.square(errors)))),
+        "mae": float(np.mean(absolute_errors)),
+        "max_abs_error": float(np.max(absolute_errors)),
+        "point_count": float(len(observed.index)),
+    }
+
+
+def _fr_label(value: object, fallback: str = "Non renseigné") -> str:
+    if value is None or pd.isna(value):
+        return fallback
+    text = str(value).strip()
+    if not text:
+        return fallback
+    return USER_VALUE_REPLACEMENTS.get(text, text)
+
+
+def _party_graph_label(value: object) -> str:
+    if value is None or pd.isna(value):
+        return "Sans parti"
+    party = str(value).strip()
+    if not party:
+        return "Sans parti"
+    return PARTY_GRAPH_LABELS.get(party, party)
+
+
+def _party_full_label(value: object) -> str:
+    if value is None or pd.isna(value):
+        return "Sans étiquette"
+    party = str(value).strip()
+    if not party:
+        return "Sans étiquette"
+    return PARTY_FULL_LABELS.get(party, party)
+
+
+def _party_family_label(party: object, family: object) -> str:
+    party_code = str(party).strip() if party not in (None, "") and not pd.isna(party) else ""
+    if party_code in {"RN", "REC"}:
+        return "Extrême droite"
+    if party_code == "DLF":
+        return "Droite souverainiste"
+    if party_code == "LR":
+        return "Droite"
+    if party_code in {"RE", "ENS", "HOR", "LFH"}:
+        return "Centre"
+    if party_code in {"PP", "PS"}:
+        return "Centre gauche"
+    if party_code in {"LFI", "PCF", "LO"}:
+        return "Gauche"
+    if party_code in {"LE", "EELV", "ECO"}:
+        return "Écologistes"
+    return _fr_label(family, "Non renseigné")
+
+
+def _party_sort_key(party: object) -> int:
+    value = str(party).strip() if party not in (None, "") else ""
+    if value in PARTY_SOURCE_ORDER:
+        return PARTY_SOURCE_ORDER.index(value)
+    return len(PARTY_SOURCE_ORDER) + 100
+
+
+def _display_sort_key(label: object) -> int:
+    value = str(label).strip() if label not in (None, "") else ""
+    if value in PARTY_DISPLAY_ORDER:
+        return PARTY_DISPLAY_ORDER.index(value)
+    return len(PARTY_DISPLAY_ORDER) + 100
+
+
+def _select_primary_first_round_scenarios(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty or "scenario_name" not in frame.columns or "poll_id" not in frame.columns:
+        return frame
+
+    scenario_rank = (
+        frame.groupby(["poll_id", "scenario_name"], dropna=False)
+        .agg(
+            candidate_count=("candidate_name", "nunique"),
+            party_count=("candidate_party", "nunique"),
+            total_score=("estimate_percent", "sum"),
+        )
+        .reset_index()
+        .sort_values(
+            ["poll_id", "candidate_count", "party_count", "total_score", "scenario_name"],
+            ascending=[True, False, False, False, True],
+        )
+    )
+    primary = scenario_rank.groupby("poll_id", dropna=False).head(1)[["poll_id", "scenario_name"]]
+    return frame.merge(primary, on=["poll_id", "scenario_name"], how="inner")
 
 
 def _build_joint_extension_paths(
@@ -114,7 +326,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     st.markdown(first_round_methodology_html(), unsafe_allow_html=True)
     st.caption(
         "Source de référence : Wikipédia, « Liste de sondages sur l'élection présidentielle française de 2027 ». "
-        "Lecture par années 2026, 2025, 2024 et 2023, avec ajustement polynomial par force."
+        "L’ajustement appliqué ici trace soit un polynôme réel par force, soit un lissage de type GitLab selon le modèle choisi."
     )
 
     pollsters = ["Tous"] + sorted(working["polling_company"].dropna().astype(str).unique().tolist())
@@ -126,40 +338,79 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         reverse=True,
     )
     year_options = ["Toutes"] + [str(year) for year in available_years]
+    default_year_index = 1 if len(year_options) > 1 else 0
 
     c1, c2, c3, c4, c5, c6 = st.columns([1.0, 1.2, 1.0, 0.8, 0.8, 0.8])
     pollster = c1.selectbox("Institut", pollsters, key="first_round_pollster")
-    period = c2.date_input("Période", value=(min_date, max_date), min_value=min_date, max_value=max_date, key="first_round_period")
-    grouping = c3.selectbox("Regrouper par", ["Parti politique", "Famille politique"], key="first_round_grouping")
-    selected_year = c4.selectbox("Année", year_options, key="first_round_year")
-    trend_method = c5.selectbox("Modèle", ["Polynomial", "Bins"], index=0, key="first_round_trend_method")
-    polynomial_order = c6.selectbox("Ordre", [1, 2, 3, 4, 5, 6], index=3, key="first_round_polynomial_order")
+    selected_year = c2.selectbox("Année", year_options, index=default_year_index, key="first_round_year")
+    period = c3.date_input(
+        "Période",
+        value=(min_date, max_date),
+        min_value=min_date,
+        max_value=max_date,
+        key="first_round_period",
+    )
+    grouping = c4.selectbox("Regrouper par", ["Parti politique", "Famille politique"], key="first_round_grouping")
+    trend_method = c5.selectbox("Modèle", ["Polynôme auto", "LOESS GitLab", "Bins", "Polynôme manuel"], index=0, key="first_round_trend_method")
+    polynomial_order = c6.selectbox("Ordre max", list(range(1, 6)), index=3, key="first_round_polynomial_order")
+    available_parties = sorted(working["candidate_party"].dropna().astype(str).unique().tolist(), key=_party_sort_key)
+    default_parties = [party for party in PARTY_SOURCE_ORDER if party in available_parties]
+    if not default_parties:
+        default_parties = available_parties[: min(len(available_parties), 12)]
+    show_all_parties = False
+    selected_parties: list[str] = []
+    if grouping == "Parti politique":
+        show_all_parties = st.checkbox(
+            "Afficher toutes les forces",
+            value=False,
+            key="first_round_show_all_parties",
+        )
+        selected_parties = st.multiselect(
+            "Forces affichées",
+            available_parties,
+            default=available_parties if show_all_parties else default_parties,
+            key="first_round_selected_parties",
+        )
     show_extension = st.checkbox(
         "Prolongation en pointillé jusqu'à l'élection",
-        value=True,
+        value=False,
         key="first_round_show_extension",
     )
     filtered = working.copy()
+    fitting_frame = working.copy()
     if pollster != "Tous":
         filtered = filtered.loc[filtered["polling_company"] == pollster]
+        fitting_frame = fitting_frame.loc[fitting_frame["polling_company"] == pollster]
+    if grouping == "Parti politique" and selected_parties:
+        filtered = filtered.loc[filtered["candidate_party"].astype(str).isin(selected_parties)].copy()
+        fitting_frame = fitting_frame.loc[fitting_frame["candidate_party"].astype(str).isin(selected_parties)].copy()
     if isinstance(period, tuple) and len(period) == 2:
         filtered = filtered.loc[
             filtered["publication_date"].between(pd.Timestamp(period[0]), pd.Timestamp(period[1]), inclusive="both")
+        ]
+        fitting_frame = fitting_frame.loc[
+            fitting_frame["publication_date"].between(pd.Timestamp(period[0]), pd.Timestamp(period[1]), inclusive="both")
         ]
         period_start_ts = pd.Timestamp(period[0])
         period_end_ts = pd.Timestamp(period[1])
     else:
         period_start_ts = pd.Timestamp(min_date)
         period_end_ts = pd.Timestamp(max_date)
-    if selected_year != "Toutes":
-        filtered = filtered.loc[filtered["publication_date"].dt.year == int(selected_year)]
-        year_start = pd.Timestamp(year=int(selected_year), month=1, day=1)
-        year_end = pd.Timestamp(year=int(selected_year), month=12, day=31)
-        period_start_ts = max(period_start_ts, year_start)
-        period_end_ts = min(period_end_ts, year_end)
-    if filtered.empty:
+    filtered = filtered.loc[
+        filtered["publication_date"].between(period_start_ts, period_end_ts, inclusive="both")
+    ].copy()
+    fitting_frame = fitting_frame.loc[
+        fitting_frame["publication_date"].between(period_start_ts, period_end_ts, inclusive="both")
+    ].copy()
+    filtered = _select_primary_first_round_scenarios(filtered)
+    fitting_frame = _select_primary_first_round_scenarios(fitting_frame)
+    if filtered.empty or fitting_frame.empty:
         st.warning("Aucune donnée disponible pour ces filtres.")
         return
+    st.caption(
+        "Période tracée : "
+        f"{period_start_ts.strftime('%d/%m/%Y')} -> {period_end_ts.strftime('%d/%m/%Y')}"
+    )
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Périmètre", "Tous les sondages du premier tour")
@@ -167,39 +418,61 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     col3.metric("Instituts", int(filtered["polling_company"].nunique()))
     col4.metric("Forces", int(filtered["candidate_party"].fillna("Sans parti").nunique() if grouping == "Parti politique" else filtered["political_family"].fillna("Autre").nunique()))
 
-    summary_source = filtered.copy()
     if grouping == "Parti politique":
-        summary_source["force_name"] = summary_source["candidate_party"].fillna("Sans parti")
-    else:
-        summary_source["force_name"] = summary_source["political_family"].fillna("Autre")
-    force_summary = build_force_summary_table(summary_source, "force_name", "estimate_percent")
-    if not force_summary.empty:
-        st.markdown("**Lecture rapide des forces**")
-        st.dataframe(
-            force_summary,
-            width="stretch",
-            hide_index=True,
-            column_config={
-                "party_logo": st.column_config.ImageColumn("Logo"),
-                "force_name": st.column_config.TextColumn("Force"),
-                "candidate_party": st.column_config.TextColumn("Parti"),
-                "political_family": st.column_config.TextColumn("Famille"),
-                "value_display": st.column_config.TextColumn("Dernière valeur"),
-            },
+        force_summary = (
+            filtered.sort_values(["publication_date", "estimate_percent"], ascending=[False, False])
+            .groupby("candidate_party", dropna=False)
+            .head(1)
+            .copy()
         )
+        force_summary["Sigle"] = force_summary["candidate_party"].map(_party_graph_label)
+        force_summary["Force"] = force_summary["candidate_party"].map(_party_full_label)
+        force_summary["Famille"] = force_summary.apply(
+            lambda row: _party_family_label(row.get("candidate_party"), row.get("political_family")),
+            axis=1,
+        )
+        force_summary["Dernière valeur"] = force_summary["estimate_percent"].map(lambda value: f"{value:.1f}%")
+        force_summary["__ordre_valeur"] = force_summary["estimate_percent"].astype(float)
+        force_summary["__ordre_sigle"] = force_summary["Sigle"].map(_display_sort_key)
+        force_summary = force_summary.sort_values(["__ordre_valeur", "__ordre_sigle"], ascending=[False, True])[
+            ["Sigle", "Force", "Famille", "Dernière valeur"]
+        ]
+    else:
+        force_summary = (
+            filtered.sort_values(["publication_date", "estimate_percent"], ascending=[False, False])
+            .groupby("political_family", dropna=False)
+            .head(1)
+            .copy()
+        )
+        force_summary["Famille"] = force_summary["political_family"].map(lambda value: _fr_label(value, "Autre"))
+        force_summary["Dernière valeur"] = force_summary["estimate_percent"].map(lambda value: f"{value:.1f}%")
+        force_summary = force_summary[["Famille", "Dernière valeur"]]
+    if not force_summary.empty:
+        force_summary = clean_user_facing_frame(force_summary)
+        st.markdown("**Lecture rapide des forces**")
+        st.table(force_summary.reset_index(drop=True))
 
     grouped = filtered.copy()
-    if grouping == "Parti politique":
-        grouped["display_name"] = grouped["candidate_party"].fillna("Sans parti")
-        grouped["display_party"] = grouped["candidate_party"].fillna("Sans parti")
-        grouped["display_family"] = grouped["political_family"].fillna("Autre")
-    else:
-        grouped["display_name"] = grouped["political_family"].fillna("Autre")
-        grouped["display_party"] = grouped["candidate_party"].fillna("Sans parti")
-        grouped["display_family"] = grouped["political_family"].fillna("Autre")
+    grouped_fit = fitting_frame.copy()
+    for current in (grouped, grouped_fit):
+        if grouping == "Parti politique":
+            current["display_name"] = current["candidate_party"].map(_party_graph_label).fillna("Sans parti")
+            current["display_party"] = current["candidate_party"].fillna("Sans parti")
+            current["display_family"] = current["political_family"].map(lambda value: _fr_label(value, "Autre"))
+            current["display_order"] = current["candidate_party"].map(_party_sort_key)
+            current["display_label_order"] = current["display_name"].map(_display_sort_key)
+        else:
+            current["display_name"] = current["political_family"].map(lambda value: _fr_label(value, "Autre"))
+            current["display_party"] = current["candidate_party"].fillna("Sans parti")
+            current["display_family"] = current["political_family"].map(lambda value: _fr_label(value, "Autre"))
+            current["display_order"] = len(PARTY_SOURCE_ORDER) + 100
+            current["display_label_order"] = len(PARTY_DISPLAY_ORDER) + 100
 
     grouped = (
-        grouped.groupby(["publication_date", "display_name"], dropna=False)
+        grouped.groupby(
+            ["poll_id", "scenario_name", "publication_date", "display_name", "display_order", "display_label_order"],
+            dropna=False,
+        )
         .agg(
             estimate_percent=("estimate_percent", "mean"),
             sample_size=("sample_size", "mean"),
@@ -208,18 +481,47 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
             political_family=("display_family", "first"),
         )
         .reset_index()
-        .sort_values(["display_name", "publication_date"])
+        .sort_values(["display_order", "display_label_order", "publication_date", "display_name"])
+    )
+    grouped_fit = (
+        grouped_fit.groupby(
+            ["poll_id", "scenario_name", "publication_date", "display_name", "display_order", "display_label_order"],
+            dropna=False,
+        )
+        .agg(
+            estimate_percent=("estimate_percent", "mean"),
+            sample_size=("sample_size", "mean"),
+            polling_company=("polling_company", "first"),
+            candidate_party=("display_party", "first"),
+            political_family=("display_family", "first"),
+        )
+        .reset_index()
+        .sort_values(["display_order", "display_label_order", "publication_date", "display_name"])
     )
 
     figure = go.Figure()
     insufficient_forces: list[str] = []
     extension_payloads: list[dict[str, object]] = []
-    for display_name, group in grouped.groupby("display_name", dropna=False):
-        ordered = group.sort_values("publication_date")
-        party = ordered["candidate_party"].dropna().iloc[0] if ordered["candidate_party"].notna().any() else None
-        family = ordered["political_family"].dropna().iloc[0] if ordered["political_family"].notna().any() else None
+    fit_diagnostics_rows: list[dict[str, object]] = []
+    ordered_display_names = (
+        grouped[["display_name", "display_order", "display_label_order"]]
+        .drop_duplicates()
+        .sort_values(["display_order", "display_label_order", "display_name"])
+        ["display_name"]
+        .tolist()
+    )
+    for display_name in ordered_display_names:
+        group_display = grouped.loc[grouped["display_name"] == display_name].copy()
+        group_fit = grouped_fit.loc[grouped_fit["display_name"] == display_name].copy()
+        if group_display.empty or group_fit.empty:
+            continue
+        ordered = group_display.sort_values("publication_date")
+        ordered_fit = group_fit.sort_values("publication_date")
+        display_name = str(ordered["display_name"].iloc[0])
+        party = ordered_fit["candidate_party"].dropna().iloc[0] if ordered_fit["candidate_party"].notna().any() else None
+        family = ordered_fit["political_family"].dropna().iloc[0] if ordered_fit["political_family"].notna().any() else None
         color = get_political_color(party, family)
-        ordered_for_curve = ordered
+        ordered_for_curve = ordered_fit
 
         figure.add_trace(
             go.Scatter(
@@ -234,16 +536,57 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                 hovertemplate="%{x|%d/%m/%Y}<br>%{y:.1f}%<br>Institut: %{customdata[0]}<br>Échantillon: %{customdata[1]}<extra></extra>",
             )
         )
-        smoothed = build_lowess_curve(
-            ordered_for_curve,
-            "estimate_percent",
-            frac=0.30,
-            degree=polynomial_order,
-            method="bins" if trend_method == "Bins" else "polynomial",
-        )
+        loess_frac = GITLAB_LOESS_SPANS.get(display_name, GITLAB_LOESS_SPANS.get(str(party).strip(), 0.25))
+        resolved_polynomial_order = polynomial_order
+        fit_quality: dict[str, float] | None = None
+        if trend_method == "Polynôme auto":
+            resolved_polynomial_order = select_auto_polynomial_degree(
+                ordered_for_curve,
+                "estimate_percent",
+                max_degree=polynomial_order,
+            )
+            smoothed = build_polynomial_curve(
+                ordered_for_curve,
+                "estimate_percent",
+                degree=resolved_polynomial_order,
+            )
+        else:
+            smoothed = build_lowess_curve(
+                ordered_for_curve,
+                "estimate_percent",
+                frac=loess_frac,
+                degree=resolved_polynomial_order,
+                method="loess" if trend_method == "LOESS GitLab" else ("bins" if trend_method == "Bins" else "polynomial"),
+            )
         if smoothed is None:
             insufficient_forces.append(str(display_name))
         else:
+            if fit_quality is None:
+                fit_quality = _evaluate_curve_fit_local(
+                    ordered,
+                    smoothed,
+                    "estimate_percent",
+                    date_column="publication_date",
+                )
+            smoothed = smoothed.loc[
+                smoothed["publication_date"].between(period_start_ts, period_end_ts, inclusive="both")
+            ].copy()
+            smoothed = (
+                smoothed.sort_values("publication_date")
+                .drop_duplicates(subset=["publication_date"], keep="last")
+                .reset_index(drop=True)
+            )
+            if fit_quality is not None:
+                fit_diagnostics_rows.append(
+                    {
+                        "Force": display_name,
+                        "Ordre": resolved_polynomial_order if trend_method in {"Polynôme auto", "Polynôme manuel"} else "n.d.",
+                        "Erreur moyenne": fit_quality["mae"],
+                        "Erreur quadratique": fit_quality["rmse"],
+                        "Erreur max": fit_quality["max_abs_error"],
+                        "Points": int(fit_quality["point_count"]),
+                    }
+                )
             smoothed_series = pd.Series(
                 smoothed["score_smooth"].to_numpy(dtype=float),
                 index=pd.to_datetime(smoothed["publication_date"]),
@@ -314,22 +657,43 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                     hovertemplate="%{x|%d/%m/%Y}<br>%{y:.1f}%<br>Scénario exploratoire normalisé à 100%<extra></extra>",
                 )
             )
-    model_label = f"modèle par bins" if trend_method == "Bins" else f"ajustement polynomial d'ordre {polynomial_order}"
-    title = f"{model_label.capitalize()} des sondages publiés entre l'élection présidentielle de 2022 et l'élection présidentielle de 2027"
-    if selected_year != "Toutes":
-        title = f"Sondages 2027 · {selected_year} · {model_label}"
+    model_label = (
+        "loess type GitLab"
+        if trend_method == "LOESS GitLab"
+        else (
+            "lissage stable par fenêtres"
+            if trend_method == "Bins"
+            else ("polynôme auto par parti" if trend_method == "Polynôme auto" else f"polynôme manuel jusqu'à l'ordre {polynomial_order}")
+        )
+    )
+    title = f"Sondages 2027 · {model_label}"
     figure.update_layout(
         title=title,
         xaxis_title="Date de publication",
         yaxis_title="Intentions de vote (%)",
         **PLOT_LAYOUT_THEME,
     )
+    figure.update_layout(legend={**PLOT_LAYOUT_THEME["legend"], "traceorder": "normal"})
     chart_end_ts = max(period_end_ts, CURRENT_ELECTION_DATE) if show_extension else period_end_ts
     figure.update_xaxes(range=[period_start_ts, chart_end_ts])
     figure.update_yaxes(ticksuffix=" %")
     figure.add_vline(x=pd.Timestamp("2022-04-10"), line_width=1, line_color="#999999", opacity=0.6)
     figure.add_vline(x=pd.Timestamp("2027-04-11"), line_width=1, line_color="#999999", opacity=0.6)
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False, "responsive": True})
+    if fit_diagnostics_rows:
+        diagnostics_frame = pd.DataFrame(fit_diagnostics_rows).sort_values("Erreur moyenne")
+        mean_mae = float(diagnostics_frame["Erreur moyenne"].mean())
+        mean_rmse = float(diagnostics_frame["Erreur quadratique"].mean())
+        worst_error = float(diagnostics_frame["Erreur max"].max())
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Erreur moyenne des courbes", f"{mean_mae:.2f} pts")
+        m2.metric("Erreur quadratique moyenne", f"{mean_rmse:.2f} pts")
+        m3.metric("Écart maximal observé", f"{worst_error:.2f} pts")
+        with st.expander("Crédibilité du tracé par force"):
+            diagnostics_frame["Erreur moyenne"] = diagnostics_frame["Erreur moyenne"].map(lambda value: f"{value:.2f} pts")
+            diagnostics_frame["Erreur quadratique"] = diagnostics_frame["Erreur quadratique"].map(lambda value: f"{value:.2f} pts")
+            diagnostics_frame["Erreur max"] = diagnostics_frame["Erreur max"].map(lambda value: f"{value:.2f} pts")
+            st.table(clean_user_facing_frame(diagnostics_frame).reset_index(drop=True))
     if insufficient_forces:
         st.caption("Tendance non calculée pour certaines forces : données insuffisantes ou scénarios non comparables.")
     if show_extension:
