@@ -1,7 +1,7 @@
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,$(shell command -v python3.10 2>/dev/null || command -v python3 2>/dev/null || command -v python))
 PACKAGE = presidentielle2027
 
-.PHONY: install init-db ingest normalize dashboard test lint format notebook notebook-kernel wiki-datasets
+.PHONY: install init-db ingest refresh auto-refresh normalize dashboard test lint format notebook notebook-kernel wiki-datasets
 
 install:
 	$(PYTHON) -m pip install -e ".[dev]"
@@ -11,6 +11,12 @@ init-db:
 
 ingest:
 	$(PYTHON) -m $(PACKAGE).cli ingest-wikipedia
+
+refresh:
+	$(PYTHON) -m $(PACKAGE).cli refresh-pipeline
+
+auto-refresh:
+	$(PYTHON) -m $(PACKAGE).cli auto-refresh-pipeline
 
 normalize:
 	$(PYTHON) -m $(PACKAGE).cli normalize

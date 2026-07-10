@@ -17,6 +17,7 @@ from presidentielle2027.extraction.coverage import build_coverage_report_from_cs
 from presidentielle2027.extraction.excel_parser import workbook_to_normalized_dataframe
 from presidentielle2027.extraction.normalizer import normalize_csv_file, normalize_to_database
 from presidentielle2027.ingestion.pdf_collector import download_pdf
+from presidentielle2027.ingestion.pipeline import run_periodic_refresh_pipeline, run_refresh_pipeline
 from presidentielle2027.ingestion.wikipedia_scraper import ingest_wikipedia_sources
 
 app = typer.Typer(help="CLI for polling ingestion, normalization and dashboard operations.")
@@ -37,6 +38,46 @@ def ingest_wikipedia() -> None:
     finally:
         session.close()
     typer.echo(f"Ingested {len(artifacts)} Wikipedia sources.")
+
+
+@app.command("refresh-pipeline")
+def refresh_pipeline() -> None:
+    settings = get_settings()
+    summary = run_refresh_pipeline(
+        settings=settings,
+        session_factory=get_session_factory(),
+    )
+    typer.echo(
+        "Refresh pipeline completed. "
+        f"normalized_input={summary.normalized_input} "
+        f"normalized_output={summary.normalized_output} "
+        f"persisted_rows={summary.persisted_rows} "
+        f"coverage_output={summary.coverage_output} "
+        f"averages_output={summary.averages_output}"
+    )
+
+
+@app.command("auto-refresh-pipeline")
+def auto_refresh_pipeline(
+    interval_minutes: Annotated[int | None, typer.Option("--interval-minutes")] = None,
+    max_runs: Annotated[int | None, typer.Option("--max-runs")] = None,
+) -> None:
+    settings = get_settings()
+    configured_interval = interval_minutes or settings.auto_ingest_interval_minutes
+    configured_max_runs = max_runs if max_runs is not None else settings.auto_ingest_max_runs
+    effective_max_runs = configured_max_runs if configured_max_runs > 0 else None
+    typer.echo(
+        "Starting automatic refresh pipeline "
+        f"(interval={configured_interval} min, "
+        f"max_runs={effective_max_runs if effective_max_runs is not None else 'infinite'})."
+    )
+    executed_runs = run_periodic_refresh_pipeline(
+        settings=settings,
+        session_factory=get_session_factory(),
+        interval_minutes=configured_interval,
+        max_runs=effective_max_runs,
+    )
+    typer.echo(f"Automatic refresh pipeline stopped after {executed_runs} run(s).")
 
 
 @app.command("ingest-pdf")
@@ -96,6 +137,13 @@ def compute_averages(
     averages = compute_weighted_polling_averages(frame, lambda_=get_settings().recency_lambda)
     averages.to_csv(export_path, index=False)
     typer.echo(f"Computed weighted averages at {export_path}")
+
+
+@app.command("calibrate-first-round-orders")
+def calibrate_first_round_orders() -> None:
+    script_path = Path(__file__).resolve().parents[2] / "scripts" / "calibrate_first_round_polynomial_orders.py"
+    subprocess.run([sys.executable, str(script_path)], check=True)
+    typer.echo("Calibration des ordres polynomiaux du premier tour terminée.")
 
 
 @app.command("train-adjustment-model")

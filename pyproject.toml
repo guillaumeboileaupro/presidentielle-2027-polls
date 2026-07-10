@@ -58,6 +58,10 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--cov=presidentielle2027.analytics.adjustment_core --cov-report=term-missing --cov-fail-under=98"
+filterwarnings = [
+  "ignore:The NumPy module was reloaded \\(imported a second time\\).*:UserWarning",
+]
 
 [tool.ruff]
 line-length = 100

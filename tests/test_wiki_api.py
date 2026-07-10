@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from typing import Any
-
 import requests
 
 from presidentielle2027.ingestion.wiki_api import extract_wikipedia_title, fetch_wikipedia_page_snapshot
 
 
 class DummyResponse:
-    def __init__(self, payload: dict[str, Any]) -> None:
+    def __init__(self, payload: dict[str, object]) -> None:
         self._payload = payload
 
     def raise_for_status(self) -> None:
         return None
 
-    def json(self) -> dict[str, Any]:
+    def json(self) -> dict[str, object]:
         return self._payload
 
 

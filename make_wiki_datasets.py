@@ -34,6 +34,7 @@ import json
 import argparse
 import re
 import sys
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from pathlib import Path
 from urllib.parse import urljoin
@@ -198,12 +199,14 @@ def extract_content_blocks(page: dict[str, str], cache_dir: Path | None = None) 
     return pd.DataFrame(rows)
 
 
-def fetch_html(page: dict[str, str], cache_dir: Path | None = None, timeout: int = 60) -> str:
+def fetch_html(page: dict[str, str], cache_dir: Path | None = None, timeout: int = 60, max_cache_age_hours: int = 6) -> str:
     cache_dir = cache_dir or (Path("data") / "raw" / "wikipedia_html")
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path = cache_dir / f"{page['key']}.html"
     if cache_path.exists():
-        return cache_path.read_text(encoding="utf-8")
+        modified_at = datetime.fromtimestamp(cache_path.stat().st_mtime, tz=timezone.utc)
+        if datetime.now(timezone.utc) - modified_at <= timedelta(hours=max_cache_age_hours):
+            return cache_path.read_text(encoding="utf-8")
 
     headers = {"User-Agent": "Mozilla/5.0 compatible; poll-dataset-extractor/1.0"}
     response = requests.get(page["url"], headers=headers, timeout=timeout)
@@ -271,10 +274,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
-    args = parse_args()
-    out_dir = Path(args.output_dir)
-    cache_dir = Path(args.cache_dir)
+def generate_wiki_datasets(out_dir: Path, cache_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     all_frames: list[pd.DataFrame] = []
     all_content_frames: list[pd.DataFrame] = []
@@ -309,6 +309,11 @@ def main() -> None:
         for page, content_df in zip(PAGES, all_content_frames):
             content_df.to_excel(writer, sheet_name=f"{page['key'][:23]}_content", index=False)
     print(f"OK : {xlsx}", file=sys.stderr)
+
+
+def main() -> None:
+    args = parse_args()
+    generate_wiki_datasets(Path(args.output_dir), Path(args.cache_dir))
 
 
 if __name__ == "__main__":
