@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import date
-
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -12,7 +10,9 @@ from presidentielle2027.analytics.adjustment_core import (
     build_polynomial_curve,
     select_auto_polynomial_degree,
 )
-from presidentielle2027.analytics.historical_corrections import CURRENT_ELECTION_DATE
+from presidentielle2027.analytics.historical_corrections import (
+    FIRST_ROUND_ELECTION_DATE,
+)
 from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.methodology_text import first_round_methodology_html
@@ -68,6 +68,27 @@ GITLAB_LOESS_SPANS: dict[str, float] = {
     "DLF": 0.35,
     "LO": 0.35,
 }
+
+WIKIPEDIA_BLOC_MAP: dict[str, str] = {
+    "PCF": "PCF",
+    "LFI": "LFI",
+    "LE": "ECO",
+    "EELV": "ECO",
+    "PS": "PS",
+    "PP": "PS",
+    "PS / PP": "PS",
+    "PS-PP": "PS",
+    "ENS": "ENS",
+    "EPR": "ENS",
+    "RE": "ENS",
+    "REN": "ENS",
+    "HOR": "ENS",
+    "LR": "LR",
+    "RN": "RN",
+    "REC": "REC",
+}
+WIKIPEDIA_BLOC_ORDER = ["PCF", "LFI", "ECO", "PS", "ENS", "LR", "RN", "REC"]
+WIKIPEDIA_2027_FIRST_ROUND_DATE = pd.Timestamp("2027-04-18")
 
 PARTY_GRAPH_LABELS: dict[str, str] = {
     "LE": "ECO",
@@ -172,6 +193,12 @@ def _party_full_label(value: object) -> str:
     if not party:
         return "Sans étiquette"
     return PARTY_FULL_LABELS.get(party, party)
+
+
+def _wikipedia_bloc_label(value: object) -> str | None:
+    if value is None or pd.isna(value):
+        return None
+    return WIKIPEDIA_BLOC_MAP.get(str(value).strip())
 
 
 def _party_family_label(party: object, family: object) -> str:
@@ -330,19 +357,17 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     )
 
     pollsters = ["Tous"] + sorted(working["polling_company"].dropna().astype(str).unique().tolist())
-    min_date = working["publication_date"].min().date() if working["publication_date"].notna().any() else date.today()
-    max_date = working["publication_date"].max().date() if working["publication_date"].notna().any() else date.today()
+    min_date = FIRST_ROUND_ELECTION_DATE.date()
+    max_date = WIKIPEDIA_2027_FIRST_ROUND_DATE.date()
 
     available_years = sorted(
         working["publication_date"].dropna().dt.year.astype(int).unique().tolist(),
         reverse=True,
     )
     year_options = ["Toutes"] + [str(year) for year in available_years]
-    default_year_index = 1 if len(year_options) > 1 else 0
-
     c1, c2, c3, c4, c5, c6 = st.columns([1.0, 1.2, 1.0, 0.8, 0.8, 0.8])
     pollster = c1.selectbox("Institut", pollsters, key="first_round_pollster")
-    selected_year = c2.selectbox("Année", year_options, index=default_year_index, key="first_round_year")
+    selected_year = c2.selectbox("Année", year_options, index=0, key="first_round_year")
     period = c3.date_input(
         "Période",
         value=(min_date, max_date),
@@ -350,8 +375,18 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         max_value=max_date,
         key="first_round_period",
     )
-    grouping = c4.selectbox("Regrouper par", ["Parti politique", "Famille politique"], key="first_round_grouping")
-    trend_method = c5.selectbox("Modèle", ["Polynôme auto", "LOESS GitLab", "Bins", "Polynôme manuel"], index=0, key="first_round_trend_method")
+    grouping = c4.selectbox(
+        "Regrouper par",
+        ["Blocs Wikipédia", "Parti politique", "Famille politique"],
+        index=0,
+        key="first_round_grouping",
+    )
+    trend_method = c5.selectbox(
+        "Modèle",
+        ["Régression locale (LOESS)", "Polynôme auto", "Bins", "Polynôme manuel"],
+        index=0,
+        key="first_round_trend_method",
+    )
     polynomial_order = c6.selectbox("Ordre max", list(range(1, 6)), index=3, key="first_round_polynomial_order")
     available_parties = sorted(working["candidate_party"].dropna().astype(str).unique().tolist(), key=_party_sort_key)
     default_parties = [party for party in PARTY_SOURCE_ORDER if party in available_parties]
@@ -381,6 +416,10 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     if pollster != "Tous":
         filtered = filtered.loc[filtered["polling_company"] == pollster]
         fitting_frame = fitting_frame.loc[fitting_frame["polling_company"] == pollster]
+    if selected_year != "Toutes":
+        selected_year_number = int(selected_year)
+        filtered = filtered.loc[filtered["publication_date"].dt.year == selected_year_number]
+        fitting_frame = fitting_frame.loc[fitting_frame["publication_date"].dt.year == selected_year_number]
     if grouping == "Parti politique" and selected_parties:
         filtered = filtered.loc[filtered["candidate_party"].astype(str).isin(selected_parties)].copy()
         fitting_frame = fitting_frame.loc[fitting_frame["candidate_party"].astype(str).isin(selected_parties)].copy()
@@ -404,6 +443,11 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     ].copy()
     filtered = _select_primary_first_round_scenarios(filtered)
     fitting_frame = _select_primary_first_round_scenarios(fitting_frame)
+    if grouping == "Blocs Wikipédia":
+        filtered["wikipedia_bloc"] = filtered["candidate_party"].map(_wikipedia_bloc_label)
+        fitting_frame["wikipedia_bloc"] = fitting_frame["candidate_party"].map(_wikipedia_bloc_label)
+        filtered = filtered.dropna(subset=["wikipedia_bloc"])
+        fitting_frame = fitting_frame.dropna(subset=["wikipedia_bloc"])
     if filtered.empty or fitting_frame.empty:
         st.warning("Aucune donnée disponible pour ces filtres.")
         return
@@ -416,7 +460,18 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     col1.metric("Périmètre", "Tous les sondages du premier tour")
     col2.metric("Lignes", int(len(filtered)))
     col3.metric("Instituts", int(filtered["polling_company"].nunique()))
-    col4.metric("Forces", int(filtered["candidate_party"].fillna("Sans parti").nunique() if grouping == "Parti politique" else filtered["political_family"].fillna("Autre").nunique()))
+    col4.metric(
+        "Forces",
+        int(
+            filtered["candidate_party"].fillna("Sans parti").nunique()
+            if grouping == "Parti politique"
+            else (
+                filtered["wikipedia_bloc"].nunique()
+                if grouping == "Blocs Wikipédia"
+                else filtered["political_family"].fillna("Autre").nunique()
+            )
+        ),
+    )
 
     if grouping == "Parti politique":
         force_summary = (
@@ -437,6 +492,24 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         force_summary = force_summary.sort_values(["__ordre_valeur", "__ordre_sigle"], ascending=[False, True])[
             ["Sigle", "Force", "Famille", "Dernière valeur"]
         ]
+    elif grouping == "Blocs Wikipédia":
+        summary_by_bloc = (
+            filtered.groupby(
+                ["poll_id", "scenario_name", "publication_date", "wikipedia_bloc"],
+                dropna=False,
+            )["estimate_percent"]
+            .sum()
+            .reset_index()
+        )
+        force_summary = (
+            summary_by_bloc.sort_values(["publication_date", "estimate_percent"], ascending=[False, False])
+            .groupby("wikipedia_bloc", dropna=False)
+            .head(1)
+            .copy()
+        )
+        force_summary["Bloc"] = force_summary["wikipedia_bloc"]
+        force_summary["Dernière valeur"] = force_summary["estimate_percent"].map(lambda value: f"{value:.1f}%")
+        force_summary = force_summary[["Bloc", "Dernière valeur"]]
     else:
         force_summary = (
             filtered.sort_values(["publication_date", "estimate_percent"], ascending=[False, False])
@@ -461,6 +534,14 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
             current["display_family"] = current["political_family"].map(lambda value: _fr_label(value, "Autre"))
             current["display_order"] = current["candidate_party"].map(_party_sort_key)
             current["display_label_order"] = current["display_name"].map(_display_sort_key)
+        elif grouping == "Blocs Wikipédia":
+            current["display_name"] = current["wikipedia_bloc"]
+            current["display_party"] = current["wikipedia_bloc"]
+            current["display_family"] = current["political_family"].map(lambda value: _fr_label(value, "Autre"))
+            current["display_order"] = current["wikipedia_bloc"].map(
+                {bloc: index for index, bloc in enumerate(WIKIPEDIA_BLOC_ORDER)}
+            )
+            current["display_label_order"] = current["display_order"]
         else:
             current["display_name"] = current["political_family"].map(lambda value: _fr_label(value, "Autre"))
             current["display_party"] = current["candidate_party"].fillna("Sans parti")
@@ -468,13 +549,14 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
             current["display_order"] = len(PARTY_SOURCE_ORDER) + 100
             current["display_label_order"] = len(PARTY_DISPLAY_ORDER) + 100
 
+    estimate_aggregation = "sum" if grouping == "Blocs Wikipédia" else "mean"
     grouped = (
         grouped.groupby(
             ["poll_id", "scenario_name", "publication_date", "display_name", "display_order", "display_label_order"],
             dropna=False,
         )
         .agg(
-            estimate_percent=("estimate_percent", "mean"),
+            estimate_percent=("estimate_percent", estimate_aggregation),
             sample_size=("sample_size", "mean"),
             polling_company=("polling_company", "first"),
             candidate_party=("display_party", "first"),
@@ -489,7 +571,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
             dropna=False,
         )
         .agg(
-            estimate_percent=("estimate_percent", "mean"),
+            estimate_percent=("estimate_percent", estimate_aggregation),
             sample_size=("sample_size", "mean"),
             polling_company=("polling_company", "first"),
             candidate_party=("display_party", "first"),
@@ -537,6 +619,8 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
             )
         )
         loess_frac = GITLAB_LOESS_SPANS.get(display_name, GITLAB_LOESS_SPANS.get(str(party).strip(), 0.25))
+        if grouping == "Blocs Wikipédia":
+            loess_frac = max(loess_frac, 0.50)
         resolved_polynomial_order = polynomial_order
         fit_quality: dict[str, float] | None = None
         if trend_method == "Polynôme auto":
@@ -556,7 +640,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                 "estimate_percent",
                 frac=loess_frac,
                 degree=resolved_polynomial_order,
-                method="loess" if trend_method == "LOESS GitLab" else ("bins" if trend_method == "Bins" else "polynomial"),
+                method="loess" if trend_method == "Régression locale (LOESS)" else ("bins" if trend_method == "Bins" else "polynomial"),
             )
         if smoothed is None:
             insufficient_forces.append(str(display_name))
@@ -620,7 +704,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                         }
                     )
     if show_extension:
-        for payload in _build_joint_extension_paths(extension_payloads, CURRENT_ELECTION_DATE):
+        for payload in _build_joint_extension_paths(extension_payloads, WIKIPEDIA_2027_FIRST_ROUND_DATE):
             figure.add_trace(
                 go.Scatter(
                     x=payload["x"],
@@ -658,8 +742,8 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                 )
             )
     model_label = (
-        "loess type GitLab"
-        if trend_method == "LOESS GitLab"
+        "régression locale (LOESS) par force politique"
+        if trend_method == "Régression locale (LOESS)"
         else (
             "lissage stable par fenêtres"
             if trend_method == "Bins"
@@ -674,11 +758,11 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         **PLOT_LAYOUT_THEME,
     )
     figure.update_layout(legend={**PLOT_LAYOUT_THEME["legend"], "traceorder": "normal"})
-    chart_end_ts = max(period_end_ts, CURRENT_ELECTION_DATE) if show_extension else period_end_ts
+    chart_end_ts = max(period_end_ts, WIKIPEDIA_2027_FIRST_ROUND_DATE) if show_extension else period_end_ts
     figure.update_xaxes(range=[period_start_ts, chart_end_ts])
     figure.update_yaxes(ticksuffix=" %")
     figure.add_vline(x=pd.Timestamp("2022-04-10"), line_width=1, line_color="#999999", opacity=0.6)
-    figure.add_vline(x=pd.Timestamp("2027-04-11"), line_width=1, line_color="#999999", opacity=0.6)
+    figure.add_vline(x=WIKIPEDIA_2027_FIRST_ROUND_DATE, line_width=1, line_color="#999999", opacity=0.6)
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False, "responsive": True})
     if fit_diagnostics_rows:
         diagnostics_frame = pd.DataFrame(fit_diagnostics_rows).sort_values("Erreur moyenne")
@@ -706,6 +790,8 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         detailed["source_url"] = pd.NA
     if grouping == "Parti politique":
         detailed["force_label"] = detailed["candidate_party"].fillna("Sans parti")
+    elif grouping == "Blocs Wikipédia":
+        detailed["force_label"] = detailed["wikipedia_bloc"]
     else:
         detailed["force_label"] = detailed["political_family"].fillna("Autre")
     render_poll_results_table(detailed)

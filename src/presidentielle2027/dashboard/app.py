@@ -10,7 +10,6 @@ import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
 from presidentielle2027.analytics.polling_average import load_results_dataframe
-from presidentielle2027.analytics.trends import smooth_candidate_trends
 from presidentielle2027.config import get_settings
 from presidentielle2027.db.session import get_engine
 from presidentielle2027.dashboard.views.analysis_2022 import render_analysis_2022_comparison_page, render_analysis_2022_page
@@ -282,7 +281,6 @@ def prepare_dashboard_frame(frame: pd.DataFrame) -> pd.DataFrame:
     working["fieldwork_end_date"] = pd.to_datetime(working.get("fieldwork_end_date"), errors="coerce")
     working["estimate_percent"] = pd.to_numeric(working["estimate_percent"], errors="coerce")
     working["sample_size"] = pd.to_numeric(working.get("sample_size"), errors="coerce")
-    working = smooth_candidate_trends(working)
     return working
 
 
@@ -301,7 +299,7 @@ def main() -> None:
     page_labels = [config["label"] for config in PAGE_CONFIG]
     page_lookup = {config["label"]: config for config in PAGE_CONFIG}
     slug_to_label = {_page_slug(config["label"]): config["label"] for config in PAGE_CONFIG}
-    default_page = page_labels[0]
+    default_page = "Sondages 2027 - premier tour brut"
     requested_page = default_page
     query_params = {}
     if hasattr(st, "query_params"):

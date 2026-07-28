@@ -361,7 +361,7 @@ def build_loess_curve(
         endog=y,
         exog=x,
         frac=float(np.clip(frac, 0.05, 1.0)),
-        it=0,
+        it=3,
         return_sorted=True,
     )
     if fitted.size == 0:

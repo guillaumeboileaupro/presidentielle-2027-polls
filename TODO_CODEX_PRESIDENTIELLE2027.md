@@ -20,6 +20,41 @@ Ne pas modifier le code sur la base de suppositions. Avant chaque changement, lo
 
 ---
 
+# Phase prioritaire — Performance du dashboard
+
+## P.1. Ne plus rafraîchir Wikipédia à chaque exécution Streamlit
+
+- Découpler `run_refresh_pipeline()` du rendu de `live_app.py`.
+- Ne pas relancer le téléchargement, la génération des datasets, la normalisation, la persistance en base, le rapport de couverture et les moyennes à chaque interaction avec un widget.
+- Déplacer ce rafraîchissement vers une tâche périodique ou une action manuelle explicite.
+- Conserver au démarrage la lecture du dernier dataset local valide.
+
+## P.2. Préserver les caches
+
+- Ne plus appeler systématiquement `load_dashboard_data.clear()` et `prepare_dashboard_frame.clear()`.
+- Invalider les caches uniquement lorsqu’un nouveau dataset a réellement été produit.
+- Mesurer séparément le temps de chargement à froid et le temps d’un rerun Streamlit.
+
+## P.3. Éviter les calculs inutiles avant le rendu
+
+- Ne pas calculer toutes les tendances globales avant de connaître la page active.
+- Calculer uniquement les agrégations et courbes nécessaires à la vue affichée.
+- Mettre en cache les séries agrégées et les régressions locales avec les filtres comme clé.
+
+## P.4. Alléger la page initiale
+
+- Éviter de recalculer simultanément le graphique par blocs et les quinze courbes par candidat.
+- Différer le second graphique dans un onglet, un expander ou une vue distincte.
+- Limiter le volume transmis à Plotly et au tableau détaillé sans perdre les données exportables.
+
+## P.5. Mesurer avant et après
+
+- Ajouter des mesures pour le rafraîchissement des sources, la préparation du DataFrame, le calcul LOWESS et le rendu Plotly.
+- Définir une cible mesurable pour le premier affichage et pour une interaction avec un filtre.
+- Ajouter un test garantissant qu’une interaction de dashboard ne déclenche pas le pipeline d’ingestion.
+
+---
+
 # Phase 0 — Audit obligatoire avant modification
 
 ## 0.1. Rechercher toutes les occurrences problématiques
