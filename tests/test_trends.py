@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from presidentielle2027.analytics.trends import build_loess_curve
 from presidentielle2027.analytics.adjustment_core import (
     _evaluate_polynomial_degree,
     _prepare_xy,
@@ -13,6 +14,44 @@ from presidentielle2027.analytics.adjustment_core import (
     evaluate_curve_fit,
     select_auto_polynomial_degree,
 )
+
+
+def test_build_loess_curve_returns_a_dense_smooth_local_regression() -> None:
+    frame = pd.DataFrame(
+        {
+            "publication_date": pd.date_range("2024-01-01", periods=20, freq="30D"),
+            "estimate_percent": [
+                12.0,
+                12.3,
+                12.6,
+                12.9,
+                13.2,
+                13.5,
+                13.8,
+                14.1,
+                30.0,
+                14.7,
+                15.0,
+                15.3,
+                15.6,
+                15.9,
+                16.2,
+                16.5,
+                16.8,
+                17.1,
+                17.4,
+                17.7,
+            ],
+        }
+    )
+
+    curve = build_loess_curve(frame, "estimate_percent", frac=0.50)
+
+    assert curve is not None
+    assert len(curve) == 500
+    assert curve["score_smooth"].notna().all()
+    assert curve["publication_date"].is_monotonic_increasing
+    assert curve["score_smooth"].max() < 25.0
 
 
 def test_evaluate_curve_fit_returns_zero_for_exact_curve() -> None:

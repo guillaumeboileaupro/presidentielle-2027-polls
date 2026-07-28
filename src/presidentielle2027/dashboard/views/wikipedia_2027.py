@@ -66,7 +66,7 @@ def _select_primary_scenarios(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def _build_candidate_curve(frame: pd.DataFrame, party: str) -> pd.DataFrame | None:
-    trend_method = str(st.session_state.get("first_round_trend_method", "Polynôme auto"))
+    trend_method = str(st.session_state.get("first_round_trend_method", "Régression locale (LOESS)"))
     polynomial_order = int(st.session_state.get("first_round_polynomial_order", 4))
 
     if trend_method == "Polynôme auto":
@@ -82,7 +82,7 @@ def _build_candidate_curve(frame: pd.DataFrame, party: str) -> pd.DataFrame | No
         )
 
     loess_frac = GITLAB_LOESS_SPANS.get(party, 0.25)
-    method = "loess" if trend_method == "LOESS GitLab" else ("bins" if trend_method == "Bins" else "polynomial")
+    method = "loess" if trend_method == "Régression locale (LOESS)" else ("bins" if trend_method == "Bins" else "polynomial")
     return build_lowess_curve(
         frame,
         "estimate_percent",
