@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 
 from presidentielle2027.dashboard import app, live_app
+from presidentielle2027.dashboard.views import first_round_raw
 
 
 def test_dashboard_startup_does_not_run_ingestion_pipeline() -> None:
@@ -24,3 +25,19 @@ def test_candidate_chart_is_deferred_by_default() -> None:
 
     assert "value=False" in function_source
     assert function_source.index("st.checkbox") < function_source.index("render_candidate_trace_chart")
+
+
+def test_first_round_curves_are_cached_and_plot_payload_is_bounded() -> None:
+    function_source = inspect.getsource(first_round_raw._cached_trend_curve)
+
+    assert "dense_points=300" in function_source
+    assert hasattr(first_round_raw._cached_trend_curve, "clear")
+
+
+def test_detailed_poll_table_is_deferred_by_default() -> None:
+    function_source = inspect.getsource(first_round_raw.render_first_round_raw_page)
+
+    checkbox_position = function_source.index('"Afficher le tableau détaillé des sondages"')
+    table_position = function_source.index("render_poll_results_table(detailed)")
+    assert checkbox_position < table_position
+    assert "value=False" in function_source[checkbox_position:table_position]

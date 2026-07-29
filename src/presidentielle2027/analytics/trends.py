@@ -738,6 +738,7 @@ def build_lowess_curve(
     frac: float = 0.30,
     degree: int | None = None,
     method: str = "polynomial",
+    dense_points: int = 500,
 ) -> pd.DataFrame | None:
     if method == "loess":
         return build_loess_curve(
@@ -745,6 +746,7 @@ def build_lowess_curve(
             value_column=value_column,
             date_column=date_column,
             frac=frac,
+            dense_points=dense_points,
         )
     if method == "bins":
         return build_binned_curve(frame=frame, value_column=value_column, date_column=date_column)

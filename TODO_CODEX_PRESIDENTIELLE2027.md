@@ -22,6 +22,15 @@ Ne pas modifier le code sur la base de suppositions. Avant chaque changement, lo
 
 # Phase prioritaire — Performance du dashboard
 
+État au 29 juillet 2026 :
+
+- fait : pipeline Wikipédia découplé des reruns Streamlit ;
+- fait : caches préservés et préparation globale des tendances supprimée ;
+- fait : courbes par candidat et tableau détaillé chargés uniquement sur demande ;
+- fait : régressions locales mises en cache et payload Plotly ramené à 300 points par courbe ;
+- mesuré : environ `0,02 s` pour une préparation en cache et `0,004 s` pour une courbe LOWESS en cache ;
+- restant : profiler le rendu dans un navigateur et optimiser les vues historiques les plus lourdes.
+
 ## P.1. Ne plus rafraîchir Wikipédia à chaque exécution Streamlit
 
 - Découpler `run_refresh_pipeline()` du rendu de `live_app.py`.
