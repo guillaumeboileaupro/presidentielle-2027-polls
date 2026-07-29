@@ -653,7 +653,13 @@ def render_analysis_2022_page() -> None:
                 hoverinfo="skip",
             )
         )
-        smoothed = build_lowess_curve(ordered, "estimate_percent", frac=0.28)
+        smoothed = build_lowess_curve(
+            ordered,
+            "estimate_percent",
+            frac=0.35,
+            method="loess",
+            dense_points=300,
+        )
         if smoothed is None:
             insufficient_forces.append(str(force_name))
         else:
@@ -673,12 +679,15 @@ def render_analysis_2022_page() -> None:
             figure.add_hline(y=float(result_value), line_width=1, line_dash="dot", line_color=color, opacity=0.55)
 
     figure.update_layout(
-        title="2022 · sondages, ajustement polynomial et résultat final",
+        title="2022 · sondages, régression locale (LOESS) et résultat final",
         xaxis_title="Date terrain / publication",
         yaxis_title="Score (%)",
         **PLOT_LAYOUT_THEME,
     )
-    figure.update_yaxes(ticksuffix=" %")
+    observed_max = pd.to_numeric(grouped["estimate_percent"], errors="coerce").max()
+    result_max = pd.to_numeric(grouped["result_percent"], errors="coerce").max()
+    useful_max = max(float(observed_max), float(result_max)) if pd.notna(observed_max) and pd.notna(result_max) else 40.0
+    figure.update_yaxes(ticksuffix=" %", range=[0.0, min(100.0, max(10.0, useful_max * 1.18))])
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False, "responsive": True})
     if insufficient_forces:
         st.caption("Tendance non calculée pour certaines forces : données insuffisantes ou scénarios non comparables.")
