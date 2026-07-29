@@ -196,7 +196,12 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
         key="second_round_mode",
     )
     period = c6.date_input("Période", value=(min_date, max_date), min_value=min_date, max_value=max_date, key="second_round_period")
-    trend_method = c7.selectbox("Modèle", ["Polynomial", "Bins"], index=0, key="second_round_trend_method")
+    trend_method = c7.selectbox(
+        "Modèle",
+        ["Polynôme", "Classes temporelles"],
+        index=0,
+        key="second_round_trend_method",
+    )
     polynomial_order = c8.selectbox("Ordre", [1, 2, 3, 4, 5, 6], index=3, key="second_round_polynomial_order")
     show_extension = c9.checkbox(
         "Pointillé",
@@ -296,7 +301,7 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
             "estimate_percent",
             frac=0.32,
             degree=polynomial_order,
-            method="bins" if trend_method == "Bins" else "polynomial",
+            method="bins" if trend_method == "Classes temporelles" else "polynomial",
         )
         if smoothed is None:
             insufficient.append(str(candidate_name))
@@ -320,7 +325,7 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
                 value_column="estimate_percent",
                 recent_days=30,
                 degree=polynomial_order,
-                method="bins" if trend_method == "Bins" else "polynomial",
+                method="bins" if trend_method == "Classes temporelles" else "polynomial",
             )
             if extension is not None:
                 figure.add_trace(
@@ -340,7 +345,11 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
         "Essai coalitions 2024": "essai coalitions 2024",
     }
     title_suffix = title_suffix_map[display_mode]
-    model_label = "modèle par bins" if trend_method == "Bins" else f"ajustement polynomial d'ordre {polynomial_order}"
+    model_label = (
+        "modèle par classes temporelles"
+        if trend_method == "Classes temporelles"
+        else f"ajustement polynomial d'ordre {polynomial_order}"
+    )
     figure.update_layout(
         title=f"Second tour 2027 · points, {model_label} et prolongation exploratoire {title_suffix}",
         xaxis_title="Date de publication",

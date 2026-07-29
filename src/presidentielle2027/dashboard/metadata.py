@@ -93,7 +93,7 @@ def build_dataset_registry_view(frame: pd.DataFrame) -> pd.DataFrame:
     if "status" in working.columns:
         working["status"] = working["status"].map(status_label)
     rename_map = {
-        "dataset_name": "Dataset",
+        "dataset_name": "Jeu de données",
         "source_name": "Source",
         "round_scope": "Tours",
         "extraction_method": "Extraction",
@@ -107,7 +107,7 @@ def build_dataset_registry_view(frame: pd.DataFrame) -> pd.DataFrame:
         "media_partner_available": "Média",
         "population_available": "Population",
         "error_bars_ready": "Barres erreur",
-        "corrected_plot_ready": "Plot corrigé",
+        "corrected_plot_ready": "Graphique corrigé",
         "status": "Statut",
     }
     return working.rename(columns=rename_map)

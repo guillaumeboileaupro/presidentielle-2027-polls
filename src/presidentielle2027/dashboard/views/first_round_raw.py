@@ -284,7 +284,7 @@ def _cached_trend_curve(
             method=(
                 "loess"
                 if trend_method == "Régression locale (LOESS)"
-                else ("bins" if trend_method == "Bins" else "polynomial")
+                else ("bins" if trend_method == "Classes temporelles" else "polynomial")
             ),
             dense_points=300,
         )
@@ -431,7 +431,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     )
     trend_method = c5.selectbox(
         "Modèle",
-        ["Régression locale (LOESS)", "Polynôme auto", "Bins", "Polynôme manuel"],
+        ["Régression locale (LOESS)", "Polynôme auto", "Classes temporelles", "Polynôme manuel"],
         index=0,
         key="first_round_trend_method",
     )
@@ -780,7 +780,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         if trend_method == "Régression locale (LOESS)"
         else (
             "lissage stable par fenêtres"
-            if trend_method == "Bins"
+            if trend_method == "Classes temporelles"
             else ("polynôme auto par parti" if trend_method == "Polynôme auto" else f"polynôme manuel jusqu'à l'ordre {polynomial_order}")
         )
     )

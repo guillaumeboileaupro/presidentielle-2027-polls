@@ -57,8 +57,8 @@ def build_complete_zip_registry() -> pd.DataFrame:
         rows.append(
             {
                 "Périmètre": config["label"],
-                "Visual rows": int(len(visual_rows)),
-                "Layout lines": int(len(layout_lines)),
+                "Lignes visuelles": int(len(visual_rows)),
+                "Lignes de mise en page": int(len(layout_lines)),
                 "Source": config["source_url"],
                 "Statut": "Importé depuis le zip complet",
             }
