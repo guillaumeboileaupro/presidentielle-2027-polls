@@ -406,12 +406,17 @@ def _render_2022_comparison_section(filtered_history: pd.DataFrame, prefix: str 
     st.markdown("**Comparaison 2022 : sondage vs résultat au fil du temps avant le scrutin**")
     available_forces = sorted(filtered_history["force_label"].dropna().astype(str).unique().tolist())
     available_pollsters = ["Tous"] + sorted(filtered_history["pollster"].dropna().astype(str).unique().tolist())
-    fit_methods = {"Polynomial": "polynomial", "Bins": "bins"}
+    fit_methods = {"Polynôme": "polynomial", "Classes temporelles": "bins"}
     c1, c2, c3, c4 = st.columns([1.0, 1.0, 0.8, 0.8])
     selected_force = c1.selectbox("Force 2022", available_forces, key=f"{prefix}_force_fit")
     selected_pollster = c2.selectbox("Institut 2022", available_pollsters, key=f"{prefix}_pollster_fit")
-    selected_fit_label = c3.selectbox("Fit", list(fit_methods.keys()), key=f"{prefix}_fit_method")
-    selected_degree = c4.selectbox("Ordre fit", [1, 2, 3, 4, 5, 6, 7, 8, 9], index=2, key=f"{prefix}_fit_degree")
+    selected_fit_label = c3.selectbox("Ajustement", list(fit_methods.keys()), key=f"{prefix}_fit_method")
+    selected_degree = c4.selectbox(
+        "Ordre du polynôme",
+        [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        index=2,
+        key=f"{prefix}_fit_degree",
+    )
 
     comparison = filtered_history.loc[filtered_history["force_label"] == selected_force].copy()
     if selected_pollster != "Tous":
@@ -461,8 +466,8 @@ def _render_2022_comparison_section(filtered_history: pd.DataFrame, prefix: str 
                 y=comparison_curve["estimate_percent"],
                 mode="lines",
                 line={"width": 2.6, "color": color},
-                name=f"Fit sondage ({selected_fit_label.lower()})",
-                hovertemplate="J-%{x:.0f}<br>Fit sondage: %{y:.1f}%<extra></extra>",
+                name=f"Ajustement du sondage ({selected_fit_label.lower()})",
+                hovertemplate="J-%{x:.0f}<br>Ajustement du sondage : %{y:.1f}%<extra></extra>",
             )
         )
     poll_vs_result.add_hline(y=result_value, line_width=2, line_dash="dot", line_color="#111111")
@@ -495,8 +500,8 @@ def _render_2022_comparison_section(filtered_history: pd.DataFrame, prefix: str 
                 y=error_curve["error_result_minus_poll"],
                 mode="lines",
                 line={"width": 2.6, "color": color},
-                name=f"Fit ecart ({selected_fit_label.lower()})",
-                hovertemplate="J-%{x:.0f}<br>Fit ecart: %{y:.2f}<extra></extra>",
+                name=f"Ajustement de l’écart ({selected_fit_label.lower()})",
+                hovertemplate="J-%{x:.0f}<br>Ajustement de l’écart : %{y:.2f}<extra></extra>",
             )
         )
     error_plot.add_hline(y=0.0, line_width=1, line_dash="dot", line_color="#666666")

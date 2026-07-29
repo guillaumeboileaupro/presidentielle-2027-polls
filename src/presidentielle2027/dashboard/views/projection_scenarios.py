@@ -62,7 +62,12 @@ def render_projection_scenarios_page(frame: pd.DataFrame) -> None:
     c4, c5, c6, c7, c8 = st.columns([0.8, 1.2, 0.8, 0.8, 0.8])
     display_mode = c4.selectbox("Vue", ["Brut", "Corrigé 2027"], key="projection_mode")
     period = c5.date_input("Période", value=(min_date, max_date), min_value=min_date, max_value=max_date, key="projection_period")
-    trend_method = c6.selectbox("Modèle", ["Polynomial", "Bins"], index=0, key="projection_trend_method")
+    trend_method = c6.selectbox(
+        "Modèle",
+        ["Polynôme", "Classes temporelles"],
+        index=0,
+        key="projection_trend_method",
+    )
     polynomial_order = c7.selectbox("Ordre", [1, 2, 3, 4, 5, 6], index=3, key="projection_polynomial_order")
     show_extension = c8.checkbox(
         "Pointillé",
@@ -127,7 +132,7 @@ def render_projection_scenarios_page(frame: pd.DataFrame) -> None:
             "estimate_percent",
             frac=0.30,
             degree=polynomial_order,
-            method="bins" if trend_method == "Bins" else "polynomial",
+            method="bins" if trend_method == "Classes temporelles" else "polynomial",
         )
         if smoothed is None:
             insufficient.append(str(candidate_name))
@@ -151,7 +156,7 @@ def render_projection_scenarios_page(frame: pd.DataFrame) -> None:
                 "value_column": "estimate_percent",
                 "recent_days": 30,
                 "degree": polynomial_order,
-                "method": "bins" if trend_method == "Bins" else "polynomial",
+                "method": "bins" if trend_method == "Classes temporelles" else "polynomial",
             }
             if supports_clip_upper:
                 extension_kwargs["clip_upper"] = None
@@ -182,7 +187,11 @@ def render_projection_scenarios_page(frame: pd.DataFrame) -> None:
                     )
                 )
     title_suffix = "corrigé 2027" if display_mode == "Corrigé 2027" else "brut"
-    model_label = "modèle par bins" if trend_method == "Bins" else f"ajustement polynomial d'ordre {polynomial_order}"
+    model_label = (
+        "modèle par classes temporelles"
+        if trend_method == "Classes temporelles"
+        else f"ajustement polynomial d'ordre {polynomial_order}"
+    )
     figure.update_layout(
         title=f"Points bruts, {model_label} et scénario exploratoire {title_suffix}",
         xaxis_title="Date de publication",

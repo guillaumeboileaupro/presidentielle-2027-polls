@@ -22,13 +22,24 @@ USER_VALUE_REPLACEMENTS = {
     "centre_left": "Centre-gauche",
     "center_left": "Centre-gauche",
     "centre_gauche": "Centre-gauche",
+    "central_gauche": "Centre-gauche",
+    "central-gauche": "Centre-gauche",
+    "centre-gauche": "Centre-gauche",
+    "gauche_radicale": "Gauche radicale",
     "green": "Écologistes",
     "greens": "Écologistes",
+    "écologistes": "Écologistes",
     "centre": "Centre",
     "center": "Centre",
+    "centre_droit": "Centre-droit",
+    "central_droit": "Centre-droit",
+    "central-droit": "Centre-droit",
+    "centre-droit": "Centre-droit",
     "right": "Droite",
     "gaullist_right": "Droite gaulliste",
     "droite_gaulliste": "Droite gaulliste",
+    "droite_nationale": "Droite nationale",
+    "droite_souverainiste": "Droite souverainiste",
     "far_right": "Extrême droite",
     "far_left": "Extrême gauche",
     "sovereigntist_right": "Droite souverainiste",
@@ -43,6 +54,20 @@ USER_VALUE_REPLACEMENTS = {
     "181_plus": "181 jours et plus",
     "historical_2022": "Calcul automatique 2022",
     "manual_override": "Surcharge manuelle",
+    "generic_bloc": "Bloc politique commun",
+    "online": "En ligne",
+    "telephone": "Téléphone",
+    "phone": "Téléphone",
+    "mixed": "Méthode mixte",
+    "registered_voters": "Personnes inscrites sur les listes électorales",
+    "general_population": "Population générale",
+    "true": "Oui",
+    "false": "Non",
+    "ready": "Prêt",
+    "partial": "Partiel",
+    "complete": "Complet",
+    "wikipedia_fr_raw_tables": "Wikipédia France — tableaux bruts corrigés",
+    "wikipedia_excel_v2": "Wikipédia — extraction structurée",
 }
 
 USER_COLUMN_LABELS = {
@@ -86,6 +111,37 @@ USER_COLUMN_LABELS = {
     "status": "Statut",
     "years_used": "Années",
     "bias_source": "Source du biais",
+    "poll_id": "Identifiant du sondage",
+    "quota_method": "Méthode des quotas",
+    "margin_of_error": "Marge d’erreur",
+    "extraction_confidence": "Confiance de l’extraction",
+    "lower_bound_percent": "Borne basse",
+    "upper_bound_percent": "Borne haute",
+    "undecided_percent": "Indécis",
+    "abstention_estimate": "Abstention estimée",
+    "registered_voters_basis": "Base des personnes inscrites",
+    "raw_text_context": "Texte source",
+    "rows": "Lignes",
+    "rounds": "Tours",
+    "scenarios": "Scénarios",
+    "pollsters": "Instituts",
+    "average_sample_size": "Échantillon moyen",
+    "first_publication": "Première publication",
+    "last_publication": "Dernière publication",
+    "missing_sample_size": "Échantillons manquants",
+    "missing_collection_method": "Modes de collecte manquants",
+    "field": "Champ",
+    "label": "Libellé",
+    "filled_count": "Présents",
+    "missing_count": "Manquants",
+    "coverage_percent": "Couverture",
+    "page": "Page",
+    "visual_row": "Ligne visuelle",
+    "row_text": "Texte de la ligne",
+    "layout_line": "Ligne de mise en page",
+    "raw_line": "Texte brut",
+    "line_number": "Numéro de ligne",
+    "text": "Texte",
 }
 
 
@@ -104,11 +160,16 @@ def clean_user_facing_frame(frame: pd.DataFrame) -> pd.DataFrame:
             working[column]
             .fillna("Non renseigné")
             .astype(str)
-            .map(lambda value: USER_VALUE_REPLACEMENTS.get(value.strip(), value.strip()))
+            .map(
+                lambda value: USER_VALUE_REPLACEMENTS.get(
+                    value.strip(),
+                    USER_VALUE_REPLACEMENTS.get(value.strip().lower(), value.strip()),
+                )
+            )
         )
     datetime_columns = working.select_dtypes(include=["datetime64[ns]", "datetimetz"]).columns.tolist()
     for column in datetime_columns:
-        working[column] = working[column].dt.strftime("%Y-%m-%d").fillna("Date non disponible")
+        working[column] = working[column].dt.strftime("%d/%m/%Y").fillna("Date non disponible")
     return working
 
 

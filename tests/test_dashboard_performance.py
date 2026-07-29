@@ -5,7 +5,9 @@ import inspect
 import pandas as pd
 
 from presidentielle2027.dashboard import app, live_app
+from presidentielle2027.dashboard.table_views import clean_user_facing_frame, rename_user_facing_columns
 from presidentielle2027.dashboard.views import analysis_2022, first_round_raw
+from presidentielle2027.dashboard.views import sources_metadata
 
 
 def test_dashboard_startup_does_not_run_ingestion_pipeline() -> None:
@@ -77,3 +79,28 @@ def test_historical_2022_overview_uses_true_local_regression() -> None:
 
     assert 'method="loess"' in function_source
     assert "ajustement polynomial et résultat final" not in function_source
+
+
+def test_user_facing_tables_translate_technical_fields_and_values() -> None:
+    frame = pd.DataFrame(
+        {
+            "publication_date": [pd.Timestamp("2026-07-29")],
+            "sample_size": [1000],
+            "political_family": ["centre_gauche"],
+            "collection_method": ["online"],
+        }
+    )
+
+    displayed = clean_user_facing_frame(rename_user_facing_columns(frame))
+
+    assert displayed.columns.tolist() == ["Publication", "Échantillon", "Famille politique", "Collecte"]
+    assert displayed.loc[0, "Publication"] == "29/07/2026"
+    assert displayed.loc[0, "Famille politique"] == "Centre-gauche"
+    assert displayed.loc[0, "Collecte"] == "En ligne"
+
+
+def test_metadata_page_does_not_display_raw_technical_field_names() -> None:
+    function_source = inspect.getsource(sources_metadata.render_sources_metadata_page)
+
+    assert '"Champ technique"' not in function_source
+    assert 'drop(columns="field"' in function_source

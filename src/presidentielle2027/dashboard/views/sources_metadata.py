@@ -11,7 +11,11 @@ from presidentielle2027.dashboard.metadata import (
     build_pollster_registry_view,
     load_csv_if_exists,
 )
-from presidentielle2027.dashboard.table_views import USER_VALUE_REPLACEMENTS
+from presidentielle2027.dashboard.table_views import (
+    USER_VALUE_REPLACEMENTS,
+    clean_user_facing_frame,
+    rename_user_facing_columns,
+)
 from presidentielle2027.dashboard.wiki_complete_zip import (
     WIKI_COMPLETE_FILES,
     build_complete_zip_registry,
@@ -90,13 +94,13 @@ def _render_imported_wiki_zip_section(imported_zip_dir: Path) -> None:
                 f"{len(preview)} ligne(s) affichée(s) sur {len(imported)} dans `{csv_name}`."
             )
             st.dataframe(
-                preview.head(300),
+                clean_user_facing_frame(rename_user_facing_columns(preview.head(300))),
                 width="stretch",
                 hide_index=True,
                 column_config={
-                    "source_url": st.column_config.LinkColumn("Source"),
-                    "line_number": st.column_config.NumberColumn("Ligne", format="%d"),
-                    "text": st.column_config.TextColumn("Texte", width="large"),
+                    "Lien source": st.column_config.LinkColumn("Source"),
+                    "Numéro de ligne": st.column_config.NumberColumn("Ligne", format="%d"),
+                    "Texte": st.column_config.TextColumn("Texte", width="large"),
                 },
             )
             st.download_button(
@@ -123,8 +127,8 @@ def _render_complete_wiki_zip_section() -> None:
         width="stretch",
         hide_index=True,
         column_config={
-            "Visual rows": st.column_config.NumberColumn("Visual rows", format="%d"),
-            "Layout lines": st.column_config.NumberColumn("Layout lines", format="%d"),
+            "Lignes visuelles": st.column_config.NumberColumn("Lignes visuelles", format="%d"),
+            "Lignes de mise en page": st.column_config.NumberColumn("Lignes de mise en page", format="%d"),
             "Source": st.column_config.LinkColumn("Source"),
         },
     )
@@ -145,19 +149,27 @@ def _render_complete_wiki_zip_section() -> None:
                 visual_preview = visual_preview.loc[
                     visual_preview["row_text"].fillna("").str.contains(search, case=False, na=False)
                 ]
-            st.caption(f"{len(visual_preview)} visual row(s) affichée(s) sur {len(visual_rows)}.")
+            st.caption(f"{len(visual_preview)} ligne(s) visuelle(s) affichée(s) sur {len(visual_rows)}.")
             st.dataframe(
-                visual_preview[["page", "visual_row", "row_text", "source_url"]].head(200),
+                clean_user_facing_frame(
+                    rename_user_facing_columns(
+                        visual_preview[["page", "visual_row", "row_text", "source_url"]].head(200)
+                    )
+                ),
                 width="stretch",
                 hide_index=True,
-                column_config={"source_url": st.column_config.LinkColumn("Source")},
+                column_config={"Lien source": st.column_config.LinkColumn("Source")},
             )
-            st.caption(f"{len(layout_lines)} layout line(s) disponibles.")
+            st.caption(f"{len(layout_lines)} ligne(s) de mise en page disponible(s).")
             st.dataframe(
-                layout_lines[["page", "layout_line", "raw_line", "source_url"]].head(120),
+                clean_user_facing_frame(
+                    rename_user_facing_columns(
+                        layout_lines[["page", "layout_line", "raw_line", "source_url"]].head(120)
+                    )
+                ),
                 width="stretch",
                 hide_index=True,
-                column_config={"source_url": st.column_config.LinkColumn("Source")},
+                column_config={"Lien source": st.column_config.LinkColumn("Source")},
             )
 
 
@@ -195,7 +207,7 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
 
     source_options = ["Tous"] + sorted(working["source_name"].dropna().astype(str).unique().tolist())
     selected_source = st.selectbox(
-        "Dataset / source",
+        "Jeu de données / source",
         source_options,
         key="sources_metadata_source",
         format_func=_display_source_label,
@@ -210,16 +222,23 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
 
     st.markdown("**Couverture des champs critiques**")
     completeness = build_frame_completeness_summary(visible)
+    completeness = completeness.drop(columns="field", errors="ignore").rename(
+        columns={
+            "label": "Champ",
+            "filled_count": "Présents",
+            "missing_count": "Manquants",
+            "coverage_percent": "Couverture",
+        }
+    )
     st.dataframe(
         completeness,
         width="stretch",
         hide_index=True,
         column_config={
-            "field": st.column_config.TextColumn("Champ technique"),
-            "label": st.column_config.TextColumn("Libellé"),
-            "filled_count": st.column_config.NumberColumn("Présents", format="%d"),
-            "missing_count": st.column_config.NumberColumn("Manquants", format="%d"),
-            "coverage_percent": st.column_config.ProgressColumn("Couverture", format="%.1f%%", min_value=0, max_value=100),
+            "Champ": st.column_config.TextColumn("Champ"),
+            "Présents": st.column_config.NumberColumn("Présents", format="%d"),
+            "Manquants": st.column_config.NumberColumn("Manquants", format="%d"),
+            "Couverture": st.column_config.ProgressColumn("Couverture", format="%.1f%%", min_value=0, max_value=100),
         },
     )
 
@@ -228,7 +247,7 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
         st.markdown("**Registre des datasets**")
         dataset_view = build_dataset_registry_view(dataset_registry)
         keep_columns = [
-            "Dataset",
+            "Jeu de données",
             "Source",
             "Tours",
             "Extraction",
@@ -238,7 +257,7 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
             "Collecte",
             "Quotas",
             "Barres erreur",
-            "Plot corrigé",
+            "Graphique corrigé",
             "Statut",
         ]
         available = [column for column in keep_columns if column in dataset_view.columns]
@@ -311,8 +330,9 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
         "Site web",
     ]
     available = [column for column in keep_columns if column in pollster_summary.columns]
+    pollster_view = clean_user_facing_frame(pollster_summary[available])
     st.dataframe(
-        pollster_summary[available],
+        pollster_view,
         width="stretch",
         hide_index=True,
         column_config={
@@ -340,19 +360,20 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
     )
     source_summary["source_name"] = source_summary["source_name"].map(_display_source_label)
     source_summary["round"] = source_summary["round"].map(lambda value: USER_VALUE_REPLACEMENTS.get(str(value), str(value)))
+    source_view = clean_user_facing_frame(rename_user_facing_columns(source_summary))
     st.markdown("**Résumé par source et par tour**")
     st.dataframe(
-        source_summary,
+        source_view,
         width="stretch",
         hide_index=True,
         column_config={
-            "source_name": st.column_config.TextColumn("Source"),
-            "round": st.column_config.TextColumn("Tour"),
-            "rows": st.column_config.NumberColumn("Lignes", format="%d"),
-            "scenarios": st.column_config.NumberColumn("Scénarios", format="%d"),
-            "pollsters": st.column_config.NumberColumn("Instituts", format="%d"),
-            "missing_sample_size": st.column_config.NumberColumn("Échantillon manquant", format="%d"),
-            "missing_collection_method": st.column_config.NumberColumn("Collecte manquante", format="%d"),
+            "Source": st.column_config.TextColumn("Source"),
+            "Tour": st.column_config.TextColumn("Tour"),
+            "Lignes": st.column_config.NumberColumn("Lignes", format="%d"),
+            "Scénarios": st.column_config.NumberColumn("Scénarios", format="%d"),
+            "Instituts": st.column_config.NumberColumn("Instituts", format="%d"),
+            "Échantillons manquants": st.column_config.NumberColumn("Échantillon manquant", format="%d"),
+            "Modes de collecte manquants": st.column_config.NumberColumn("Collecte manquante", format="%d"),
         },
     )
 
@@ -381,10 +402,13 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
     if "round" in missing_rows.columns:
         missing_rows["round"] = missing_rows["round"].map(lambda value: USER_VALUE_REPLACEMENTS.get(str(value), str(value)))
     existing_columns = [column for column in columns if column in missing_rows.columns]
+    missing_view = clean_user_facing_frame(
+        rename_user_facing_columns(missing_rows[existing_columns].head(200))
+    )
     st.markdown("**Lignes avec métadonnées critiques manquantes**")
     st.dataframe(
-        missing_rows[existing_columns].head(200),
+        missing_view,
         width="stretch",
         hide_index=True,
-        column_config={"source_url": st.column_config.LinkColumn("Lien source")},
+        column_config={"Lien source": st.column_config.LinkColumn("Lien source")},
     )
