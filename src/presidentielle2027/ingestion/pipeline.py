@@ -179,7 +179,12 @@ def _merge_with_latest_raw_wikipedia_tables(frame: pd.DataFrame, raw_dir: Path) 
     if raw_frame.empty:
         return frame
 
-    merged = pd.concat([frame, raw_frame], ignore_index=True, sort=False)
+    cleaned_frame = frame.copy()
+    if "poll_id" in cleaned_frame.columns:
+        raw_poll_mask = cleaned_frame["poll_id"].fillna("").astype(str).str.startswith(("RAW-FR-", "RAW-SR-"))
+        cleaned_frame = cleaned_frame.loc[~raw_poll_mask].copy()
+
+    merged = pd.concat([cleaned_frame, raw_frame], ignore_index=True, sort=False)
     merged = merged.drop_duplicates(
         subset=[
             "round",
