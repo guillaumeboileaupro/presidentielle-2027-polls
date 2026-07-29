@@ -5,6 +5,49 @@ from pathlib import Path
 import pandas as pd
 
 
+CRITICAL_FIELD_LABELS = {
+    "sample_size": "Taille d'échantillon",
+    "fieldwork_start_date": "Date de terrain début",
+    "fieldwork_end_date": "Date de terrain fin",
+    "publication_date": "Date de publication",
+    "collection_method": "Mode de collecte",
+    "quota_method": "Méthode des quotas",
+    "commissioner": "Commanditaire",
+    "media_partner": "Partenaire média",
+    "population": "Population interrogée",
+    "margin_of_error": "Marge d'erreur",
+    "extraction_confidence": "Confiance d'extraction",
+}
+
+MISSING_TEXT_VALUES = {
+    "",
+    "unknown",
+    "unknown_source",
+    "unknown_pollster",
+    "unknown_scenario",
+    "unknown_round",
+    "nan",
+    "none",
+    "nat",
+    "non renseigné",
+    "n.d.",
+    "nd",
+    "n/a",
+    "na",
+    "non disponible",
+    "non communiqué",
+}
+
+
+def meaningful_value_mask(series: pd.Series) -> pd.Series:
+    if pd.api.types.is_datetime64_any_dtype(series):
+        return series.notna()
+    if str(series.dtype) != "object":
+        return series.notna()
+    normalized = series.fillna("").astype(str).str.strip().str.lower()
+    return ~normalized.isin(MISSING_TEXT_VALUES)
+
+
 def load_csv_if_exists(path: Path) -> pd.DataFrame:
     if path.exists():
         return pd.read_csv(path, engine="python", on_bad_lines="skip")
@@ -12,30 +55,16 @@ def load_csv_if_exists(path: Path) -> pd.DataFrame:
 
 
 def build_frame_completeness_summary(frame: pd.DataFrame) -> pd.DataFrame:
-    checks = {
-        "sample_size": "Taille d'échantillon",
-        "fieldwork_start_date": "Date de terrain début",
-        "fieldwork_end_date": "Date de terrain fin",
-        "publication_date": "Date de publication",
-        "collection_method": "Mode de collecte",
-        "quota_method": "Méthode des quotas",
-        "commissioner": "Commanditaire",
-        "media_partner": "Partenaire média",
-        "population": "Population interrogée",
-        "margin_of_error": "Marge d'erreur",
-        "extraction_confidence": "Confiance d'extraction",
-    }
     rows: list[dict[str, object]] = []
     total = len(frame.index)
     if total == 0:
         return pd.DataFrame(columns=["field", "label", "filled_count", "missing_count", "coverage_percent"])
 
-    for column, label in checks.items():
+    for column, label in CRITICAL_FIELD_LABELS.items():
         if column not in frame.columns:
             filled_count = 0
         else:
-            series = frame[column]
-            filled_count = int(series.notna().sum()) if str(series.dtype) != "object" else int(series.fillna("").astype(str).str.strip().ne("").sum())
+            filled_count = int(meaningful_value_mask(frame[column]).sum())
         rows.append(
             {
                 "field": column,
