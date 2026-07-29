@@ -127,3 +127,39 @@ def test_live_dashboard_installs_the_global_text_guard() -> None:
     function_source = inspect.getsource(live_app.main)
 
     assert "install_user_facing_text_guard()" in function_source
+
+
+def test_official_results_are_flagged_separately_from_polls() -> None:
+    frame = pd.DataFrame(
+        {
+            "poll_id": ["poll-1", "RAW-FR-RÉSULTATS-06-010"],
+            "polling_company": ["Ifop", "Résultats"],
+            "scenario_name": ["Hypothèse", "Résultats officiels"],
+            "candidate_name": ["Candidat A", "Candidat A"],
+            "candidate_party": ["TEST", "TEST"],
+            "political_family": ["centre", "centre"],
+            "publication_date": ["2022-04-01", "2022-04-10"],
+            "fieldwork_start_date": ["2022-03-31", "2022-04-10"],
+            "fieldwork_end_date": ["2022-04-01", "2022-04-10"],
+            "estimate_percent": [20.0, 25.0],
+            "sample_size": [1000, 1000000],
+        }
+    )
+
+    prepared = app.prepare_dashboard_frame(frame)
+
+    assert prepared["is_official_result"].tolist() == [False, True]
+
+
+def test_dashboard_excludes_official_results_from_regular_renderers() -> None:
+    function_source = inspect.getsource(app.main)
+
+    assert 'page != "Sources et métadonnées"' in function_source
+    assert '~frame["is_official_result"]' in function_source
+
+
+def test_historical_second_round_smoothing_uses_polls_only() -> None:
+    function_source = inspect.getsource(analysis_2022.render_analysis_2022_page)
+
+    assert "second_round_polls" in function_source
+    assert "ordered = second_round_polls.sort_values" in function_source
