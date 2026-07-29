@@ -5,7 +5,7 @@ import inspect
 import pandas as pd
 
 from presidentielle2027.dashboard import app, live_app
-from presidentielle2027.dashboard.views import first_round_raw
+from presidentielle2027.dashboard.views import analysis_2022, first_round_raw
 
 
 def test_dashboard_startup_does_not_run_ingestion_pipeline() -> None:
@@ -70,3 +70,10 @@ def test_latest_raw_first_round_replaces_stale_v2_database_rows() -> None:
 
     assert merged["poll_id"].tolist() == ["RAW-FR-IFOP-01-001"]
     assert merged["estimate_percent"].tolist() == [15.0]
+
+
+def test_historical_2022_overview_uses_true_local_regression() -> None:
+    function_source = inspect.getsource(analysis_2022.render_analysis_2022_page)
+
+    assert 'method="loess"' in function_source
+    assert "ajustement polynomial et résultat final" not in function_source
