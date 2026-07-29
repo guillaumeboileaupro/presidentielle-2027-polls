@@ -39,6 +39,20 @@ def load_results_dataframe(engine: Engine) -> pd.DataFrame:
     return pd.read_sql(text(JOINED_RESULTS_SQL), engine)
 
 
+def exclude_official_results(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame.copy()
+    polling_company = frame.get("polling_company", pd.Series("", index=frame.index)).fillna("").astype(str)
+    poll_id = frame.get("poll_id", pd.Series("", index=frame.index)).fillna("").astype(str)
+    scenario_name = frame.get("scenario_name", pd.Series("", index=frame.index)).fillna("").astype(str)
+    official_result = (
+        polling_company.str.match(r"(?i)^résultats?(?:\s+officiels?)?$")
+        | poll_id.str.contains(r"(?i)RÉSULTATS|RESULTATS")
+        | scenario_name.str.contains(r"(?i)\bofficiel(?:le|s|les)?\b")
+    )
+    return frame.loc[~official_result].copy()
+
+
 def compute_weighted_polling_averages(
     frame: pd.DataFrame,
     reference_date: date | None = None,
@@ -56,7 +70,7 @@ def compute_weighted_polling_averages(
             ]
         )
 
-    working = frame.copy()
+    working = exclude_official_results(frame)
     working = working.loc[~working["candidate_name"].map(is_generic_bloc_label)].copy()
     if working.empty:
         return pd.DataFrame(

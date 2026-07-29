@@ -135,6 +135,8 @@ def _load_2022_first_round_from_wiki_tables(include_archive: bool = False) -> pd
         sample_text = next((str(row_map[column]).strip() for column in sample_columns if pd.notna(row_map.get(column)) and str(row_map.get(column)).strip()), "")
         if not pollster or pollster == "nan":
             continue
+        if re.match(r"(?i)^résultats?(?:\s+officiels?)?$", pollster):
+            continue
         if any(marker in pollster for marker in ["Arrêt de publication", "annonce sa candidature", "retire sa candidature", "remporte la Primaire"]):
             continue
         fallback_year = 2022
@@ -827,6 +829,11 @@ def render_analysis_2022_page() -> None:
         st.markdown("**Second tour 2022 · Macron vs Le Pen**")
         second_round["error_lepen"] = second_round["lepen_percent"] - 41.45
         second_round["error_macron"] = second_round["macron_percent"] - 58.55
+        official_second_round = second_round["pollster"].str.match(
+            r"(?i)^résultats?(?:\s+officiels?)?$",
+            na=False,
+        )
+        second_round_polls = second_round.loc[~official_second_round].copy()
 
         st.dataframe(
             second_round.rename(
@@ -856,7 +863,9 @@ def render_analysis_2022_page() -> None:
             ("Macron", "macron_percent", "#F4A300"),
             ("Le Pen", "lepen_percent", "#0D47A1"),
         ]:
-            ordered = second_round.sort_values("publication_date")
+            ordered = second_round_polls.sort_values("publication_date")
+            if ordered.empty:
+                continue
             second_round_chart.add_trace(
                 go.Scatter(
                     x=ordered["publication_date"],

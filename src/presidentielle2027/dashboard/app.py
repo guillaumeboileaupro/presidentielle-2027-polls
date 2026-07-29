@@ -290,6 +290,14 @@ def prepare_dashboard_frame(frame: pd.DataFrame) -> pd.DataFrame:
     working["fieldwork_end_date"] = pd.to_datetime(working.get("fieldwork_end_date"), errors="coerce")
     working["estimate_percent"] = pd.to_numeric(working["estimate_percent"], errors="coerce")
     working["sample_size"] = pd.to_numeric(working.get("sample_size"), errors="coerce")
+    polling_company = working.get("polling_company", pd.Series("", index=working.index)).fillna("").astype(str)
+    poll_id = working.get("poll_id", pd.Series("", index=working.index)).fillna("").astype(str)
+    scenario_name = working.get("scenario_name", pd.Series("", index=working.index)).fillna("").astype(str)
+    working["is_official_result"] = (
+        polling_company.str.match(r"(?i)^résultats?(?:\s+officiels?)?$")
+        | poll_id.str.contains(r"(?i)RÉSULTATS|RESULTATS")
+        | scenario_name.str.contains(r"(?i)\bofficiel(?:le|s|les)?\b")
+    )
     return working
 
 
@@ -345,7 +353,10 @@ def main() -> None:
         with st.popover("?", help="Aide pour la vue active", use_container_width=True):
             st.markdown(page_lookup[page]["help"])
 
-    page_lookup[page]["renderer"](frame)
+    renderer_frame = frame
+    if page != "Sources et métadonnées" and "is_official_result" in frame.columns:
+        renderer_frame = frame.loc[~frame["is_official_result"]].copy()
+    page_lookup[page]["renderer"](renderer_frame)
 
 
 if __name__ == "__main__":
