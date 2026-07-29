@@ -184,22 +184,26 @@ def _parse_raw_poll_percent(value: object) -> float | None:
         return None
 
 def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
+    """Correct only individually impossible percentages.
+
+    A scenario total can legitimately exceed 100 when a source table places
+    alternative candidacies in the same row. It must therefore never be used
+    to divide every value in the scenario: doing so turned valid values such
+    as 31 % into 3.1 %. Values already in the [0, 100] percentage range are
+    preserved exactly. Only values above 100 are divided by powers of ten
+    until they become a possible percentage.
+    """
     if frame.empty:
         return frame.copy()
     corrected = frame.copy()
     numeric = pd.to_numeric(corrected["estimate_percent"], errors="coerce")
     corrected.loc[numeric.notna(), "estimate_percent"] = numeric.loc[numeric.notna()]
-    scenario_columns = ["poll_id", "round", "scenario_name"]
-    for _, indexes in corrected.groupby(scenario_columns, dropna=False).groups.items():
-        indexes = list(indexes)
-        values = pd.to_numeric(corrected.loc[indexes, "estimate_percent"], errors="coerce")
-        total = values.sum(min_count=1)
-        scale = 1.0
-        if pd.notna(total):
-            while total / scale > 110.0:
-                scale *= 10.0
-        if scale > 1.0:
-            corrected.loc[indexes, "estimate_percent"] = values / scale
+    impossible = numeric > 100.0
+    for index, value in numeric.loc[impossible].items():
+        corrected_value = float(value)
+        while corrected_value > 100.0:
+            corrected_value /= 10.0
+        corrected.at[index, "estimate_percent"] = corrected_value
     return corrected
 
 
