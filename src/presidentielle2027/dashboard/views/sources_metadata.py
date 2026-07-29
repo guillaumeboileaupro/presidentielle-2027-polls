@@ -6,10 +6,12 @@ import pandas as pd
 import streamlit as st
 
 from presidentielle2027.dashboard.metadata import (
+    CRITICAL_FIELD_LABELS,
     build_dataset_registry_view,
     build_frame_completeness_summary,
     build_pollster_registry_view,
     load_csv_if_exists,
+    meaningful_value_mask,
 )
 from presidentielle2027.dashboard.table_views import (
     USER_VALUE_REPLACEMENTS,
@@ -240,6 +242,96 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
             "Manquants": st.column_config.NumberColumn("Manquants", format="%d"),
             "Couverture": st.column_config.ProgressColumn("Couverture", format="%.1f%%", min_value=0, max_value=100),
         },
+    )
+    st.caption(
+        "Les valeurs techniques vides (`unknown`, `N/A`, etc.) sont comptées comme manquantes. "
+        "Utilisez les filtres ci-dessous pour contrôler les lignes derrière chaque total."
+    )
+
+    st.markdown("**Explorer la qualité des métadonnées**")
+    field_labels = {
+        label: field for field, label in CRITICAL_FIELD_LABELS.items()
+    }
+    filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
+    selected_field_label = filter_col1.selectbox(
+        "Champ à contrôler",
+        list(field_labels),
+        key="metadata_quality_field",
+    )
+    selected_state = filter_col2.selectbox(
+        "État du champ",
+        ["Toutes", "Manquantes", "Renseignées"],
+        key="metadata_quality_state",
+    )
+    round_values = sorted(visible["round"].dropna().astype(str).unique().tolist())
+    selected_round = filter_col3.selectbox(
+        "Tour",
+        ["Tous"] + round_values,
+        key="metadata_quality_round",
+        format_func=lambda value: USER_VALUE_REPLACEMENTS.get(str(value), str(value)),
+    )
+    pollster_values = sorted(
+        value
+        for value in visible["polling_company"].dropna().astype(str).unique().tolist()
+        if meaningful_value_mask(pd.Series([value])).iloc[0]
+    )
+    selected_pollster = filter_col4.selectbox(
+        "Institut",
+        ["Tous"] + pollster_values,
+        key="metadata_quality_pollster",
+    )
+
+    selected_field = field_labels[selected_field_label]
+    quality_rows = visible.copy()
+    if selected_round != "Tous":
+        quality_rows = quality_rows.loc[
+            quality_rows["round"].fillna("").astype(str) == selected_round
+        ]
+    if selected_pollster != "Tous":
+        quality_rows = quality_rows.loc[
+            quality_rows["polling_company"].fillna("").astype(str) == selected_pollster
+        ]
+
+    if selected_field in quality_rows.columns:
+        selected_field_is_filled = meaningful_value_mask(quality_rows[selected_field])
+    else:
+        quality_rows[selected_field] = pd.NA
+        selected_field_is_filled = pd.Series(False, index=quality_rows.index)
+    if selected_state == "Manquantes":
+        quality_rows = quality_rows.loc[~selected_field_is_filled].copy()
+    elif selected_state == "Renseignées":
+        quality_rows = quality_rows.loc[selected_field_is_filled].copy()
+
+    quality_rows["État"] = (
+        meaningful_value_mask(quality_rows[selected_field])
+        .map({True: "Renseigné", False: "Manquant"})
+    )
+    detail_columns = [
+        "poll_id",
+        "publication_date",
+        "polling_company",
+        "round",
+        "scenario_name",
+        "candidate_name",
+        selected_field,
+        "État",
+        "source_url",
+    ]
+    detail_columns = list(dict.fromkeys(
+        column for column in detail_columns if column in quality_rows.columns
+    ))
+    quality_view = clean_user_facing_frame(
+        rename_user_facing_columns(quality_rows[detail_columns])
+    )
+    st.caption(
+        f"{len(quality_view)} ligne(s) correspondent aux filtres "
+        f"pour « {selected_field_label} »."
+    )
+    st.dataframe(
+        quality_view,
+        width="stretch",
+        hide_index=True,
+        column_config={"Lien source": st.column_config.LinkColumn("Lien source")},
     )
 
     dataset_registry = load_csv_if_exists(Path("data/reference/datasets_metadata.csv"))

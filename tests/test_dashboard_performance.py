@@ -5,6 +5,10 @@ import inspect
 import pandas as pd
 
 from presidentielle2027.dashboard import app, live_app
+from presidentielle2027.dashboard.metadata import (
+    build_frame_completeness_summary,
+    meaningful_value_mask,
+)
 from presidentielle2027.dashboard.table_views import (
     clean_user_facing_frame,
     rename_user_facing_columns,
@@ -107,6 +111,38 @@ def test_metadata_page_does_not_display_raw_technical_field_names() -> None:
 
     assert '"Champ technique"' not in function_source
     assert 'drop(columns="field"' in function_source
+
+
+def test_metadata_coverage_treats_placeholder_values_as_missing() -> None:
+    frame = pd.DataFrame(
+        {
+            "collection_method": ["unknown", "N/A", "online", None],
+            "publication_date": pd.to_datetime(
+                ["2026-01-01", None, "2026-01-03", "2026-01-04"]
+            ),
+        }
+    )
+
+    summary = build_frame_completeness_summary(frame).set_index("field")
+
+    assert summary.loc["collection_method", "filled_count"] == 1
+    assert summary.loc["collection_method", "missing_count"] == 3
+    assert summary.loc["collection_method", "coverage_percent"] == 25.0
+    assert summary.loc["publication_date", "filled_count"] == 3
+    assert meaningful_value_mask(pd.Series(["non disponible", "Ifop"])).tolist() == [
+        False,
+        True,
+    ]
+
+
+def test_metadata_quality_table_has_field_state_round_and_pollster_filters() -> None:
+    function_source = inspect.getsource(sources_metadata.render_sources_metadata_page)
+
+    assert '"Champ à contrôler"' in function_source
+    assert '"État du champ"' in function_source
+    assert '"Tour"' in function_source
+    assert '"Institut"' in function_source
+    assert "meaningful_value_mask" in function_source
 
 
 def test_unknown_internal_identifiers_get_a_readable_fallback() -> None:
