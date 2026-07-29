@@ -44,8 +44,12 @@ OFFICIAL_2024_LEGISLATIVE_ZIP_PATHS = [
     Path.cwd() / "data" / "reference" / "2024_legislative.zip",
 ]
 OFFICIAL_2024_CIRCO_RESULTS_LOCAL_PATHS = [
+    Path.cwd() / "data" / "reference" / "official_2024_legislatives_circo_results.csv",
     Path("/home/gboileau/Téléchargements/2024_legislative/resultats-definitifs-par-circonscriptions-legislatives.csv"),
     Path.cwd() / "data" / "reference" / "resultats-definitifs-par-circonscriptions-legislatives.csv",
+]
+OFFICIAL_2024_T2_CANDIDATURES_LOCAL_PATHS = [
+    Path.cwd() / "data" / "reference" / "official_2024_legislatives_t2_candidates.csv",
 ]
 WIKIPEDIA_2024_RESULTS_PAGE_URL = "https://fr.wikipedia.org/wiki/R%C3%A9sultats_par_d%C3%A9partement_des_%C3%A9lections_l%C3%A9gislatives_fran%C3%A7aises_de_2024"
 WIKIPEDIA_2024_T2_RESULTS_LOCAL_PATHS = [
@@ -1079,6 +1083,15 @@ def _load_official_first_round_circo_candidate_results() -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def _load_official_t2_candidatures_from_zip() -> pd.DataFrame:
+    for path in OFFICIAL_2024_T2_CANDIDATURES_LOCAL_PATHS:
+        if not path.exists():
+            continue
+        try:
+            frame = pd.read_csv(path, sep=";")
+            if not frame.empty:
+                return frame
+        except Exception:
+            continue
     for path in OFFICIAL_2024_LEGISLATIVE_ZIP_PATHS:
         if not path.exists():
             continue
