@@ -234,6 +234,7 @@ def _display_sort_key(label: object) -> int:
     return len(PARTY_DISPLAY_ORDER) + 100
 
 
+@st.cache_data(show_spinner=False, max_entries=64)
 def _select_primary_first_round_scenarios(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty or "scenario_name" not in frame.columns or "poll_id" not in frame.columns:
         return frame
@@ -253,6 +254,41 @@ def _select_primary_first_round_scenarios(frame: pd.DataFrame) -> pd.DataFrame:
     )
     primary = scenario_rank.groupby("poll_id", dropna=False).head(1)[["poll_id", "scenario_name"]]
     return frame.merge(primary, on=["poll_id", "scenario_name"], how="inner")
+
+
+@st.cache_data(show_spinner=False, max_entries=256)
+def _cached_trend_curve(
+    frame: pd.DataFrame,
+    trend_method: str,
+    polynomial_order: int,
+    loess_frac: float,
+) -> tuple[pd.DataFrame | None, int]:
+    resolved_order = polynomial_order
+    if trend_method == "Polynôme auto":
+        resolved_order = select_auto_polynomial_degree(
+            frame,
+            "estimate_percent",
+            max_degree=polynomial_order,
+        )
+        curve = build_polynomial_curve(
+            frame,
+            "estimate_percent",
+            degree=resolved_order,
+        )
+    else:
+        curve = build_lowess_curve(
+            frame,
+            "estimate_percent",
+            frac=loess_frac,
+            degree=resolved_order,
+            method=(
+                "loess"
+                if trend_method == "Régression locale (LOESS)"
+                else ("bins" if trend_method == "Bins" else "polynomial")
+            ),
+            dense_points=300,
+        )
+    return curve, resolved_order
 
 
 def _build_joint_extension_paths(
@@ -621,27 +657,13 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         loess_frac = GITLAB_LOESS_SPANS.get(display_name, GITLAB_LOESS_SPANS.get(str(party).strip(), 0.25))
         if grouping == "Blocs Wikipédia":
             loess_frac = max(loess_frac, 0.50)
-        resolved_polynomial_order = polynomial_order
         fit_quality: dict[str, float] | None = None
-        if trend_method == "Polynôme auto":
-            resolved_polynomial_order = select_auto_polynomial_degree(
-                ordered_for_curve,
-                "estimate_percent",
-                max_degree=polynomial_order,
-            )
-            smoothed = build_polynomial_curve(
-                ordered_for_curve,
-                "estimate_percent",
-                degree=resolved_polynomial_order,
-            )
-        else:
-            smoothed = build_lowess_curve(
-                ordered_for_curve,
-                "estimate_percent",
-                frac=loess_frac,
-                degree=resolved_polynomial_order,
-                method="loess" if trend_method == "Régression locale (LOESS)" else ("bins" if trend_method == "Bins" else "polynomial"),
-            )
+        smoothed, resolved_polynomial_order = _cached_trend_curve(
+            ordered_for_curve[["publication_date", "estimate_percent"]].reset_index(drop=True),
+            trend_method,
+            polynomial_order,
+            loess_frac,
+        )
         if smoothed is None:
             insufficient_forces.append(str(display_name))
         else:
@@ -784,14 +806,21 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         st.caption("Scénario exploratoire fondé sur la pente récente des courbes lissées, avec fit élargi sur plus de points récents et sans renormalisation finale forcée à 100%. Ce n’est pas une prédiction électorale validée.")
     st.caption("Les données historiques 2017–2022 sont affichées dans la vue `Analyse historique 2022`. Cette vue reste un graphe brut 2027, sans mélange de séries historiques dans la courbe principale.")
 
-    st.markdown("**Tableau détaillé des sondages du premier tour**")
-    detailed = filtered.sort_values(["publication_date", "candidate_party", "estimate_percent"], ascending=[False, True, False])
-    if "source_url" not in detailed.columns:
-        detailed["source_url"] = pd.NA
-    if grouping == "Parti politique":
-        detailed["force_label"] = detailed["candidate_party"].fillna("Sans parti")
-    elif grouping == "Blocs Wikipédia":
-        detailed["force_label"] = detailed["wikipedia_bloc"]
-    else:
-        detailed["force_label"] = detailed["political_family"].fillna("Autre")
-    render_poll_results_table(detailed)
+    if st.checkbox(
+        "Afficher le tableau détaillé des sondages",
+        value=False,
+        key="show_first_round_detailed_table",
+    ):
+        detailed = filtered.sort_values(
+            ["publication_date", "candidate_party", "estimate_percent"],
+            ascending=[False, True, False],
+        )
+        if "source_url" not in detailed.columns:
+            detailed["source_url"] = pd.NA
+        if grouping == "Parti politique":
+            detailed["force_label"] = detailed["candidate_party"].fillna("Sans parti")
+        elif grouping == "Blocs Wikipédia":
+            detailed["force_label"] = detailed["wikipedia_bloc"]
+        else:
+            detailed["force_label"] = detailed["political_family"].fillna("Autre")
+        render_poll_results_table(detailed)
