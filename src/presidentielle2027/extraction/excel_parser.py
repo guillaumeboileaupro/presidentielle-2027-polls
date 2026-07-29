@@ -294,6 +294,17 @@ def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
         subset=[*scenario_columns, "raw_text_context"],
         keep="first",
     )
+    merged_cell_rows = corrected.loc[annotated_context].groupby(
+        [*scenario_columns, "raw_text_context"],
+        dropna=False,
+    )
+    for _, merged_group in merged_cell_rows:
+        if len(merged_group.index) <= 1:
+            continue
+        first_index = merged_group.index[0]
+        corrected.at[first_index, "candidate_name"] = "NFP"
+        corrected.at[first_index, "candidate_party"] = "NFP"
+        corrected.at[first_index, "political_family"] = "generic_bloc"
     corrected = corrected.loc[~(annotated_context & repeated_merged_cell)].copy()
     duplicate_columns = [
         *scenario_columns,

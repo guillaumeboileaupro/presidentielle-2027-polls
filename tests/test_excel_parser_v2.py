@@ -78,5 +78,6 @@ def test_annotated_colspan_is_deduplicated_across_candidate_headers() -> None:
 
     corrected = _correct_poll_units_by_scenario(frame)
 
-    assert corrected["candidate_name"].tolist() == ["Gauche commune", "RN"]
+    assert corrected["candidate_name"].tolist() == ["NFP", "RN"]
+    assert corrected["candidate_party"].tolist() == ["NFP", "RN"]
     assert corrected["estimate_percent"].tolist() == [66.0, 34.0]
