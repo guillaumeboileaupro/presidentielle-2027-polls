@@ -175,6 +175,8 @@ def _parse_raw_poll_percent(value: object) -> float | None:
     text = str(value or "").replace("\xa0", " ").strip()
     if not text or text in {"—", "-", "nan", "NaN"}:
         return None
+    if text.startswith("<"):
+        return 0.5
     match = re.search(r"(\d+(?:[.,]\d+)?)", text)
     if not match:
         return None
@@ -183,27 +185,125 @@ def _parse_raw_poll_percent(value: object) -> float | None:
     except ValueError:
         return None
 
-def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
-    """Correct only individually impossible percentages.
+def _poll_percentage_options(raw_text: object, parsed_value: float) -> list[float]:
+    """Return plausible percentages when an HTML decimal separator was lost."""
+    text = str(raw_text or "").replace("\xa0", " ").strip()
+    numeric_match = re.search(r"(\d+(?:[.,]\d+)?)", text)
+    token = numeric_match.group(1) if numeric_match else ""
+    if text.startswith("<"):
+        return [0.5]
+    if "," in token or ("." in token and not token.endswith(".0")):
+        return [float(parsed_value)]
 
-    A scenario total can legitimately exceed 100 when a source table places
-    alternative candidacies in the same row. It must therefore never be used
-    to divide every value in the scenario: doing so turned valid values such
-    as 31 % into 3.1 %. Values already in the [0, 100] percentage range are
-    preserved exactly. Only values above 100 are divided by powers of ten
-    until they become a possible percentage.
+    value = float(parsed_value)
+    if len(token) > 1 and token.startswith("0"):
+        return [value / 10.0]
+
+    original_value = value
+    while value > 100.0:
+        value /= 10.0
+    options = [value]
+    decimal_artifact = token.endswith(".0")
+    if value >= 10.0 or decimal_artifact:
+        options.append(value / 10.0)
+    if original_value > 100.0 or decimal_artifact:
+        options.append(value / 100.0)
+    return list(dict.fromkeys(round(option, 4) for option in options))
+
+
+def _percentage_plausibility_penalty(party: object, value: float) -> float:
+    party_code = str(party or "").strip()
+    plausible_ranges = {
+        "LO": (0.0, 5.0),
+        "NPA-A": (0.0, 5.0),
+        "LFI": (5.0, 30.0),
+        "PCF": (0.0, 12.0),
+        "LE": (0.0, 15.0),
+        "EELV": (0.0, 15.0),
+        "PS": (2.0, 25.0),
+        "PP": (2.0, 25.0),
+        "RE": (2.0, 35.0),
+        "HOR": (2.0, 35.0),
+        "ENS": (2.0, 35.0),
+        "LR": (2.0, 25.0),
+        "DLF": (0.0, 10.0),
+        "RN": (15.0, 50.0),
+        "REC": (0.0, 15.0),
+    }
+    minimum, maximum = plausible_ranges.get(party_code, (0.0, 50.0))
+    if value < minimum:
+        return minimum - value
+    if value > maximum:
+        return value - maximum
+    return 0.0
+
+
+def _reconstruct_scenario_percentages(group: pd.DataFrame) -> pd.Series:
+    """Choose decimal variants whose scenario sum is closest to 100."""
+    def state_rank(state: tuple[float, float, list[float]]) -> tuple[float, float, float]:
+        distance = abs(state[0] - 100.0)
+        total_penalty = 0.0 if distance <= 1.0 else distance
+        return total_penalty, state[1], distance
+
+    states: list[tuple[float, float, list[float]]] = [(0.0, 0.0, [])]
+    for _, row in group.iterrows():
+        parsed_value = float(row["estimate_percent"])
+        options = _poll_percentage_options(row.get("raw_text_context"), parsed_value)
+        candidates: dict[float, tuple[float, float, list[float]]] = {}
+        for running_total, running_cost, selected in states:
+            for option_index, option in enumerate(options):
+                total = round(running_total + option, 4)
+                if total > 130.0:
+                    continue
+                plausibility = _percentage_plausibility_penalty(row.get("candidate_party"), option)
+                candidate = (
+                    total,
+                    running_cost + option_index + (plausibility * 10.0),
+                    [*selected, option],
+                )
+                previous = candidates.get(total)
+                if previous is None or candidate[1] < previous[1]:
+                    candidates[total] = candidate
+        states = sorted(
+            candidates.values(),
+            key=lambda state: (state[1], abs(state[0] - 100.0)),
+        )[:2048]
+    if not states:
+        return pd.to_numeric(group["estimate_percent"], errors="coerce")
+    best = min(states, key=state_rank)
+    return pd.Series(best[2], index=group.index, dtype=float)
+
+
+def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
+    """Reconstruct percentages at scenario level without discarding polls.
+
+    Wikipedia's HTML tables occasionally lose decimal separators during CSV
+    extraction (10.5 becomes 105) and repeat cells created with ``colspan``.
+    Exact technical duplicates are removed, then a bounded search chooses the
+    plausible decimal variants whose total is closest to 100 percent.
     """
     if frame.empty:
         return frame.copy()
     corrected = frame.copy()
     numeric = pd.to_numeric(corrected["estimate_percent"], errors="coerce")
     corrected.loc[numeric.notna(), "estimate_percent"] = numeric.loc[numeric.notna()]
-    impossible = numeric > 100.0
-    for index, value in numeric.loc[impossible].items():
-        corrected_value = float(value)
-        while corrected_value > 100.0:
-            corrected_value /= 10.0
-        corrected.at[index, "estimate_percent"] = corrected_value
+    scenario_columns = ["poll_id", "round", "scenario_name"]
+    raw_context = corrected["raw_text_context"].fillna("").astype(str)
+    annotated_context = raw_context.str.contains(r"\[[^\]]+\]", regex=True)
+    repeated_merged_cell = corrected.duplicated(
+        subset=[*scenario_columns, "raw_text_context"],
+        keep="first",
+    )
+    corrected = corrected.loc[~(annotated_context & repeated_merged_cell)].copy()
+    duplicate_columns = [
+        *scenario_columns,
+        "candidate_name",
+        "raw_text_context",
+    ]
+    corrected = corrected.drop_duplicates(subset=duplicate_columns, keep="first").copy()
+    for _, indexes in corrected.groupby(scenario_columns, dropna=False).groups.items():
+        group = corrected.loc[list(indexes)]
+        corrected.loc[group.index, "estimate_percent"] = _reconstruct_scenario_percentages(group)
     return corrected
 
 
@@ -263,10 +363,14 @@ def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int)
             estimate = _parse_raw_poll_percent(cell_text)
             if estimate is None:
                 continue
-            generic_header = header_label.startswith("Candidat ") or header_label in {"Autre", "Autres"}
             candidate_fragment = re.sub(r"^\s*\d+(?:[.,]\d+)?\s*", "", _strip_wikipedia_annotations(cell_text)).strip()
-            candidate_label = candidate_fragment if generic_header and candidate_fragment and candidate_fragment not in {"—", "-"} else header_label
-            candidate_name, candidate_party, political_family = _extract_candidate_and_party_from_label(candidate_label, header_label if generic_header else None)
+            has_named_candidate = bool(re.search(r"[A-Za-zÀ-ÖØ-öø-ÿ]", candidate_fragment))
+            candidate_label = candidate_fragment if has_named_candidate else header_label
+            generic_header = header_label.startswith("Candidat ") or header_label in {"Autre", "Autres"}
+            candidate_name, candidate_party, political_family = _extract_candidate_and_party_from_label(
+                candidate_label,
+                header_label if generic_header else None,
+            )
             rows.append(
                 {
                     "poll_id": poll_id,
@@ -370,7 +474,11 @@ def raw_wikipedia_2027_tables_to_normalized_dataframe(raw_dir: Path) -> pd.DataF
     fallback_year = int(timestamp_match.group(1)) if timestamp_match else None
     frames: list[pd.DataFrame] = []
     for table_path in table_files:
-        parsed_first_round = _parse_first_round_raw_wikipedia_table(table_path, fallback_year or 2026)
+        table_match = re.search(r"table-(\d+)\.csv$", table_path.name)
+        table_index = int(table_match.group(1)) if table_match else 0
+        first_round_years = {1: 2026, 2: 2026, 3: 2025, 4: 2024, 5: 2023, 6: 2023}
+        table_fallback_year = first_round_years.get(table_index, fallback_year or 2026)
+        parsed_first_round = _parse_first_round_raw_wikipedia_table(table_path, table_fallback_year)
         if not parsed_first_round.empty:
             frames.append(parsed_first_round)
             continue
@@ -389,6 +497,7 @@ def raw_wikipedia_2027_tables_to_normalized_dataframe(raw_dir: Path) -> pd.DataF
     normalized = normalized.drop(columns="_publication_date")
     normalized = normalized.drop_duplicates(
         subset=[
+            "poll_id",
             "round",
             "polling_company",
             "fieldwork_start_date",

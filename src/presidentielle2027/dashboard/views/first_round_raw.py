@@ -89,8 +89,6 @@ WIKIPEDIA_BLOC_MAP: dict[str, str] = {
 }
 WIKIPEDIA_BLOC_ORDER = ["PCF", "LFI", "ECO", "PS", "ENS", "LR", "RN", "REC"]
 WIKIPEDIA_2027_FIRST_ROUND_DATE = pd.Timestamp("2027-04-18")
-MIN_COMPLETE_SCENARIO_TOTAL = 95.0
-MAX_COMPLETE_SCENARIO_TOTAL = 105.0
 
 PARTY_GRAPH_LABELS: dict[str, str] = {
     "LE": "ECO",
@@ -241,40 +239,21 @@ def _select_primary_first_round_scenarios(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty or "scenario_name" not in frame.columns or "poll_id" not in frame.columns:
         return frame
 
-    working = frame.copy()
-    working["estimate_percent"] = pd.to_numeric(working["estimate_percent"], errors="coerce")
     scenario_rank = (
-        working.groupby(["poll_id", "scenario_name"], dropna=False)
+        frame.groupby(["poll_id", "scenario_name"], dropna=False)
         .agg(
             candidate_count=("candidate_name", "nunique"),
             party_count=("candidate_party", "nunique"),
             total_score=("estimate_percent", "sum"),
         )
         .reset_index()
-    )
-    scenario_rank = scenario_rank.loc[
-        scenario_rank["total_score"].between(
-            MIN_COMPLETE_SCENARIO_TOTAL,
-            MAX_COMPLETE_SCENARIO_TOTAL,
-            inclusive="both",
-        )
-    ].copy()
-    if scenario_rank.empty:
-        return working.iloc[0:0].assign(scenario_total=pd.Series(dtype=float))
-    scenario_rank["distance_to_100"] = (scenario_rank["total_score"] - 100.0).abs()
-    scenario_rank = (
-        scenario_rank
         .sort_values(
-            ["poll_id", "distance_to_100", "candidate_count", "party_count", "scenario_name"],
-            ascending=[True, True, False, False, True],
+            ["poll_id", "candidate_count", "party_count", "total_score", "scenario_name"],
+            ascending=[True, False, False, False, True],
         )
     )
-    primary = scenario_rank.groupby("poll_id", dropna=False).head(1)[
-        ["poll_id", "scenario_name", "total_score"]
-    ]
-    return working.merge(primary, on=["poll_id", "scenario_name"], how="inner").rename(
-        columns={"total_score": "scenario_total"}
-    )
+    primary = scenario_rank.groupby("poll_id", dropna=False).head(1)[["poll_id", "scenario_name"]]
+    return frame.merge(primary, on=["poll_id", "scenario_name"], how="inner")
 
 
 @st.cache_data(show_spinner=False, max_entries=256)
@@ -405,12 +384,11 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     if working.empty:
         st.info("Aucune donnée de premier tour exploitable.")
         return
-    initial_scenario_count = working[["poll_id", "scenario_name"]].drop_duplicates().shape[0]
-    working = _select_primary_first_round_scenarios(working)
-    retained_scenario_count = working[["poll_id", "scenario_name"]].drop_duplicates().shape[0]
-    if working.empty:
-        st.warning("Aucun scénario complet dont la somme est proche de 100 %.")
-        return
+    scenario_totals = (
+        working.groupby(["poll_id", "scenario_name"], dropna=False)["estimate_percent"]
+        .sum(min_count=1)
+        .dropna()
+    )
     if "source_url" not in working.columns:
         working["source_url"] = pd.NA
     st.markdown(first_round_methodology_html(), unsafe_allow_html=True)
@@ -418,6 +396,13 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         "Source de référence : Wikipédia, « Liste de sondages sur l'élection présidentielle française de 2027 ». "
         "L’ajustement appliqué ici trace soit un polynôme réel par force, soit un lissage de type GitLab selon le modèle choisi."
     )
+    if not scenario_totals.empty:
+        st.caption(
+            "Contrôle après correction des décimales : "
+            f"{len(scenario_totals)} scénarios conservés, sommes de "
+            f"{scenario_totals.min():.1f} % à {scenario_totals.max():.1f} % "
+            f"(médiane {scenario_totals.median():.1f} %)."
+        )
 
     pollsters = ["Tous"] + sorted(working["polling_company"].dropna().astype(str).unique().tolist())
     min_date = FIRST_ROUND_ELECTION_DATE.date()
@@ -504,6 +489,8 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     fitting_frame = fitting_frame.loc[
         fitting_frame["publication_date"].between(period_start_ts, period_end_ts, inclusive="both")
     ].copy()
+    filtered = _select_primary_first_round_scenarios(filtered)
+    fitting_frame = _select_primary_first_round_scenarios(fitting_frame)
     if grouping == "Blocs Wikipédia":
         filtered["wikipedia_bloc"] = filtered["candidate_party"].map(_wikipedia_bloc_label)
         fitting_frame["wikipedia_bloc"] = fitting_frame["candidate_party"].map(_wikipedia_bloc_label)
@@ -515,11 +502,6 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     st.caption(
         "Période tracée : "
         f"{period_start_ts.strftime('%d/%m/%Y')} -> {period_end_ts.strftime('%d/%m/%Y')}"
-    )
-    st.caption(
-        f"Contrôle des sommes : {retained_scenario_count} scénarios conservés sur "
-        f"{initial_scenario_count}, chacun totalisant entre "
-        f"{MIN_COMPLETE_SCENARIO_TOTAL:.0f} % et {MAX_COMPLETE_SCENARIO_TOTAL:.0f} %."
     )
 
     col1, col2, col3, col4 = st.columns(4)
