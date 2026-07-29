@@ -245,10 +245,13 @@ def _merge_dashboard_with_latest_raw_frame(base_frame: pd.DataFrame, raw_frame: 
     if "poll_id" in cleaned_base.columns:
         raw_poll_mask = cleaned_base["poll_id"].fillna("").astype(str).str.startswith(("RAW-FR-", "RAW-SR-"))
         superseded_first_round = pd.Series(False, index=cleaned_base.index)
-        if {"source_name", "round"}.issubset(cleaned_base.columns) and raw_frame["round"].eq("first_round").any():
-            superseded_first_round = cleaned_base["source_name"].eq("wikipedia_excel_v2") & cleaned_base["round"].eq(
-                "first_round"
-            )
+        if "round" in cleaned_base.columns and raw_frame["round"].eq("first_round").any():
+            legacy_v2_poll = cleaned_base["poll_id"].fillna("").astype(str).str.startswith(("V2-FR-", "V2-SP-"))
+            superseded_first_round = legacy_v2_poll & cleaned_base["round"].eq("first_round")
+            if "source_name" in cleaned_base.columns:
+                superseded_first_round |= cleaned_base["source_name"].eq("wikipedia_excel_v2") & cleaned_base[
+                    "round"
+                ].eq("first_round")
         cleaned_base = cleaned_base.loc[~(raw_poll_mask | superseded_first_round)].copy()
 
     merged = pd.concat([cleaned_base, raw_frame], ignore_index=True, sort=False)

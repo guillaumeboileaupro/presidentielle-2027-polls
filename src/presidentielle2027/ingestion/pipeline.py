@@ -183,10 +183,13 @@ def _merge_with_latest_raw_wikipedia_tables(frame: pd.DataFrame, raw_dir: Path) 
     if "poll_id" in cleaned_frame.columns:
         raw_poll_mask = cleaned_frame["poll_id"].fillna("").astype(str).str.startswith(("RAW-FR-", "RAW-SR-"))
         superseded_first_round = pd.Series(False, index=cleaned_frame.index)
-        if {"source_name", "round"}.issubset(cleaned_frame.columns) and raw_frame["round"].eq("first_round").any():
-            superseded_first_round = cleaned_frame["source_name"].eq("wikipedia_excel_v2") & cleaned_frame["round"].eq(
-                "first_round"
-            )
+        if "round" in cleaned_frame.columns and raw_frame["round"].eq("first_round").any():
+            legacy_v2_poll = cleaned_frame["poll_id"].fillna("").astype(str).str.startswith(("V2-FR-", "V2-SP-"))
+            superseded_first_round = legacy_v2_poll & cleaned_frame["round"].eq("first_round")
+            if "source_name" in cleaned_frame.columns:
+                superseded_first_round |= cleaned_frame["source_name"].eq("wikipedia_excel_v2") & cleaned_frame[
+                    "round"
+                ].eq("first_round")
         cleaned_frame = cleaned_frame.loc[~(raw_poll_mask | superseded_first_round)].copy()
 
     merged = pd.concat([cleaned_frame, raw_frame], ignore_index=True, sort=False)
