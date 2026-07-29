@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from presidentielle2027.dashboard import app as dashboard_app
+from presidentielle2027.dashboard.table_views import install_user_facing_text_guard
 from presidentielle2027.dashboard.views.first_round_raw import render_first_round_raw_page
 from presidentielle2027.dashboard.views.wikipedia_2027 import render_candidate_trace_chart
 
@@ -19,6 +20,7 @@ def _render_first_round_with_candidate_chart(frame: pd.DataFrame) -> None:
 
 
 def main() -> None:
+    install_user_facing_text_guard()
     for config in dashboard_app.PAGE_CONFIG:
         if config["label"] == "Sondages 2027 - premier tour brut":
             config["renderer"] = _render_first_round_with_candidate_chart

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+from functools import wraps
+
 import pandas as pd
 import streamlit as st
 
@@ -145,11 +148,33 @@ USER_COLUMN_LABELS = {
 }
 
 
-def rename_user_facing_columns(frame: pd.DataFrame, extra_labels: dict[str, str] | None = None) -> pd.DataFrame:
+def rename_user_facing_columns(
+    frame: pd.DataFrame,
+    extra_labels: dict[str, str] | None = None,
+) -> pd.DataFrame:
     rename_map = USER_COLUMN_LABELS.copy()
     if extra_labels:
         rename_map.update(extra_labels)
+    for column in frame.columns:
+        is_internal_name = isinstance(column, str) and re.fullmatch(r"[a-z][a-z0-9_]*", column)
+        if column not in rename_map and is_internal_name:
+            rename_map[column] = column.replace("_", " ").capitalize()
     return frame.rename(columns=rename_map)
+
+
+def user_facing_value(value: object) -> object:
+    if not isinstance(value, str):
+        return value
+    stripped = value.strip()
+    translated = USER_VALUE_REPLACEMENTS.get(
+        stripped,
+        USER_VALUE_REPLACEMENTS.get(stripped.lower()),
+    )
+    if translated is not None:
+        return translated
+    if re.fullmatch(r"[a-z][a-z0-9_]*", stripped) and "_" in stripped:
+        return stripped.replace("_", " ").capitalize()
+    return stripped
 
 
 def clean_user_facing_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -160,17 +185,70 @@ def clean_user_facing_frame(frame: pd.DataFrame) -> pd.DataFrame:
             working[column]
             .fillna("Non renseigné")
             .astype(str)
-            .map(
-                lambda value: USER_VALUE_REPLACEMENTS.get(
-                    value.strip(),
-                    USER_VALUE_REPLACEMENTS.get(value.strip().lower(), value.strip()),
-                )
-            )
+            .map(user_facing_value)
         )
     datetime_columns = working.select_dtypes(include=["datetime64[ns]", "datetimetz"]).columns.tolist()
     for column in datetime_columns:
         working[column] = working[column].dt.strftime("%d/%m/%Y").fillna("Date non disponible")
     return working
+
+
+def _sanitize_display_frame(data: object) -> object:
+    if not isinstance(data, pd.DataFrame):
+        return data
+    return clean_user_facing_frame(rename_user_facing_columns(data))
+
+
+def install_user_facing_text_guard() -> None:
+    """Prevent internal identifiers from leaking through Streamlit widgets."""
+    if getattr(st, "_presidentielle_text_guard_installed", False):
+        return
+
+    original_dataframe = st.dataframe
+    original_table = st.table
+    original_selectbox = st.selectbox
+    original_multiselect = st.multiselect
+    original_radio = st.radio
+
+    @wraps(original_dataframe)
+    def guarded_dataframe(data: object = None, *args: object, **kwargs: object) -> object:
+        sanitized = _sanitize_display_frame(data)
+        column_config = kwargs.get("column_config")
+        if isinstance(data, pd.DataFrame) and isinstance(column_config, dict):
+            rename_lookup = dict(zip(data.columns, sanitized.columns))
+            kwargs["column_config"] = {
+                rename_lookup.get(column, column): config
+                for column, config in column_config.items()
+            }
+        return original_dataframe(sanitized, *args, **kwargs)
+
+    @wraps(original_table)
+    def guarded_table(data: object = None, *args: object, **kwargs: object) -> object:
+        return original_table(_sanitize_display_frame(data), *args, **kwargs)
+
+    def _guard_format_func(kwargs: dict[str, object]) -> dict[str, object]:
+        if kwargs.get("format_func") is None:
+            kwargs["format_func"] = user_facing_value
+        return kwargs
+
+    @wraps(original_selectbox)
+    def guarded_selectbox(*args: object, **kwargs: object) -> object:
+        return original_selectbox(*args, **_guard_format_func(kwargs))
+
+    @wraps(original_multiselect)
+    def guarded_multiselect(*args: object, **kwargs: object) -> object:
+        return original_multiselect(*args, **_guard_format_func(kwargs))
+
+    @wraps(original_radio)
+    def guarded_radio(*args: object, **kwargs: object) -> object:
+        return original_radio(*args, **_guard_format_func(kwargs))
+
+    st.dataframe = guarded_dataframe
+    st.table = guarded_table
+    st.selectbox = guarded_selectbox
+    st.multiselect = guarded_multiselect
+    st.radio = guarded_radio
+    st._presidentielle_text_guard_installed = True
 
 
 def render_poll_results_table(frame: pd.DataFrame) -> None:

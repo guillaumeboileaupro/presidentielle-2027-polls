@@ -5,9 +5,12 @@ import inspect
 import pandas as pd
 
 from presidentielle2027.dashboard import app, live_app
-from presidentielle2027.dashboard.table_views import clean_user_facing_frame, rename_user_facing_columns
-from presidentielle2027.dashboard.views import analysis_2022, first_round_raw
-from presidentielle2027.dashboard.views import sources_metadata
+from presidentielle2027.dashboard.table_views import (
+    clean_user_facing_frame,
+    rename_user_facing_columns,
+    user_facing_value,
+)
+from presidentielle2027.dashboard.views import analysis_2022, first_round_raw, sources_metadata
 
 
 def test_dashboard_startup_does_not_run_ingestion_pipeline() -> None:
@@ -104,3 +107,23 @@ def test_metadata_page_does_not_display_raw_technical_field_names() -> None:
 
     assert '"Champ technique"' not in function_source
     assert 'drop(columns="field"' in function_source
+
+
+def test_unknown_internal_identifiers_get_a_readable_fallback() -> None:
+    frame = pd.DataFrame(
+        {
+            "new_internal_keyword": ["untranslated_status_code"],
+        }
+    )
+
+    displayed = clean_user_facing_frame(rename_user_facing_columns(frame))
+
+    assert displayed.columns.tolist() == ["New internal keyword"]
+    assert displayed.iloc[0, 0] == "Untranslated status code"
+    assert user_facing_value("centre_gauche") == "Centre-gauche"
+
+
+def test_live_dashboard_installs_the_global_text_guard() -> None:
+    function_source = inspect.getsource(live_app.main)
+
+    assert "install_user_facing_text_guard()" in function_source
