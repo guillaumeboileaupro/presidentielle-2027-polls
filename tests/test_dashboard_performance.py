@@ -94,6 +94,41 @@ def test_2022_campaign_extension_caps_rn_at_its_current_level() -> None:
     assert values.min() >= 28.0
 
 
+def test_2022_campaign_extension_preserves_lfi_late_acceleration() -> None:
+    payloads = [
+        {
+            "display_name": "LFI",
+            "color": "#cc2443",
+            "smoothed": pd.Series(
+                [12.0, 12.0],
+                index=pd.to_datetime(["2026-07-01", "2026-07-30"]),
+            ),
+            "sigma": 1.0,
+            "anchor_value": 12.0,
+        }
+    ]
+    historical = pd.DataFrame(
+        {
+            "force_label": ["LFI"] * 7,
+            "fieldwork_end_date": pd.date_range("2022-01-04", "2022-04-08", periods=7),
+            "estimate_percent": [9.0, 9.2, 9.6, 10.2, 11.2, 14.0, 17.0],
+        }
+    )
+
+    path = first_round_raw._build_2022_campaign_extension_paths(
+        payloads,
+        pd.Timestamp("2027-04-18"),
+        historical,
+    )[0]
+    values = pd.to_numeric(path["y"], errors="coerce").reset_index(drop=True)
+    midpoint = len(values.index) // 2
+    first_half_gain = float(values.iloc[midpoint] - values.iloc[0])
+    late_gain = float(values.iloc[-1] - values.iloc[midpoint])
+
+    assert late_gain > first_half_gain
+    assert values.iloc[-1] <= 16.0
+
+
 def test_detailed_poll_table_is_deferred_by_default() -> None:
     function_source = inspect.getsource(first_round_raw.render_first_round_raw_page)
 
