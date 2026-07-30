@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -89,6 +91,7 @@ WIKIPEDIA_BLOC_MAP: dict[str, str] = {
 }
 WIKIPEDIA_BLOC_ORDER = ["PCF", "LFI", "ECO", "PS", "ENS", "LR", "RN", "REC"]
 WIKIPEDIA_2027_FIRST_ROUND_DATE = pd.Timestamp("2027-04-18")
+HISTORICAL_2022_CAMPAIGN_FILE = Path("data/reference/historical_polls_2022_first_round.csv")
 
 PARTY_GRAPH_LABELS: dict[str, str] = {
     "LE": "ECO",
@@ -393,6 +396,73 @@ def _build_joint_extension_paths(
     return normalized_payloads
 
 
+def _build_2022_campaign_extension_paths(
+    extension_payloads: list[dict[str, object]],
+    election_date: pd.Timestamp,
+    historical_frame: pd.DataFrame | None = None,
+) -> list[dict[str, object]]:
+    """Blend current momentum with 2022 campaign-stage movements and bounded plateaus."""
+    paths = _build_joint_extension_paths(extension_payloads, election_date)
+    if not paths:
+        return paths
+    if historical_frame is None:
+        if not HISTORICAL_2022_CAMPAIGN_FILE.exists():
+            return paths
+        historical_frame = pd.read_csv(HISTORICAL_2022_CAMPAIGN_FILE)
+
+    force_map = {
+        "ECO": "EELV",
+        "LE": "EELV",
+        "PS": "PS-PP",
+        "PP": "PS-PP",
+        "RE": "ENS",
+        "HOR": "ENS",
+    }
+    history = historical_frame.copy()
+    history["days_until_election"] = pd.to_numeric(
+        history["days_until_election"], errors="coerce"
+    )
+    history["estimate_percent"] = pd.to_numeric(history["estimate_percent"], errors="coerce")
+    history = history.dropna(subset=["force_label", "days_until_election", "estimate_percent"])
+    election_ts = pd.Timestamp(election_date)
+
+    for path in paths:
+        key = str(path["display_name"])
+        historical_force = force_map.get(key, key)
+        force_history = history.loc[history["force_label"].astype(str) == historical_force]
+        if force_history.empty:
+            continue
+        trajectory = (
+            force_history.groupby("days_until_election")["estimate_percent"]
+            .median()
+            .sort_index()
+        )
+        xp = trajectory.index.to_numpy(dtype=float)
+        fp = trajectory.to_numpy(dtype=float)
+        dates = pd.to_datetime(path["x"])
+        remaining_days = ((election_ts - dates) / pd.Timedelta(days=1)).to_numpy(dtype=float)
+        historical_levels = np.interp(remaining_days, xp, fp)
+        historical_start = float(np.interp(remaining_days[0], xp, fp))
+        historical_delta = historical_levels - historical_start
+
+        current_path = pd.to_numeric(path["y"], errors="coerce").to_numpy(dtype=float)
+        anchor = float(current_path[0])
+        current_delta = current_path - anchor
+        blended_delta = 0.35 * current_delta + 0.65 * historical_delta
+        plateaued = anchor + np.clip(blended_delta, -4.0, 4.0)
+        if historical_force == "RN":
+            plateaued = np.minimum(plateaued, anchor)
+
+        path["y"] = pd.Series(plateaued)
+        width = (
+            pd.to_numeric(path["upper"], errors="coerce").to_numpy(dtype=float)
+            - pd.to_numeric(path["lower"], errors="coerce").to_numpy(dtype=float)
+        ) / 2.0
+        path["lower"] = pd.Series(np.clip(plateaued - width, 0.0, 100.0))
+        path["upper"] = pd.Series(np.clip(plateaued + width, 0.0, 100.0))
+    return paths
+
+
 def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     st.subheader("Sondages 2027 concernant le premier tour")
     working = frame.loc[(frame["round"] == "first_round") & (~frame["is_generic_bloc"])].copy()
@@ -474,6 +544,13 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         value=False,
         key="first_round_show_extension",
     )
+    extension_model = "Dynamique récente"
+    if show_extension:
+        extension_model = st.selectbox(
+            "Scénario de prolongation",
+            ["Dynamique récente", "Comparer avec la campagne 2022 (rose)"],
+            key="first_round_extension_model",
+        )
     filtered = working.copy()
     fitting_frame = working.copy()
     if pollster != "Tous":
@@ -753,43 +830,68 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                         }
                     )
     if show_extension:
-        for payload in _build_joint_extension_paths(extension_payloads, WIKIPEDIA_2027_FIRST_ROUND_DATE):
-            figure.add_trace(
-                go.Scatter(
-                    x=payload["x"],
-                    y=payload["upper"],
-                    mode="lines",
-                    line={"width": 0, "color": payload["color"]},
-                    hoverinfo="skip",
-                    showlegend=False,
-                    legendgroup=f"{payload['display_name']}-extension",
+        extension_sets = [
+            (
+                _build_joint_extension_paths(
+                    extension_payloads,
+                    WIKIPEDIA_2027_FIRST_ROUND_DATE,
+                ),
+                "Dynamique récente",
+                None,
+            )
+        ]
+        if extension_model == "Comparer avec la campagne 2022 (rose)":
+            extension_sets.append(
+                (
+                    _build_2022_campaign_extension_paths(
+                        extension_payloads,
+                        WIKIPEDIA_2027_FIRST_ROUND_DATE,
+                    ),
+                    "Dynamique de campagne 2022 avec paliers",
+                    "#d63384",
                 )
             )
-            figure.add_trace(
-                go.Scatter(
-                    x=payload["x"],
-                    y=payload["lower"],
-                    mode="lines",
-                    line={"width": 0, "color": payload["color"]},
-                    fill="tonexty",
-                    fillcolor="rgba(120,120,120,0.10)",
-                    hoverinfo="skip",
-                    showlegend=False,
-                    legendgroup=f"{payload['display_name']}-extension",
+        for extension_paths, scenario_label, scenario_color in extension_sets:
+            for payload in extension_paths:
+                line_color = scenario_color or payload["color"]
+                line_dash = "dot" if scenario_color else "dash"
+                show_scenario_legend = bool(scenario_color)
+                figure.add_trace(
+                    go.Scatter(
+                        x=payload["x"],
+                        y=payload["upper"],
+                        mode="lines",
+                        line={"width": 0, "color": line_color},
+                        hoverinfo="skip",
+                        showlegend=False,
+                        legendgroup=f"{payload['display_name']}-{scenario_label}",
+                    )
                 )
-            )
-            figure.add_trace(
-                go.Scatter(
-                    x=payload["x"],
-                    y=payload["y"],
-                    mode="lines",
-                    line={"width": 1.8, "color": payload["color"], "dash": "dash"},
-                    name=f"{payload['display_name']} - prolongation",
-                    legendgroup=f"{payload['display_name']}-extension",
-                    showlegend=False,
-                    hovertemplate="%{x|%d/%m/%Y}<br>%{y:.1f}%<br>Scénario exploratoire normalisé à 100%<extra></extra>",
+                figure.add_trace(
+                    go.Scatter(
+                        x=payload["x"],
+                        y=payload["lower"],
+                        mode="lines",
+                        line={"width": 0, "color": line_color},
+                        fill="tonexty",
+                        fillcolor="rgba(214,51,132,0.06)" if scenario_color else "rgba(120,120,120,0.10)",
+                        hoverinfo="skip",
+                        showlegend=False,
+                        legendgroup=f"{payload['display_name']}-{scenario_label}",
+                    )
                 )
-            )
+                figure.add_trace(
+                    go.Scatter(
+                        x=payload["x"],
+                        y=payload["y"],
+                        mode="lines",
+                        line={"width": 2.0 if scenario_color else 1.8, "color": line_color, "dash": line_dash},
+                        name=f"{payload['display_name']} · {scenario_label}",
+                        legendgroup=f"{payload['display_name']}-{scenario_label}",
+                        showlegend=show_scenario_legend,
+                        hovertemplate=f"%{{x|%d/%m/%Y}}<br>%{{y:.1f}}%<br>{scenario_label}<extra></extra>",
+                    )
+                )
     model_label = (
         "régression locale (LOESS) par force politique"
         if trend_method == "Régression locale (LOESS)"
@@ -830,7 +932,19 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     if insufficient_forces:
         st.caption("Tendance non calculée pour certaines forces : données insuffisantes ou scénarios non comparables.")
     if show_extension:
-        st.caption("Scénario exploratoire fondé sur la pente récente des courbes lissées, avec fit élargi sur plus de points récents et sans renormalisation finale forcée à 100%. Ce n’est pas une prédiction électorale validée.")
+        if extension_model == "Comparer avec la campagne 2022 (rose)":
+            st.caption(
+                "Scénario exploratoire combinant 35 % de dynamique récente et 65 % des "
+                "mouvements observés au même stade de la campagne 2022. Les variations sont "
+                "plafonnées à ±4 points et le RN ne peut pas dépasser son niveau lissé au "
+                "départ de la prolongation. Ce n’est pas une prédiction électorale validée."
+            )
+        else:
+            st.caption(
+                "Scénario exploratoire fondé sur la pente récente des courbes lissées, "
+                "sans renormalisation finale forcée à 100 %. Ce n’est pas une prédiction "
+                "électorale validée."
+            )
     st.caption("Les données historiques 2017–2022 sont affichées dans la vue `Analyse historique 2022`. Cette vue reste un graphe brut 2027, sans mélange de séries historiques dans la courbe principale.")
 
     if st.checkbox(
