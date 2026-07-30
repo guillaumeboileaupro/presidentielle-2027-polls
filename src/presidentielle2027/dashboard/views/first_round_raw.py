@@ -469,7 +469,7 @@ def _build_2022_campaign_extension_paths(
             # Preserve the observed 2022 timing (including LFI's late acceleration)
             # while translating the fitted curve to the current 2026 level.
             historical_shape = historical_delta / abs(historical_final_delta)
-            historical_amplitude = float(np.clip(historical_final_delta, -4.0, 4.0))
+            historical_amplitude = historical_final_delta
             historical_component = historical_shape * abs(historical_amplitude)
         else:
             historical_component = np.zeros_like(historical_delta)
@@ -481,7 +481,7 @@ def _build_2022_campaign_extension_paths(
             (1.0 - connection_weight) * current_delta
             + connection_weight * historical_component
         )
-        plateaued = anchor + np.clip(blended_delta, -4.0, 4.0)
+        plateaued = np.clip(anchor + blended_delta, 0.0, 100.0)
         if historical_force == "RN":
             plateaued = np.minimum(plateaued, anchor)
 
@@ -973,8 +973,8 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                 "Scénario exploratoire raccordant la pente récente de 2026 à une courbe "
                 "ajustée sur la campagne complète de janvier à avril 2022. Le raccord est "
                 "progressif sur les premiers 18 % de l’horizon, puis la forme 2022 est "
-                "transposée au niveau atteint en 2026. Les variations sont "
-                "plafonnées à ±4 points et le RN ne peut pas dépasser son niveau lissé au "
+                "transposée au niveau atteint en 2026, avec son amplitude observée. "
+                "Le RN ne peut pas dépasser son niveau lissé au "
                 "départ de la prolongation. Ce n’est pas une prédiction électorale validée."
             )
         else:
