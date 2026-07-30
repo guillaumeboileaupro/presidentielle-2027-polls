@@ -581,7 +581,8 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         extension_model = st.selectbox(
             "Scénario de prolongation",
             ["Dynamique récente", "Comparer avec la campagne 2022 lissée"],
-            key="first_round_extension_model",
+            index=1,
+            key="first_round_extension_model_v2",
         )
     filtered = working.copy()
     fitting_frame = working.copy()
@@ -916,7 +917,11 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                         x=payload["x"],
                         y=payload["y"],
                         mode="lines",
-                        line={"width": 2.0 if line_dash == "dashdot" else 1.8, "color": line_color, "dash": line_dash},
+                        line={
+                            "width": 3.2 if line_dash == "dashdot" else 1.4,
+                            "color": line_color,
+                            "dash": line_dash,
+                        },
                         name=f"{payload['display_name']} · {scenario_label}",
                         legendgroup=f"{payload['display_name']}-{scenario_label}",
                         showlegend=show_scenario_legend,

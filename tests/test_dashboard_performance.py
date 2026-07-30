@@ -129,6 +129,15 @@ def test_2022_campaign_extension_preserves_lfi_late_acceleration() -> None:
     assert values.iloc[-1] <= 16.0
 
 
+def test_2022_campaign_comparison_is_the_default_extension_view() -> None:
+    function_source = inspect.getsource(first_round_raw.render_first_round_raw_page)
+    selection = function_source.index('"Scénario de prolongation"')
+    following_code = function_source[selection : selection + 240]
+
+    assert '"Comparer avec la campagne 2022 lissée"' in following_code
+    assert "index=1" in following_code
+
+
 def test_detailed_poll_table_is_deferred_by_default() -> None:
     function_source = inspect.getsource(first_round_raw.render_first_round_raw_page)
 
