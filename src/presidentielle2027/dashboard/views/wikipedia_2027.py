@@ -17,7 +17,7 @@ CANDIDATE_SPECS = [
     ("Arthaud — LO", "LO", ("arthaud",), "solid"),
     ("Mélenchon — LFI", "LFI", ("melenchon",), "solid"),
     ("Roussel — PCF", "PCF", ("roussel",), "solid"),
-    ("Tondelier — LE", "LE", ("tondelier",), "solid"),
+    ("Tondelier — EELV", "EELV", ("tondelier",), "solid"),
     ("Faure — PS", "PS", ("faure",), "solid"),
     ("Hollande — PS", "PS", ("hollande",), "dash"),
     ("Glucksmann — PP", "PP", ("glucksmann",), "solid"),

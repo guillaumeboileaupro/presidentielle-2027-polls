@@ -257,8 +257,6 @@ def load_dashboard_data() -> pd.DataFrame:
 
 
 def _merge_dashboard_with_latest_raw_frame(base_frame: pd.DataFrame, raw_frame: pd.DataFrame) -> pd.DataFrame:
-    if base_frame.empty:
-        return raw_frame
     if raw_frame.empty:
         return base_frame
 
@@ -276,6 +274,20 @@ def _merge_dashboard_with_latest_raw_frame(base_frame: pd.DataFrame, raw_frame: 
         cleaned_base = cleaned_base.loc[~(raw_poll_mask | superseded_first_round)].copy()
 
     merged = pd.concat([cleaned_base, raw_frame], ignore_index=True, sort=False)
+    parse_status = merged.get(
+        "parse_status",
+        pd.Series("parsed", index=merged.index),
+    ).fillna("parsed")
+    merged["_parse_priority"] = parse_status.map(
+        {
+            "parsed": 0,
+            "vector_length_mismatch": 1,
+            "unparsed_estimate": 2,
+            "not_tested": 3,
+            "technical_duplicate": 4,
+        }
+    ).fillna(2)
+    merged = merged.sort_values("_parse_priority", kind="stable")
     merged = merged.drop_duplicates(
         subset=[
             "poll_id",
@@ -286,9 +298,9 @@ def _merge_dashboard_with_latest_raw_frame(base_frame: pd.DataFrame, raw_frame: 
             "scenario_name",
             "candidate_name",
         ],
-        keep="last",
+        keep="first",
     )
-    return merged
+    return merged.drop(columns="_parse_priority").sort_index()
 
 
 @st.cache_data(show_spinner=False)

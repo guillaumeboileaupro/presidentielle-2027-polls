@@ -32,7 +32,7 @@ def test_lost_decimal_separators_are_reconstructed_to_100_percent() -> None:
             "round": ["first_round"] * len(raw_values),
             "scenario_name": ["A"] * len(raw_values),
             "candidate_name": [f"Candidat {index}" for index in range(len(raw_values))],
-            "candidate_party": ["LO", "LFI", "PCF", "LE", "PP", "RE", "LR", "DLF", "RN", "REC", None],
+            "candidate_party": ["LO", "LFI", "PCF", "EELV", "PP", "RE", "LR", "DLF", "RN", "REC", None],
             "raw_text_context": raw_values,
             "estimate_percent": [1, 16, 25, 35, 105, 165, 8, 15, 35, 3, 2.5],
         }
@@ -44,7 +44,7 @@ def test_lost_decimal_separators_are_reconstructed_to_100_percent() -> None:
     assert corrected["estimate_percent"].tolist() == [1.0, 16.0, 2.5, 3.5, 10.5, 16.5, 8.0, 1.5, 35.0, 3.0, 2.5]
 
 
-def test_merged_html_cells_are_deduplicated_without_dropping_the_poll() -> None:
+def test_merged_html_cells_are_retained_without_double_counting_the_poll() -> None:
     frame = pd.DataFrame(
         {
             "poll_id": ["poll-1"] * 4,
@@ -58,8 +58,13 @@ def test_merged_html_cells_are_deduplicated_without_dropping_the_poll() -> None:
 
     corrected = _correct_poll_units_by_scenario(frame)
 
-    assert len(corrected) == 3
-    assert corrected["candidate_name"].tolist() == ["Gauche", "Centre", "Droite"]
+    assert len(corrected) == 4
+    assert corrected["parse_status"].tolist() == [
+        "parsed",
+        "parsed",
+        "technical_duplicate",
+        "parsed",
+    ]
     assert corrected["estimate_percent"].sum() == 100.0
 
 
@@ -70,7 +75,7 @@ def test_annotated_colspan_is_deduplicated_across_candidate_headers() -> None:
             "round": ["first_round"] * 4,
             "scenario_name": ["A"] * 4,
             "candidate_name": ["Gauche commune", "PCF", "Écologistes", "RN"],
-            "candidate_party": ["LFI", "PCF", "LE", "RN"],
+            "candidate_party": ["LFI", "PCF", "EELV", "RN"],
             "raw_text_context": ["66[h]", "66[h]", "66[h]", "34"],
             "estimate_percent": [66.0, 66.0, 66.0, 34.0],
         }
@@ -78,6 +83,13 @@ def test_annotated_colspan_is_deduplicated_across_candidate_headers() -> None:
 
     corrected = _correct_poll_units_by_scenario(frame)
 
-    assert corrected["candidate_name"].tolist() == ["NFP", "RN"]
-    assert corrected["candidate_party"].tolist() == ["NFP", "RN"]
-    assert corrected["estimate_percent"].tolist() == [66.0, 34.0]
+    assert len(corrected) == 4
+    assert corrected["candidate_name"].tolist() == ["NFP", "PCF", "Écologistes", "RN"]
+    assert corrected["candidate_party"].tolist() == ["NFP", "PCF", "EELV", "RN"]
+    assert corrected["estimate_percent"].dropna().tolist() == [66.0, 34.0]
+    assert corrected["parse_status"].tolist() == [
+        "parsed",
+        "technical_duplicate",
+        "technical_duplicate",
+        "parsed",
+    ]

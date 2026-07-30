@@ -9,7 +9,7 @@ def test_wikipedia_blocs_match_reference_chart_legend() -> None:
 
 
 def test_wikipedia_blocs_combine_successor_party_labels() -> None:
-    assert _wikipedia_bloc_label("LE") == "ECO"
+    assert _wikipedia_bloc_label("EELV") == "ECO"
     assert _wikipedia_bloc_label("PP") == "PS"
     assert _wikipedia_bloc_label("RE") == "ENS"
     assert _wikipedia_bloc_label("HOR") == "ENS"

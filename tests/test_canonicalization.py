@@ -40,12 +40,19 @@ def test_generic_bloc_labels_are_identified() -> None:
 
 def test_candidate_party_aliases_and_family_aliases_are_normalized() -> None:
     _, party, family = canonicalize_candidate_fields("Marine Tondelier", "EELV", "greens")
-    assert party == "LE"
+    assert party == "EELV"
     assert family == "écologistes"
 
     _, party, family = canonicalize_candidate_fields("François Bayrou", "MODEM", "centre_left")
     assert party == "MoDem"
     assert family == "centre_gauche"
+
+
+def test_all_ecologist_party_aliases_use_eelv() -> None:
+    for alias in ("LE", "EELV", "Les Écologistes", "Europe Écologie Les Verts"):
+        _, party, family = canonicalize_candidate_fields("Marine Tondelier", alias, "green")
+        assert party == "EELV"
+        assert family == "écologistes"
 
 
 def test_epr_bucket_is_split_back_to_candidate_party() -> None:

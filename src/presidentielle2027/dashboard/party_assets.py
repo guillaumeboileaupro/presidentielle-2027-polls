@@ -23,12 +23,10 @@ COMMONS_SPECIAL_FILEPATH = "https://commons.wikimedia.org/wiki/Special:FilePath/
 PLACEHOLDER_LOGO_PATH = str(Path(__file__).parent / "assets" / "logo-placeholder.svg")
 
 PARTY_LOGO_FILENAMES: dict[str, str] = {
-    "LFI": "LFI Logo 2024 (cropped).svg",
     "RN": "Logo Rassemblement National - Cropped.svg",
     "LR": "Les Républicains - logo (France, 2023) (cropped).svg",
     "PS": "Le Parti socialiste wordmark.svg",
     "PP": "Logo Place publique.svg",
-    "LE": "Logo Les Écologistes (France).png",
     "EELV": "Logo Les Écologistes (France).png",
     "PCF": "PCF LOGO.svg",
     "DLF": "Debout la France logo (2022).png",
@@ -43,6 +41,10 @@ PARTY_LOGO_FILENAMES: dict[str, str] = {
     "D!": "DemsFrance.png",
 }
 
+PARTY_LOGO_URLS: dict[str, str] = {
+    "LFI": "https://lafranceinsoumise.fr/wp-content/uploads/2026/05/LOGO-LFI-VIOLET.png",
+}
+
 PARTY_DISPLAY_LABELS: dict[str, str] = {
     "RN": "Rassemblement national",
     "REC": "Reconquête",
@@ -50,12 +52,10 @@ PARTY_DISPLAY_LABELS: dict[str, str] = {
     "PS": "Parti socialiste",
     "PP": "Place publique",
     "PCF": "Parti communiste français",
-    "LE": "Les Écologistes",
     "EELV": "Les Écologistes",
     "RE": "Renaissance",
     "REN": "Renaissance",
     "ENS": "Ensemble",
-    "EPR": "Ensemble pour la République",
     "HOR": "Horizons",
     "LFH": "La France humaniste",
     "LR": "Les Républicains",
@@ -98,10 +98,6 @@ FAMILY_DISPLAY_LABELS: dict[str, str] = {
 }
 
 CANDIDATE_LOGO_FILENAMES: dict[tuple[str, str], str] = {
-    ("PS-PP", "Raphaël Glucksmann"): "Logo Place publique.svg",
-    ("PS-PP", "François Hollande"): "Le Parti socialiste wordmark.svg",
-    ("PS-PP", "Olivier Faure"): "Le Parti socialiste wordmark.svg",
-    ("PS-PP", "Boris Vallaud"): "Le Parti socialiste wordmark.svg",
     ("PP", "Raphaël Glucksmann"): "Logo Place publique.svg",
 }
 
@@ -120,12 +116,15 @@ def resolve_party_logo_filename(
         filename = CANDIDATE_LOGO_FILENAMES.get((normalized_party, normalized_candidate))
         if filename is not None:
             return filename
-    if normalized_party in {"REN", "EPR"}:
+    if normalized_party == "REN":
         normalized_party = "RE"
     return PARTY_LOGO_FILENAMES.get(normalized_party)
 
 
 def get_party_logo_url(candidate_party: object | None, candidate_name: object | None = None) -> str | None:
+    normalized_party = str(candidate_party).strip() if candidate_party is not None else ""
+    if normalized_party in PARTY_LOGO_URLS:
+        return PARTY_LOGO_URLS[normalized_party]
     filename = resolve_party_logo_filename(candidate_party, candidate_name)
     if filename is None:
         return PLACEHOLDER_LOGO_PATH
