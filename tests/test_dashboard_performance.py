@@ -45,6 +45,23 @@ def test_first_round_curves_are_cached_and_plot_payload_is_bounded() -> None:
     assert hasattr(first_round_raw._cached_trend_curve, "clear")
 
 
+def test_smoothed_curve_alignment_accepts_duplicate_publication_dates() -> None:
+    curve = pd.Series(
+        [10.0, 20.0],
+        index=pd.to_datetime(["2026-01-01", "2026-01-03"]),
+    )
+    observation_dates = pd.Series(
+        pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-02", "2026-01-03"])
+    )
+
+    aligned = first_round_raw._align_smoothed_values_to_observations(
+        curve,
+        observation_dates,
+    )
+
+    assert aligned.tolist() == [10.0, 15.0, 15.0, 20.0]
+
+
 def test_detailed_poll_table_is_deferred_by_default() -> None:
     function_source = inspect.getsource(first_round_raw.render_first_round_raw_page)
 

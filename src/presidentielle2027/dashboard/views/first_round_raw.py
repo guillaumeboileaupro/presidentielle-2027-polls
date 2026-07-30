@@ -256,6 +256,21 @@ def _select_primary_first_round_scenarios(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.merge(primary, on=["poll_id", "scenario_name"], how="inner")
 
 
+def _align_smoothed_values_to_observations(
+    smoothed_series: pd.Series,
+    observation_dates: pd.Series,
+) -> np.ndarray:
+    """Interpolate a curve on observations, including repeated publication dates."""
+    curve = smoothed_series.copy()
+    curve.index = pd.to_datetime(curve.index)
+    curve = curve.groupby(level=0).last().sort_index()
+    requested_dates = pd.DatetimeIndex(pd.to_datetime(observation_dates))
+    unique_dates = pd.DatetimeIndex(requested_dates.dropna().unique()).sort_values()
+    interpolation_index = curve.index.union(unique_dates).drop_duplicates().sort_values()
+    interpolated = curve.reindex(interpolation_index).interpolate(method="time").ffill().bfill()
+    return interpolated.reindex(requested_dates).to_numpy(dtype=float)
+
+
 @st.cache_data(show_spinner=False, max_entries=256)
 def _cached_trend_curve(
     frame: pd.DataFrame,
@@ -722,10 +737,10 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                 )
             )
             if show_extension:
-                smoothed_on_observed = smoothed_series.reindex(
-                    smoothed_series.index.union(pd.to_datetime(ordered["publication_date"]))
-                ).sort_index().interpolate(method="time").ffill().bfill()
-                aligned_smooth = smoothed_on_observed.reindex(pd.to_datetime(ordered["publication_date"])).to_numpy(dtype=float)
+                aligned_smooth = _align_smoothed_values_to_observations(
+                    smoothed_series,
+                    ordered["publication_date"],
+                )
                 residuals = ordered["estimate_percent"].to_numpy(dtype=float) - aligned_smooth
                 sigma = float(np.nanstd(residuals)) if len(residuals) > 1 else 1.0
                 extension_payloads.append(
