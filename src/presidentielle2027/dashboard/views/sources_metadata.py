@@ -175,83 +175,9 @@ def _render_complete_wiki_zip_section() -> None:
             )
 
 
-def render_sources_metadata_page(frame: pd.DataFrame) -> None:
-    st.subheader("Sources et métadonnées")
-    if frame.empty:
-        st.info("Aucune donnée disponible.")
-        return
-
-    working = frame.copy()
-    if "source_name" not in working.columns:
-        working["source_name"] = "unknown_source"
-    if "polling_company" not in working.columns:
-        working["polling_company"] = "unknown_pollster"
-    if "scenario_name" not in working.columns:
-        working["scenario_name"] = "unknown_scenario"
-    if "round" not in working.columns:
-        working["round"] = "unknown_round"
-    if "sample_size" not in working.columns:
-        working["sample_size"] = pd.NA
-    if "commissioner" not in working.columns:
-        working["commissioner"] = pd.NA
-    if "media_partner" not in working.columns:
-        working["media_partner"] = pd.NA
-    if "collection_method" not in working.columns:
-        working["collection_method"] = pd.NA
-    if "publication_date" not in working.columns:
-        working["publication_date"] = pd.NaT
-
-    st.markdown(
-        '<div class="wiki-note">Cette vue sert à vérifier ce que le dataset contient réellement, '
-        "source par source et institut par institut, avant toute lecture politique.</div>",
-        unsafe_allow_html=True,
-    )
-
-    source_options = ["Tous"] + sorted(working["source_name"].dropna().astype(str).unique().tolist())
-    selected_source = st.selectbox(
-        "Jeu de données / source",
-        source_options,
-        key="sources_metadata_source",
-        format_func=_display_source_label,
-    )
-    visible = working if selected_source == "Tous" else working.loc[working["source_name"] == selected_source].copy()
-
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Lignes", int(len(visible)))
-    col2.metric("Sondages", int(visible["poll_id"].nunique() if "poll_id" in visible.columns else len(visible)))
-    col3.metric("Instituts", int(visible["polling_company"].nunique(dropna=True)))
-    col4.metric("Scénarios", int(visible["scenario_name"].nunique(dropna=True)))
-
-    st.markdown("**Couverture des champs critiques**")
-    completeness = build_frame_completeness_summary(visible)
-    completeness = completeness.drop(columns="field", errors="ignore").rename(
-        columns={
-            "label": "Champ",
-            "filled_count": "Présents",
-            "missing_count": "Manquants",
-            "coverage_percent": "Couverture",
-        }
-    )
-    st.dataframe(
-        completeness,
-        width="stretch",
-        hide_index=True,
-        column_config={
-            "Champ": st.column_config.TextColumn("Champ"),
-            "Présents": st.column_config.NumberColumn("Présents", format="%d"),
-            "Manquants": st.column_config.NumberColumn("Manquants", format="%d"),
-            "Couverture": st.column_config.ProgressColumn("Couverture", format="%.1f%%", min_value=0, max_value=100),
-        },
-    )
-    st.caption(
-        "Les valeurs techniques vides (`unknown`, `N/A`, etc.) sont comptées comme manquantes. "
-        "Utilisez les filtres ci-dessous pour contrôler les lignes derrière chaque total."
-    )
-
+def _render_metadata_quality_explorer(visible: pd.DataFrame) -> None:
     st.markdown("**Explorer la qualité des métadonnées**")
-    field_labels = {
-        label: field for field, label in CRITICAL_FIELD_LABELS.items()
-    }
+    field_labels = {label: field for field, label in CRITICAL_FIELD_LABELS.items()}
     filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
     selected_field_label = filter_col1.selectbox(
         "Champ à contrôler",
@@ -302,9 +228,8 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
     elif selected_state == "Renseignées":
         quality_rows = quality_rows.loc[selected_field_is_filled].copy()
 
-    quality_rows["État"] = (
-        meaningful_value_mask(quality_rows[selected_field])
-        .map({True: "Renseigné", False: "Manquant"})
+    quality_rows["État"] = meaningful_value_mask(quality_rows[selected_field]).map(
+        {True: "Renseigné", False: "Manquant"}
     )
     detail_columns = [
         "poll_id",
@@ -317,9 +242,9 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
         "État",
         "source_url",
     ]
-    detail_columns = list(dict.fromkeys(
-        column for column in detail_columns if column in quality_rows.columns
-    ))
+    detail_columns = list(
+        dict.fromkeys(column for column in detail_columns if column in quality_rows.columns)
+    )
     quality_view = clean_user_facing_frame(
         rename_user_facing_columns(quality_rows[detail_columns])
     )
@@ -333,6 +258,109 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
         hide_index=True,
         column_config={"Lien source": st.column_config.LinkColumn("Lien source")},
     )
+
+
+def render_sources_metadata_page(frame: pd.DataFrame) -> None:
+    st.subheader("Sources et métadonnées")
+    if frame.empty:
+        st.info("Aucune donnée disponible.")
+        return
+
+    working = frame.copy()
+    if "source_name" not in working.columns:
+        working["source_name"] = "unknown_source"
+    if "polling_company" not in working.columns:
+        working["polling_company"] = "unknown_pollster"
+    if "scenario_name" not in working.columns:
+        working["scenario_name"] = "unknown_scenario"
+    if "round" not in working.columns:
+        working["round"] = "unknown_round"
+    if "sample_size" not in working.columns:
+        working["sample_size"] = pd.NA
+    if "commissioner" not in working.columns:
+        working["commissioner"] = pd.NA
+    if "media_partner" not in working.columns:
+        working["media_partner"] = pd.NA
+    if "collection_method" not in working.columns:
+        working["collection_method"] = pd.NA
+    if "publication_date" not in working.columns:
+        working["publication_date"] = pd.NaT
+
+    st.markdown(
+        '<div class="wiki-note">Cette vue sert à vérifier ce que le dataset contient réellement, '
+        "source par source et institut par institut, avant toute lecture politique.</div>",
+        unsafe_allow_html=True,
+    )
+
+    source_options = ["Tous"] + sorted(working["source_name"].dropna().astype(str).unique().tolist())
+    selected_source = st.selectbox(
+        "Jeu de données / source",
+        source_options,
+        key="sources_metadata_source",
+        format_func=_display_source_label,
+    )
+    visible = working if selected_source == "Tous" else working.loc[working["source_name"] == selected_source].copy()
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Lignes", int(len(visible)))
+    col2.metric("Sondages", int(visible["poll_id"].nunique() if "poll_id" in visible.columns else len(visible)))
+    col3.metric("Instituts", int(visible["polling_company"].nunique(dropna=True)))
+    col4.metric("Scénarios", int(visible["scenario_name"].nunique(dropna=True)))
+
+    section = st.radio(
+        "Section",
+        [
+            "Vue d’ensemble",
+            "Contrôle qualité",
+            "Instituts et sources",
+            "Archives brutes",
+        ],
+        horizontal=True,
+        key="sources_metadata_section",
+    )
+
+    if section == "Archives brutes":
+        st.caption(
+            "Consultez ici les extractions documentaires d’origine. "
+            "Ces tables sont utiles pour remonter à la source, mais ne sont pas des sondages normalisés."
+        )
+        _render_imported_wiki_zip_section(Path("data/imported_wiki_zip"))
+        _render_complete_wiki_zip_section()
+        return
+
+    if section == "Vue d’ensemble":
+        st.markdown("**Couverture des champs critiques**")
+        completeness = build_frame_completeness_summary(visible)
+        completeness = completeness.drop(columns="field", errors="ignore").rename(
+            columns={
+                "label": "Champ",
+                "filled_count": "Présents",
+                "missing_count": "Manquants",
+                "coverage_percent": "Couverture",
+            }
+        )
+        st.dataframe(
+            completeness,
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "Champ": st.column_config.TextColumn("Champ"),
+                "Présents": st.column_config.NumberColumn("Présents", format="%d"),
+                "Manquants": st.column_config.NumberColumn("Manquants", format="%d"),
+                "Couverture": st.column_config.ProgressColumn(
+                    "Couverture", format="%.1f%%", min_value=0, max_value=100
+                ),
+            },
+        )
+        st.caption(
+            "Les valeurs techniques vides (`unknown`, `N/A`, etc.) sont comptées comme manquantes. "
+            "La section « Contrôle qualité » permet d’inspecter les lignes concernées."
+        )
+        return
+
+    if section == "Contrôle qualité":
+        _render_metadata_quality_explorer(visible)
+        return
 
     dataset_registry = load_csv_if_exists(Path("data/reference/datasets_metadata.csv"))
     if not dataset_registry.empty:
@@ -367,9 +395,6 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
                 "source_url": st.column_config.LinkColumn("Lien"),
             },
         )
-
-    _render_imported_wiki_zip_section(Path("data/imported_wiki_zip"))
-    _render_complete_wiki_zip_section()
 
     reference_files = [
         ("historical_polls_2022_first_round.csv", "Historique des sondages 2022 utilisés pour le redressage"),
@@ -467,40 +492,4 @@ def render_sources_metadata_page(frame: pd.DataFrame) -> None:
             "Échantillons manquants": st.column_config.NumberColumn("Échantillon manquant", format="%d"),
             "Modes de collecte manquants": st.column_config.NumberColumn("Collecte manquante", format="%d"),
         },
-    )
-
-    columns = [
-        "poll_id",
-        "source_name",
-        "polling_company",
-        "round",
-        "scenario_name",
-        "candidate_name",
-        "sample_size",
-        "fieldwork_start_date",
-        "fieldwork_end_date",
-        "publication_date",
-        "commissioner",
-        "media_partner",
-        "source_url",
-    ]
-    missing_rows = visible.loc[
-        visible["sample_size"].isna()
-        | visible["publication_date"].isna()
-        | visible.get("fieldwork_start_date", pd.Series(index=visible.index, dtype="datetime64[ns]")).isna()
-    ].copy()
-    if "source_name" in missing_rows.columns:
-        missing_rows["source_name"] = missing_rows["source_name"].map(_display_source_label)
-    if "round" in missing_rows.columns:
-        missing_rows["round"] = missing_rows["round"].map(lambda value: USER_VALUE_REPLACEMENTS.get(str(value), str(value)))
-    existing_columns = [column for column in columns if column in missing_rows.columns]
-    missing_view = clean_user_facing_frame(
-        rename_user_facing_columns(missing_rows[existing_columns].head(200))
-    )
-    st.markdown("**Lignes avec métadonnées critiques manquantes**")
-    st.dataframe(
-        missing_view,
-        width="stretch",
-        hide_index=True,
-        column_config={"Lien source": st.column_config.LinkColumn("Lien source")},
     )

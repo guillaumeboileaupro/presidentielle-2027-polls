@@ -136,13 +136,34 @@ def test_metadata_coverage_treats_placeholder_values_as_missing() -> None:
 
 
 def test_metadata_quality_table_has_field_state_round_and_pollster_filters() -> None:
-    function_source = inspect.getsource(sources_metadata.render_sources_metadata_page)
+    function_source = inspect.getsource(sources_metadata._render_metadata_quality_explorer)
 
     assert '"Champ à contrôler"' in function_source
     assert '"État du champ"' in function_source
     assert '"Tour"' in function_source
     assert '"Institut"' in function_source
     assert "meaningful_value_mask" in function_source
+
+
+def test_navigation_follows_analysis_workflow_and_keeps_sources_last() -> None:
+    labels = [config["label"] for config in app.PAGE_CONFIG]
+
+    assert labels[:3] == [
+        "Sondages 2027 - premier tour brut",
+        "Sondages 2027 - second tour brut",
+        "Barres d’erreur brutes",
+    ]
+    assert labels.index("Biais calculés") < labels.index("Projection corrigée 2027")
+    assert labels[-1] == "Sources et métadonnées"
+
+
+def test_metadata_page_is_split_into_navigable_sections() -> None:
+    function_source = inspect.getsource(sources_metadata.render_sources_metadata_page)
+
+    assert '"Vue d’ensemble"' in function_source
+    assert '"Contrôle qualité"' in function_source
+    assert '"Instituts et sources"' in function_source
+    assert '"Archives brutes"' in function_source
 
 
 def test_unknown_internal_identifiers_get_a_readable_fallback() -> None:
