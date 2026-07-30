@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -91,7 +89,6 @@ WIKIPEDIA_BLOC_MAP: dict[str, str] = {
 }
 WIKIPEDIA_BLOC_ORDER = ["PCF", "LFI", "ECO", "PS", "ENS", "LR", "RN", "REC"]
 WIKIPEDIA_2027_FIRST_ROUND_DATE = pd.Timestamp("2027-04-18")
-HISTORICAL_2022_CAMPAIGN_FILE = Path("data/reference/historical_polls_2022_first_round.csv")
 
 PARTY_GRAPH_LABELS: dict[str, str] = {
     "LE": "ECO",
@@ -406,9 +403,11 @@ def _build_2022_campaign_extension_paths(
     if not paths:
         return paths
     if historical_frame is None:
-        if not HISTORICAL_2022_CAMPAIGN_FILE.exists():
-            return paths
-        historical_frame = pd.read_csv(HISTORICAL_2022_CAMPAIGN_FILE)
+        from presidentielle2027.dashboard.views.analysis_2022 import (
+            _load_2022_first_round_from_wiki_tables,
+        )
+
+        historical_frame = _load_2022_first_round_from_wiki_tables()
 
     force_map = {
         "ECO": "EELV",
@@ -419,12 +418,15 @@ def _build_2022_campaign_extension_paths(
         "HOR": "ENS",
     }
     history = historical_frame.copy()
-    history["days_until_election"] = pd.to_numeric(
-        history["days_until_election"], errors="coerce"
-    )
     history["estimate_percent"] = pd.to_numeric(history["estimate_percent"], errors="coerce")
-    history = history.dropna(subset=["force_label", "days_until_election", "estimate_percent"])
-    election_ts = pd.Timestamp(election_date)
+    if "fieldwork_end_date" in history.columns:
+        history["campaign_date"] = pd.to_datetime(history["fieldwork_end_date"], errors="coerce")
+    elif "days_until_election" in history.columns:
+        days = pd.to_numeric(history["days_until_election"], errors="coerce")
+        history["campaign_date"] = pd.Timestamp("2022-04-10") - pd.to_timedelta(days, unit="D")
+    else:
+        return paths
+    history = history.dropna(subset=["force_label", "campaign_date", "estimate_percent"])
 
     for path in paths:
         key = str(path["display_name"])
@@ -433,17 +435,31 @@ def _build_2022_campaign_extension_paths(
         if force_history.empty:
             continue
         trajectory = (
-            force_history.groupby("days_until_election")["estimate_percent"]
+            force_history.groupby("campaign_date")["estimate_percent"]
             .median()
+            .reset_index()
             .sort_index()
         )
-        xp = trajectory.index.to_numpy(dtype=float)
-        fp = trajectory.to_numpy(dtype=float)
-        dates = pd.to_datetime(path["x"])
-        remaining_days = ((election_ts - dates) / pd.Timedelta(days=1)).to_numpy(dtype=float)
-        historical_levels = np.interp(remaining_days, xp, fp)
-        historical_start = float(np.interp(remaining_days[0], xp, fp))
-        historical_delta = historical_levels - historical_start
+        smooth_history = build_lowess_curve(
+            trajectory,
+            "estimate_percent",
+            date_column="campaign_date",
+            frac=0.24,
+            method="loess",
+            dense_points=max(120, len(trajectory.index) * 3),
+        )
+        if smooth_history is None or smooth_history.empty:
+            historical_values = trajectory["estimate_percent"].to_numpy(dtype=float)
+        else:
+            historical_values = smooth_history["score_smooth"].to_numpy(dtype=float)
+        historical_progress = np.linspace(0.0, 1.0, num=len(historical_values))
+        projected_progress = np.linspace(0.0, 1.0, num=len(path["x"]))
+        historical_levels = np.interp(
+            projected_progress,
+            historical_progress,
+            historical_values,
+        )
+        historical_delta = historical_levels - historical_levels[0]
 
         current_path = pd.to_numeric(path["y"], errors="coerce").to_numpy(dtype=float)
         anchor = float(current_path[0])
@@ -548,7 +564,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     if show_extension:
         extension_model = st.selectbox(
             "Scénario de prolongation",
-            ["Dynamique récente", "Comparer avec la campagne 2022 (rose)"],
+            ["Dynamique récente", "Comparer avec la campagne 2022 lissée"],
             key="first_round_extension_model",
         )
     filtered = working.copy()
@@ -837,10 +853,10 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                     WIKIPEDIA_2027_FIRST_ROUND_DATE,
                 ),
                 "Dynamique récente",
-                None,
+                "dash",
             )
         ]
-        if extension_model == "Comparer avec la campagne 2022 (rose)":
+        if extension_model == "Comparer avec la campagne 2022 lissée":
             extension_sets.append(
                 (
                     _build_2022_campaign_extension_paths(
@@ -848,14 +864,13 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                         WIKIPEDIA_2027_FIRST_ROUND_DATE,
                     ),
                     "Dynamique de campagne 2022 avec paliers",
-                    "#d63384",
+                    "dashdot",
                 )
             )
-        for extension_paths, scenario_label, scenario_color in extension_sets:
+        for extension_paths, scenario_label, line_dash in extension_sets:
             for payload in extension_paths:
-                line_color = scenario_color or payload["color"]
-                line_dash = "dot" if scenario_color else "dash"
-                show_scenario_legend = bool(scenario_color)
+                line_color = payload["color"]
+                show_scenario_legend = line_dash == "dashdot"
                 figure.add_trace(
                     go.Scatter(
                         x=payload["x"],
@@ -874,7 +889,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                         mode="lines",
                         line={"width": 0, "color": line_color},
                         fill="tonexty",
-                        fillcolor="rgba(214,51,132,0.06)" if scenario_color else "rgba(120,120,120,0.10)",
+                        fillcolor="rgba(120,120,120,0.06)",
                         hoverinfo="skip",
                         showlegend=False,
                         legendgroup=f"{payload['display_name']}-{scenario_label}",
@@ -885,7 +900,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                         x=payload["x"],
                         y=payload["y"],
                         mode="lines",
-                        line={"width": 2.0 if scenario_color else 1.8, "color": line_color, "dash": line_dash},
+                        line={"width": 2.0 if line_dash == "dashdot" else 1.8, "color": line_color, "dash": line_dash},
                         name=f"{payload['display_name']} · {scenario_label}",
                         legendgroup=f"{payload['display_name']}-{scenario_label}",
                         showlegend=show_scenario_legend,
@@ -932,10 +947,11 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     if insufficient_forces:
         st.caption("Tendance non calculée pour certaines forces : données insuffisantes ou scénarios non comparables.")
     if show_extension:
-        if extension_model == "Comparer avec la campagne 2022 (rose)":
+        if extension_model == "Comparer avec la campagne 2022 lissée":
             st.caption(
                 "Scénario exploratoire combinant 35 % de dynamique récente et 65 % des "
-                "mouvements observés au même stade de la campagne 2022. Les variations sont "
+                "dynamiques lissées de la campagne complète de janvier à avril 2022, "
+                "transposées sur le temps restant en 2027. Les variations sont "
                 "plafonnées à ±4 points et le RN ne peut pas dépasser son niveau lissé au "
                 "départ de la prolongation. Ce n’est pas une prédiction électorale validée."
             )
