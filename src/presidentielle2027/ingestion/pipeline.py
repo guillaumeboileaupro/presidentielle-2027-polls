@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 import importlib.util
 from pathlib import Path
+import shutil
 import time
 from types import ModuleType
 
@@ -20,6 +21,12 @@ from presidentielle2027.extraction.excel_parser import (
     workbook_to_normalized_dataframe,
 )
 from presidentielle2027.extraction.normalizer import normalize_csv_file, normalize_to_database
+from presidentielle2027.extraction.migration import (
+    NORMALIZATION_VERSION,
+    build_migration_report,
+    build_percentage_correction_report,
+    canonicalize_normalized_frame,
+)
 from presidentielle2027.ingestion.wikipedia_scraper import ingest_wikipedia_sources
 
 
@@ -145,22 +152,22 @@ def _refresh_normalized_dataset(settings: Settings) -> tuple[Path, Path]:
     if normalized_v2_csv.exists() and (not v2_xlsx.exists() or normalized_v2_csv.stat().st_mtime >= v2_xlsx.stat().st_mtime):
         frame = pd.read_csv(normalized_v2_csv)
         frame = _merge_with_latest_raw_wikipedia_tables(frame, settings.raw_dir)
-        frame.to_csv(normalized_v2_csv, index=False)
+        _write_processed_frame(frame, normalized_v2_csv)
         return normalized_v2_csv, normalized_v2_csv
     if v2_xlsx.exists():
         frame = workbook_to_normalized_dataframe(v2_xlsx)
         frame = _merge_with_latest_raw_wikipedia_tables(frame, settings.raw_dir)
-        frame.to_csv(normalized_v2_csv, index=False)
+        _write_processed_frame(frame, normalized_v2_csv)
         return v2_xlsx, normalized_v2_csv
     if normalized_csv.exists() and (not v1_xlsx.exists() or normalized_csv.stat().st_mtime >= v1_xlsx.stat().st_mtime):
         frame = pd.read_csv(normalized_csv)
         frame = _merge_with_latest_raw_wikipedia_tables(frame, settings.raw_dir)
-        frame.to_csv(normalized_csv, index=False)
+        _write_processed_frame(frame, normalized_csv)
         return normalized_csv, normalized_csv
     if v1_xlsx.exists():
         frame = workbook_to_normalized_dataframe(v1_xlsx)
         frame = _merge_with_latest_raw_wikipedia_tables(frame, settings.raw_dir)
-        frame.to_csv(normalized_csv, index=False)
+        _write_processed_frame(frame, normalized_csv)
         return v1_xlsx, normalized_csv
 
     raise FileNotFoundError(
@@ -169,6 +176,30 @@ def _refresh_normalized_dataset(settings: Settings) -> tuple[Path, Path]:
         "data/raw/presidentielle_2027_sondages_wikipedia_extraction.xlsx, "
         "data/processed/wikipedia_2027_polls_normalized_v2.csv, "
         "data/processed/wikipedia_2027_polls_normalized.csv."
+    )
+
+
+def _write_processed_frame(frame: pd.DataFrame, output_path: Path) -> None:
+    before = frame.copy()
+    migrated = canonicalize_normalized_frame(before)
+    if output_path.exists():
+        existing = pd.read_csv(output_path, nrows=1)
+        old_version = pd.to_numeric(
+            existing.get("normalization_version", pd.Series([0])),
+            errors="coerce",
+        ).fillna(0)
+        backup_path = output_path.with_suffix(f"{output_path.suffix}.v1.bak")
+        if int(old_version.max()) < NORMALIZATION_VERSION and not backup_path.exists():
+            shutil.copy2(output_path, backup_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    migrated.to_csv(output_path, index=False)
+    build_migration_report(before, migrated).to_csv(
+        output_path.parent / f"{output_path.stem}_migration_report.csv",
+        index=False,
+    )
+    build_percentage_correction_report(migrated).to_csv(
+        output_path.parent / "poll_percentage_correction_report.csv",
+        index=False,
     )
 
 

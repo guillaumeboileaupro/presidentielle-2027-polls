@@ -14,7 +14,12 @@ from presidentielle2027.dashboard.table_views import (
     rename_user_facing_columns,
     user_facing_value,
 )
-from presidentielle2027.dashboard.views import analysis_2022, first_round_raw, sources_metadata
+from presidentielle2027.dashboard.views import (
+    analysis_2022,
+    corrected_dataset,
+    first_round_raw,
+    sources_metadata,
+)
 
 
 def test_dashboard_startup_does_not_run_ingestion_pipeline() -> None:
@@ -171,6 +176,47 @@ def test_latest_raw_first_round_replaces_stale_v2_database_rows() -> None:
 
     assert merged["poll_id"].tolist() == ["RAW-FR-IFOP-01-001"]
     assert merged["estimate_percent"].tolist() == [15.0]
+
+
+def test_dashboard_merge_prefers_parsed_row_over_retained_technical_duplicate() -> None:
+    raw = pd.DataFrame(
+        {
+            "poll_id": ["RAW-FR-TEST-001", "RAW-FR-TEST-001"],
+            "round": ["first_round", "first_round"],
+            "polling_company": ["Test", "Test"],
+            "fieldwork_start_date": ["2026-01-01", "2026-01-01"],
+            "fieldwork_end_date": ["2026-01-02", "2026-01-02"],
+            "scenario_name": ["Hypothèse", "Hypothèse"],
+            "candidate_name": ["Candidate", "Candidate"],
+            "estimate_percent": [27.0, None],
+            "parse_status": ["parsed", "technical_duplicate"],
+        }
+    )
+
+    merged = app._merge_dashboard_with_latest_raw_frame(pd.DataFrame(), raw)
+
+    assert len(merged) == 1
+    assert merged.iloc[0]["estimate_percent"] == 27.0
+    assert merged.iloc[0]["parse_status"] == "parsed"
+
+
+def test_quality_sum_uses_complete_scenario_total_after_filtering() -> None:
+    filtered = pd.DataFrame(
+        {
+            "poll_id": ["poll-1"],
+            "scenario_name": ["Hypothèse"],
+            "candidate_name": ["Candidate"],
+            "estimate_percent": [27.0],
+            "scenario_total_after": [100.0],
+            "historically_corrected_estimate": [27.0],
+            "sample_size": [1000],
+            "publication_date": [pd.Timestamp("2026-01-01")],
+        }
+    )
+
+    alerts = corrected_dataset._build_quality_alerts(filtered)
+
+    assert alerts.empty
 
 
 def test_historical_2022_overview_uses_true_local_regression() -> None:

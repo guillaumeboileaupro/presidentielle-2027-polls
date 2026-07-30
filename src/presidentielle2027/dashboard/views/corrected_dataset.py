@@ -110,12 +110,23 @@ def _build_quality_alerts(frame: pd.DataFrame) -> pd.DataFrame:
     for row in missing_publication.itertuples(index=False):
         alerts.append({"Type": "Publication", "Message": f"Date de publication absente pour le sondage {row.poll_id}."})
 
-    if {"poll_id", "scenario_name", "estimate_percent"}.issubset(frame.columns):
+    scenario_columns = ["poll_id", "scenario_name"]
+    if {"poll_id", "scenario_name", "scenario_total_after"}.issubset(frame.columns):
         sums = (
-            frame.groupby(["poll_id", "scenario_name"], dropna=False)["estimate_percent"]
-            .sum()
+            frame.groupby(scenario_columns, dropna=False)["scenario_total_after"]
+            .first()
             .reset_index(name="score_sum")
         )
+    elif {"poll_id", "scenario_name", "estimate_percent"}.issubset(frame.columns):
+        sums = (
+            frame.groupby(scenario_columns, dropna=False)["estimate_percent"]
+            .sum(min_count=1)
+            .reset_index(name="score_sum")
+        )
+    else:
+        sums = pd.DataFrame()
+    if not sums.empty:
+        sums["score_sum"] = pd.to_numeric(sums["score_sum"], errors="coerce")
         incoherent = sums.loc[(sums["score_sum"] < 85) | (sums["score_sum"] > 105)]
         for row in incoherent.itertuples(index=False):
             alerts.append(

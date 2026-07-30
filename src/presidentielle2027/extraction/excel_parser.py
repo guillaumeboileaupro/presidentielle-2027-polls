@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from itertools import zip_longest
 import re
 from pathlib import Path
 from typing import Iterable
@@ -9,6 +10,19 @@ from openpyxl import load_workbook
 import pandas as pd
 
 from presidentielle2027.extraction.canonicalization import canonicalize_candidate_fields, is_generic_bloc_label
+
+PARSING_DIAGNOSTIC_COLUMNS = [
+    "fieldwork_date_raw",
+    "parse_status",
+    "parse_error",
+    "estimate_percent_original",
+    "estimate_percent_corrected",
+    "percentage_correction_applied",
+    "percentage_correction_factor",
+    "percentage_correction_reason",
+    "scenario_total_before",
+    "scenario_total_after",
+]
 
 
 def load_workbook_sheets(workbook_path: Path) -> dict[str, pd.DataFrame]:
@@ -218,7 +232,6 @@ def _percentage_plausibility_penalty(party: object, value: float) -> float:
         "NPA-A": (0.0, 5.0),
         "LFI": (5.0, 30.0),
         "PCF": (0.0, 12.0),
-        "LE": (0.0, 15.0),
         "EELV": (0.0, 15.0),
         "PS": (2.0, 25.0),
         "PP": (2.0, 25.0),
@@ -238,7 +251,7 @@ def _percentage_plausibility_penalty(party: object, value: float) -> float:
     return 0.0
 
 
-def _reconstruct_scenario_percentages(group: pd.DataFrame) -> pd.Series:
+def _reconstruct_scenario_percentages(group: pd.DataFrame) -> tuple[pd.Series, bool]:
     """Choose decimal variants whose scenario sum is closest to 100."""
     def state_rank(state: tuple[float, float, list[float]]) -> tuple[float, float, float]:
         distance = abs(state[0] - 100.0)
@@ -269,9 +282,15 @@ def _reconstruct_scenario_percentages(group: pd.DataFrame) -> pd.Series:
             key=lambda state: (state[1], abs(state[0] - 100.0)),
         )[:2048]
     if not states:
-        return pd.to_numeric(group["estimate_percent"], errors="coerce")
+        return pd.to_numeric(group["estimate_percent"], errors="coerce"), True
     best = min(states, key=state_rank)
-    return pd.Series(best[2], index=group.index, dtype=float)
+    best_rank = state_rank(best)
+    tied = [
+        state
+        for state in states
+        if state_rank(state) == best_rank and state[2] != best[2]
+    ]
+    return pd.Series(best[2], index=group.index, dtype=float), bool(tied)
 
 
 def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
@@ -279,19 +298,34 @@ def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
 
     Wikipedia's HTML tables occasionally lose decimal separators during CSV
     extraction (10.5 becomes 105) and repeat cells created with ``colspan``.
-    Exact technical duplicates are removed, then a bounded search chooses the
-    plausible decimal variants whose total is closest to 100 percent.
+    Exact technical duplicates are retained and marked, then a bounded search
+    chooses plausible decimal variants whose total is closest to 100 percent.
     """
     if frame.empty:
         return frame.copy()
     corrected = frame.copy()
     numeric = pd.to_numeric(corrected["estimate_percent"], errors="coerce")
     corrected.loc[numeric.notna(), "estimate_percent"] = numeric.loc[numeric.notna()]
+    corrected["estimate_percent_original"] = numeric
+    corrected["estimate_percent_corrected"] = numeric
+    corrected["percentage_correction_applied"] = False
+    corrected["percentage_correction_factor"] = 1.0
+    corrected["percentage_correction_reason"] = "unchanged"
+    corrected["scenario_total_before"] = float("nan")
+    corrected["scenario_total_after"] = float("nan")
+    if "parse_status" not in corrected:
+        corrected["parse_status"] = "parsed"
+    if "parse_error" not in corrected:
+        corrected["parse_error"] = None
     scenario_columns = ["poll_id", "round", "scenario_name"]
     raw_context = corrected["raw_text_context"].fillna("").astype(str)
     annotated_context = raw_context.str.contains(r"\[[^\]]+\]", regex=True)
     repeated_merged_cell = corrected.duplicated(
         subset=[*scenario_columns, "raw_text_context"],
+        keep="first",
+    )
+    exact_technical_duplicate = corrected.duplicated(
+        subset=[*scenario_columns, "candidate_name", "raw_text_context"],
         keep="first",
     )
     merged_cell_rows = corrected.loc[annotated_context].groupby(
@@ -305,16 +339,66 @@ def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
         corrected.at[first_index, "candidate_name"] = "NFP"
         corrected.at[first_index, "candidate_party"] = "NFP"
         corrected.at[first_index, "political_family"] = "generic_bloc"
-    corrected = corrected.loc[~(annotated_context & repeated_merged_cell)].copy()
-    duplicate_columns = [
-        *scenario_columns,
-        "candidate_name",
-        "raw_text_context",
-    ]
-    corrected = corrected.drop_duplicates(subset=duplicate_columns, keep="first").copy()
+    technical_duplicates = exact_technical_duplicate | (annotated_context & repeated_merged_cell)
+    corrected.loc[technical_duplicates, "estimate_percent"] = None
+    corrected.loc[technical_duplicates, "estimate_percent_corrected"] = None
+    corrected.loc[technical_duplicates, "parse_status"] = "technical_duplicate"
+    corrected.loc[technical_duplicates, "parse_error"] = "repeated HTML colspan cell retained for traceability"
+    corrected.loc[technical_duplicates, "percentage_correction_reason"] = "technical_duplicate_excluded"
+
     for _, indexes in corrected.groupby(scenario_columns, dropna=False).groups.items():
         group = corrected.loc[list(indexes)]
-        corrected.loc[group.index, "estimate_percent"] = _reconstruct_scenario_percentages(group)
+        usable = group.loc[
+            ~group["parse_status"].isin({"technical_duplicate", "not_tested"})
+        ].copy()
+        values_before = pd.to_numeric(usable["estimate_percent"], errors="coerce")
+        total_before = float(values_before.sum(min_count=1))
+        corrected.loc[group.index, "scenario_total_before"] = total_before
+        if usable.empty:
+            corrected.loc[group.index, "scenario_total_after"] = total_before
+            continue
+        if values_before.isna().any():
+            corrected.loc[group.index, "percentage_correction_reason"] = "ambiguous_missing_value"
+            corrected.loc[group.index, "scenario_total_after"] = total_before
+            continue
+        if total_before <= 101.0 and bool(values_before.le(100.0).all()):
+            corrected.loc[group.index, "scenario_total_after"] = total_before
+            continue
+
+        reconstructed, ambiguous = _reconstruct_scenario_percentages(usable)
+        option_signatures = usable.apply(
+            lambda row: (
+                tuple(_poll_percentage_options(row.get("raw_text_context"), float(row["estimate_percent"]))),
+                str(row.get("candidate_party") or ""),
+            ),
+            axis=1,
+        )
+        for _, equivalent_indexes in option_signatures.groupby(option_signatures).groups.items():
+            equivalent_indexes = list(equivalent_indexes)
+            if len(equivalent_indexes) > 1 and reconstructed.loc[equivalent_indexes].nunique() > 1:
+                ambiguous = True
+        if ambiguous:
+            corrected.loc[group.index, "percentage_correction_reason"] = "ambiguous_multiple_solutions"
+            corrected.loc[group.index, "scenario_total_after"] = total_before
+            continue
+
+        corrected.loc[reconstructed.index, "estimate_percent"] = reconstructed
+        corrected.loc[reconstructed.index, "estimate_percent_corrected"] = reconstructed
+        originals = pd.to_numeric(
+            corrected.loc[reconstructed.index, "estimate_percent_original"],
+            errors="coerce",
+        )
+        changed = ~originals.eq(reconstructed)
+        changed_indexes = reconstructed.index[changed]
+        corrected.loc[changed_indexes, "percentage_correction_applied"] = True
+        corrected.loc[changed_indexes, "percentage_correction_factor"] = (
+            reconstructed.loc[changed_indexes] / originals.loc[changed_indexes]
+        )
+        corrected.loc[group.index, "percentage_correction_reason"] = "scenario_total_aberrant"
+        corrected.loc[group.index, "scenario_total_after"] = float(reconstructed.sum())
+
+    assert len(corrected) == len(frame)
+    assert corrected.index.equals(frame.index)
     return corrected
 
 
@@ -360,8 +444,11 @@ def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int)
         if not _row_looks_like_poll(pollster, date_text, sample_size):
             continue
         fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(date_text), fallback_year=fallback_year)
-        if fieldwork_start_date is None and fieldwork_end_date is None:
-            continue
+        date_error = (
+            None
+            if fieldwork_start_date is not None or fieldwork_end_date is not None
+            else "unparseable fieldwork date"
+        )
         pollster_label = _normalize_company_name(str(pollster))
         key = (pollster_label, str(date_text))
         scenario_counters[key] = scenario_counters.get(key, 0) + 1
@@ -372,8 +459,7 @@ def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int)
         for column_index, header_label in enumerate(candidate_headers, start=3):
             cell_text = str(frame.iat[row_index, column_index] or "").strip()
             estimate = _parse_raw_poll_percent(cell_text)
-            if estimate is None:
-                continue
+            is_not_tested = cell_text in {"", "-", "—"}
             candidate_fragment = re.sub(r"^\s*\d+(?:[.,]\d+)?\s*", "", _strip_wikipedia_annotations(cell_text)).strip()
             has_named_candidate = bool(re.search(r"[A-Za-zÀ-ÖØ-öø-ÿ]", candidate_fragment))
             candidate_label = candidate_fragment if has_named_candidate else header_label
@@ -411,6 +497,21 @@ def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int)
                     "registered_voters_basis": None,
                     "raw_text_context": cell_text,
                     "extraction_confidence": 0.55,
+                    "fieldwork_date_raw": str(date_text),
+                    "parse_status": (
+                        "not_tested"
+                        if is_not_tested
+                        else "parsed"
+                        if estimate is not None
+                        else "unparsed_estimate"
+                    ),
+                    "parse_error": (
+                        None
+                        if is_not_tested
+                        else "unparseable percentage"
+                        if estimate is None
+                        else date_error
+                    ),
                 }
             )
     return pd.DataFrame(rows)
@@ -433,15 +534,18 @@ def _parse_second_round_raw_wikipedia_table(table_path: Path, fallback_year: int
         if not _row_looks_like_poll(pollster, date_text, sample_size):
             continue
         fieldwork_start_date, fieldwork_end_date = _parse_fieldwork_dates(str(date_text), fallback_year=fallback_year)
-        if fieldwork_start_date is None and fieldwork_end_date is None:
-            continue
+        date_error = (
+            None
+            if fieldwork_start_date is not None or fieldwork_end_date is not None
+            else "unparseable fieldwork date"
+        )
         pollster_label = _normalize_company_name(str(pollster))
         scenario_name = f"{candidate_headers[0]} / {candidate_headers[1]}"
         poll_id = f"RAW-SR-{pollster_label.upper().replace(' ', '-')}-{table_index}-{row_index:03d}"
         for offset, candidate_label in enumerate(candidate_headers, start=3):
-            estimate = _parse_raw_poll_percent(frame.iat[row_index, offset])
-            if estimate is None:
-                continue
+            cell_text = str(frame.iat[row_index, offset] or "").strip()
+            estimate = _parse_raw_poll_percent(cell_text)
+            is_not_tested = cell_text in {"", "-", "—"}
             candidate_name, candidate_party, political_family = _extract_candidate_and_party_from_label(candidate_label)
             rows.append(
                 {
@@ -470,8 +574,23 @@ def _parse_second_round_raw_wikipedia_table(table_path: Path, fallback_year: int
                     "undecided_percent": None,
                     "abstention_estimate": None,
                     "registered_voters_basis": None,
-                    "raw_text_context": str(frame.iat[row_index, offset]),
+                    "raw_text_context": cell_text,
                     "extraction_confidence": 0.65,
+                    "fieldwork_date_raw": str(date_text),
+                    "parse_status": (
+                        "not_tested"
+                        if is_not_tested
+                        else "parsed"
+                        if estimate is not None
+                        else "unparsed_estimate"
+                    ),
+                    "parse_error": (
+                        None
+                        if is_not_tested
+                        else "unparseable percentage"
+                        if estimate is None
+                        else date_error
+                    ),
                 }
             )
     return pd.DataFrame(rows)
@@ -502,23 +621,12 @@ def raw_wikipedia_2027_tables_to_normalized_dataframe(raw_dir: Path) -> pd.DataF
     normalized = _correct_poll_units_by_scenario(normalized)
     normalized = _rewrite_first_round_scenario_names(normalized)
     publication_dates = pd.to_datetime(normalized["publication_date"], errors="coerce")
-    normalized = normalized.loc[publication_dates.notna()].copy()
-    normalized["_publication_date"] = publication_dates.loc[normalized.index]
-    normalized = normalized.loc[normalized["_publication_date"].dt.date <= date.today()].copy()
-    normalized = normalized.drop(columns="_publication_date")
-    normalized = normalized.drop_duplicates(
-        subset=[
-            "poll_id",
-            "round",
-            "polling_company",
-            "fieldwork_start_date",
-            "fieldwork_end_date",
-            "scenario_name",
-            "candidate_name",
-            "estimate_percent",
-        ],
-        keep="last",
+    normalized["_publication_date"] = publication_dates
+    recognized_future = normalized["_publication_date"].notna() & (
+        normalized["_publication_date"].dt.date > date.today()
     )
+    normalized = normalized.loc[~recognized_future].copy()
+    normalized = normalized.drop(columns="_publication_date")
     ordered_columns = [
         "poll_id",
         "source_url",
@@ -547,6 +655,7 @@ def raw_wikipedia_2027_tables_to_normalized_dataframe(raw_dir: Path) -> pd.DataF
         "registered_voters_basis",
         "raw_text_context",
         "extraction_confidence",
+        *PARSING_DIAGNOSTIC_COLUMNS,
     ]
     return normalized.reindex(columns=ordered_columns)
 
@@ -806,9 +915,22 @@ def parse_first_round_raw_vectors_sheet(
         )
         poll_id = f"V2-FR-{_normalize_company_name(str(record.get('pollster') or 'unknown')).upper().replace(' ', '-')}-{index:03d}"
         scenario_name = _scenario_name_from_v2_row(section, str(record.get("pollster") or ""), record.get("scenario_index"))
-        for candidate_name, token in zip(order, tokens):
-            if token == "-":
+        vector_mismatch = len(order) != len(tokens)
+        for position, (candidate_name, token) in enumerate(
+            zip_longest(order, tokens),
+            start=1,
+        ):
+            if token is None:
                 continue
+            candidate_name = candidate_name or f"Valeur non attribuée {position}"
+            estimate = None if token == "-" else token.replace(",", ".")
+            parse_status = (
+                "not_tested"
+                if token == "-"
+                else "vector_length_mismatch"
+                if vector_mismatch
+                else "parsed"
+            )
             candidate_party, political_family, normalized_candidate = _guess_party_and_family(_clean_candidate_name(candidate_name))
             normalized_candidate, candidate_party, political_family = canonicalize_candidate_fields(
                 normalized_candidate, candidate_party, political_family
@@ -833,7 +955,7 @@ def parse_first_round_raw_vectors_sheet(
                     "candidate_name": normalized_candidate,
                     "candidate_party": candidate_party,
                     "political_family": political_family,
-                    "estimate_percent": token.replace(",", "."),
+                    "estimate_percent": estimate,
                     "lower_bound_percent": None,
                     "upper_bound_percent": None,
                     "margin_of_error": None,
@@ -842,6 +964,12 @@ def parse_first_round_raw_vectors_sheet(
                     "registered_voters_basis": None,
                     "raw_text_context": str(record.get("scores_raw_vector") or ""),
                     "extraction_confidence": 0.8,
+                    "parse_status": parse_status,
+                    "parse_error": (
+                        f"candidate_count={len(order)} token_count={len(tokens)}"
+                        if vector_mismatch
+                        else None
+                    ),
                 }
             )
     return pd.DataFrame(rows)
@@ -867,9 +995,22 @@ def parse_scenario_polling_raw_sheet(frame: pd.DataFrame) -> pd.DataFrame:
         )
         poll_id = f"V2-SP-{_normalize_company_name(str(record.get('pollster') or 'unknown')).upper().replace(' ', '-')}-{index:03d}"
         scenario_name = _scenario_name_from_v2_row(str(record.get("section") or "scenario"), str(record.get("pollster") or ""), record.get("scenario_index"))
-        for candidate_name, token in zip(order, tokens):
-            if token == "-":
+        vector_mismatch = len(order) != len(tokens)
+        for position, (candidate_name, token) in enumerate(
+            zip_longest(order, tokens),
+            start=1,
+        ):
+            if token is None:
                 continue
+            candidate_name = candidate_name or f"Valeur non attribuée {position}"
+            estimate = None if token == "-" else token.replace(",", ".")
+            parse_status = (
+                "not_tested"
+                if token == "-"
+                else "vector_length_mismatch"
+                if vector_mismatch
+                else "parsed"
+            )
             candidate_party, political_family, normalized_candidate = _guess_party_and_family(_clean_candidate_name(candidate_name))
             normalized_candidate, candidate_party, political_family = canonicalize_candidate_fields(
                 normalized_candidate, candidate_party, political_family
@@ -894,7 +1035,7 @@ def parse_scenario_polling_raw_sheet(frame: pd.DataFrame) -> pd.DataFrame:
                     "candidate_name": normalized_candidate,
                     "candidate_party": candidate_party,
                     "political_family": political_family,
-                    "estimate_percent": token.replace(",", "."),
+                    "estimate_percent": estimate,
                     "lower_bound_percent": None,
                     "upper_bound_percent": None,
                     "margin_of_error": None,
@@ -903,6 +1044,12 @@ def parse_scenario_polling_raw_sheet(frame: pd.DataFrame) -> pd.DataFrame:
                     "registered_voters_basis": None,
                     "raw_text_context": str(record.get("scores_raw_vector") or ""),
                     "extraction_confidence": 0.7,
+                    "parse_status": parse_status,
+                    "parse_error": (
+                        f"candidate_count={len(order)} token_count={len(tokens)}"
+                        if vector_mismatch
+                        else None
+                    ),
                 }
             )
     return pd.DataFrame(rows)
@@ -964,5 +1111,6 @@ def workbook_to_normalized_dataframe(workbook_path: Path) -> pd.DataFrame:
         "registered_voters_basis",
         "raw_text_context",
         "extraction_confidence",
+        *PARSING_DIAGNOSTIC_COLUMNS,
     ]
     return normalized.reindex(columns=ordered_columns)
