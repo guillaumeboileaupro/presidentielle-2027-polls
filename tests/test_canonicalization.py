@@ -1,10 +1,23 @@
-from presidentielle2027.extraction.canonicalization import canonicalize_candidate_fields, is_generic_bloc_label
+from presidentielle2027.extraction.canonicalization import (
+    canonicalize_candidate_fields,
+    canonicalize_polling_company,
+    is_generic_bloc_label,
+)
 
 
 def test_candidate_aliases_are_canonicalized() -> None:
     assert canonicalize_candidate_fields("Bardella", "RN", None)[0] == "Jordan Bardella"
     assert canonicalize_candidate_fields("Jean-Luc Mélenchon", "LFI", None)[0] == "Jean-Luc Mélenchon"
     assert canonicalize_candidate_fields("Edouard Philippe", "HOR", None)[0] == "Édouard Philippe"
+
+
+def test_polling_company_footnotes_and_typographic_variants_are_canonicalized() -> None:
+    assert canonicalize_polling_company("Cluster17[m]") == "Cluster17"
+    assert canonicalize_polling_company(" Cluster 17 ") == "Cluster17"
+    assert canonicalize_polling_company("Harris-Interactive") == "Harris Interactive"
+    assert canonicalize_polling_company("Harris[g]") == "Harris Interactive"
+    assert canonicalize_polling_company("Ifop[f]") == "Ifop"
+    assert canonicalize_polling_company("Ifop/Hexagone") == "Ifop/Hexagone"
 
 
 def test_ps_pp_candidates_are_split_back_to_their_actual_party() -> None:

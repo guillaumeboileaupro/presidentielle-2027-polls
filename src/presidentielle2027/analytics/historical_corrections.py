@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from presidentielle2027.extraction.canonicalization import canonicalize_polling_company
 
 HISTORICAL_2022_POLLS_FILE = "historical_polls_2022_first_round.csv"
 HISTORICAL_2022_RESULTS_FILE = "historical_results_2022_presidential_first_round.csv"
@@ -454,6 +455,7 @@ def _extract_2024_poll_rows_from_complete_zip(reference_dir: Path) -> pd.DataFra
     frame = pd.DataFrame(rows)
     if frame.empty:
         return frame
+    frame["polling_company"] = frame["polling_company"].map(canonicalize_polling_company)
     return frame.drop_duplicates().sort_values(["normalized_bloc", "publication_date", "polling_company"]).reset_index(drop=True)
 
 
@@ -514,7 +516,7 @@ def load_legislative_2024_national_polls_from_wiki_tables(reference_dir: Path) -
         sample["estimate_percent"] = bloc_values.loc[bloc_values.notna()].astype(float).to_numpy()
         sample["publication_date"] = sample[date_column].map(_parse_french_date)
         sample = sample.dropna(subset=["publication_date", "estimate_percent"])
-        sample["polling_company"] = sample[pollster_column]
+        sample["polling_company"] = sample[pollster_column].map(canonicalize_polling_company)
         sample["normalized_bloc"] = bloc_label
         rows.extend(
             sample[["publication_date", "polling_company", "normalized_bloc", "estimate_percent"]].to_dict(orient="records")
