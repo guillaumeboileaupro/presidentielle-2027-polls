@@ -203,6 +203,23 @@ Cette vue teste des hypothèses alternatives plutôt qu'un scénario central uni
     },
 ]
 
+PAGE_ORDER = [
+    "Sondages 2027 - premier tour brut",
+    "Sondages 2027 - second tour brut",
+    "Barres d’erreur brutes",
+    "Analyse historique 2022",
+    "Comparaison 2022 sondages vs résultat",
+    "Législatives 2024 - sondages et blocs",
+    "Législatives 2024 - circonscriptions et logique 2027",
+    "Biais calculés",
+    "Projection corrigée 2027",
+    "Scénarios exploratoires",
+    "Dataset corrigé 2027",
+    "Sources et métadonnées",
+]
+_page_order_index = {label: index for index, label in enumerate(PAGE_ORDER)}
+PAGE_CONFIG.sort(key=lambda config: _page_order_index[config["label"]])
+
 
 def _page_slug(label: str) -> str:
     slug = label.lower()
