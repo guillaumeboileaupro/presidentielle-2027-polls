@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 from presidentielle2027.analytics.adjustment_core import (
     build_adaptive_polynomial_curve,
@@ -15,6 +16,11 @@ from presidentielle2027.analytics.historical_corrections import (
 )
 from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
+from presidentielle2027.dashboard.force_selection import (
+    cookie_javascript,
+    selection_cookie_value,
+    selection_from_cookie,
+)
 from presidentielle2027.dashboard.methodology_text import first_round_methodology_html
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
 from presidentielle2027.dashboard.table_views import USER_VALUE_REPLACEMENTS, clean_user_facing_frame, render_poll_results_table
@@ -23,7 +29,7 @@ PARTY_SOURCE_ORDER = [
     "LO",
     "LFI",
     "PCF",
-    "LE",
+    "EELV",
     "PS",
     "PP",
     "RE",
@@ -54,7 +60,7 @@ PARTY_DISPLAY_ORDER = [
 GITLAB_LOESS_SPANS: dict[str, float] = {
     "PCF": 0.25,
     "LFI": 0.25,
-    "LE": 0.25,
+    "EELV": 0.25,
     "ECO": 0.25,
     "PS": 0.25,
     "PP": 0.25,
@@ -72,7 +78,6 @@ GITLAB_LOESS_SPANS: dict[str, float] = {
 WIKIPEDIA_BLOC_MAP: dict[str, str] = {
     "PCF": "PCF",
     "LFI": "LFI",
-    "LE": "ECO",
     "EELV": "ECO",
     "PS": "PS",
     "PP": "PS",
@@ -91,7 +96,6 @@ WIKIPEDIA_BLOC_ORDER = ["PCF", "LFI", "ECO", "PS", "ENS", "LR", "RN", "REC"]
 WIKIPEDIA_2027_FIRST_ROUND_DATE = pd.Timestamp("2027-04-18")
 
 PARTY_GRAPH_LABELS: dict[str, str] = {
-    "LE": "ECO",
     "EELV": "ECO",
     "RE": "RE",
     "HOR": "HOR",
@@ -111,7 +115,7 @@ PARTY_FULL_LABELS: dict[str, str] = {
     "LO": "Lutte ouvrière",
     "LFI": "La France insoumise",
     "PCF": "Parti communiste français",
-    "LE": "Les Écologistes",
+    "EELV": "Les Écologistes",
     "PS": "Parti socialiste",
     "PP": "Place publique",
     "RE": "Renaissance",
@@ -215,7 +219,7 @@ def _party_family_label(party: object, family: object) -> str:
         return "Centre gauche"
     if party_code in {"LFI", "PCF", "LO"}:
         return "Gauche"
-    if party_code in {"LE", "EELV", "ECO"}:
+    if party_code in {"EELV", "ECO"}:
         return "Écologistes"
     return _fr_label(family, "Non renseigné")
 
@@ -411,7 +415,6 @@ def _build_2022_campaign_extension_paths(
 
     force_map = {
         "ECO": "EELV",
-        "LE": "EELV",
         "PS": "PS-PP",
         "PP": "PS-PP",
         "RE": "ENS",
@@ -557,20 +560,70 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     default_parties = [party for party in PARTY_SOURCE_ORDER if party in available_parties]
     if not default_parties:
         default_parties = available_parties[: min(len(available_parties), 12)]
-    show_all_parties = False
-    selected_parties: list[str] = []
-    if grouping == "Parti politique":
-        show_all_parties = st.checkbox(
-            "Afficher toutes les forces",
-            value=False,
-            key="first_round_show_all_parties",
+    selected_forces: list[str] = []
+    selection_column: str | None = None
+    if grouping in {"Parti politique", "Famille politique"}:
+        party_mode = grouping == "Parti politique"
+        selection_column = "candidate_party" if party_mode else "political_family"
+        available_forces = (
+            available_parties
+            if party_mode
+            else sorted(working[selection_column].dropna().astype(str).unique().tolist())
         )
-        selected_parties = st.multiselect(
+        default_forces = default_parties if party_mode else available_forces
+        mode_key = "partis" if party_mode else "familles"
+        cookie_key = f"presidentielle2027_forces_{mode_key}"
+        widget_key = f"first_round_selected_{mode_key}"
+        cookie_selection = selection_from_cookie(
+            st.context.cookies,
+            cookie_key,
+            available_forces,
+            default_forces,
+        )
+        if widget_key not in st.session_state:
+            st.session_state[widget_key] = cookie_selection
+        else:
+            current_selection = list(st.session_state.get(widget_key, []))
+            if party_mode:
+                current_selection = [
+                    "EELV" if force == "LE" else force
+                    for force in current_selection
+                ]
+            st.session_state[widget_key] = list(
+                dict.fromkeys(
+                    force
+                    for force in current_selection
+                    if force in available_forces
+                )
+            )
+        button_all, button_none, button_reset = st.columns(3)
+        button_all.button(
+            "Tout afficher",
+            key=f"first_round_{mode_key}_all",
+            on_click=lambda: st.session_state.update({widget_key: available_forces}),
+        )
+        button_none.button(
+            "Tout masquer",
+            key=f"first_round_{mode_key}_none",
+            on_click=lambda: st.session_state.update({widget_key: []}),
+        )
+        button_reset.button(
+            "Réinitialiser",
+            key=f"first_round_{mode_key}_reset",
+            on_click=lambda: st.session_state.update({widget_key: default_forces}),
+        )
+        selected_forces = st.multiselect(
             "Forces affichées",
-            available_parties,
-            default=available_parties if show_all_parties else default_parties,
-            key="first_round_selected_parties",
+            available_forces,
+            key=widget_key,
         )
+        selected_cookie = selection_cookie_value(selected_forces, available_forces)
+        if st.context.cookies.get(cookie_key) != selected_cookie:
+            components.html(
+                cookie_javascript(cookie_key, selected_cookie),
+                height=0,
+                scrolling=False,
+            )
     show_extension = st.checkbox(
         "Prolongation en pointillé jusqu'à l'élection",
         value=False,
@@ -593,9 +646,16 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         selected_year_number = int(selected_year)
         filtered = filtered.loc[filtered["publication_date"].dt.year == selected_year_number]
         fitting_frame = fitting_frame.loc[fitting_frame["publication_date"].dt.year == selected_year_number]
-    if grouping == "Parti politique" and selected_parties:
-        filtered = filtered.loc[filtered["candidate_party"].astype(str).isin(selected_parties)].copy()
-        fitting_frame = fitting_frame.loc[fitting_frame["candidate_party"].astype(str).isin(selected_parties)].copy()
+    if selection_column is not None:
+        filtered = filtered.loc[
+            filtered[selection_column].astype(str).isin(selected_forces)
+        ].copy()
+        fitting_frame = fitting_frame.loc[
+            fitting_frame[selection_column].astype(str).isin(selected_forces)
+        ].copy()
+        if not selected_forces:
+            st.info("Aucune force politique n’est affichée. Utilisez « Tout afficher » ou sélectionnez une force.")
+            return
     if isinstance(period, tuple) and len(period) == 2:
         filtered = filtered.loc[
             filtered["publication_date"].between(pd.Timestamp(period[0]), pd.Timestamp(period[1]), inclusive="both")
