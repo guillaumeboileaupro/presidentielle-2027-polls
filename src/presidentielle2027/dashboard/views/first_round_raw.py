@@ -467,13 +467,20 @@ def _build_2022_campaign_extension_paths(
         historical_final_delta = float(historical_delta[-1])
         if abs(historical_final_delta) > 0.15:
             # Preserve the observed 2022 timing (including LFI's late acceleration)
-            # while bounding only its final amplitude in the 2027 scenario.
+            # while translating the fitted curve to the current 2026 level.
             historical_shape = historical_delta / abs(historical_final_delta)
-            historical_amplitude = float(np.clip(0.65 * historical_final_delta, -4.0, 4.0))
+            historical_amplitude = float(np.clip(historical_final_delta, -4.0, 4.0))
             historical_component = historical_shape * abs(historical_amplitude)
         else:
             historical_component = np.zeros_like(historical_delta)
-        blended_delta = 0.35 * current_delta + historical_component
+        # Start on the observed 2026 tangent, then join the translated 2022 fit
+        # with a smoothstep bridge whose slope is zero at both ends.
+        connection_progress = np.clip(projected_progress / 0.18, 0.0, 1.0)
+        connection_weight = connection_progress**2 * (3.0 - 2.0 * connection_progress)
+        blended_delta = (
+            (1.0 - connection_weight) * current_delta
+            + connection_weight * historical_component
+        )
         plateaued = anchor + np.clip(blended_delta, -4.0, 4.0)
         if historical_force == "RN":
             plateaued = np.minimum(plateaued, anchor)
@@ -958,9 +965,10 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
     if show_extension:
         if extension_model == "Comparer avec la campagne 2022 lissée":
             st.caption(
-                "Scénario exploratoire combinant 35 % de dynamique récente et 65 % des "
-                "dynamiques lissées de la campagne complète de janvier à avril 2022, "
-                "transposées sur le temps restant en 2027. Les variations sont "
+                "Scénario exploratoire raccordant la pente récente de 2026 à une courbe "
+                "ajustée sur la campagne complète de janvier à avril 2022. Le raccord est "
+                "progressif sur les premiers 18 % de l’horizon, puis la forme 2022 est "
+                "transposée au niveau atteint en 2026. Les variations sont "
                 "plafonnées à ±4 points et le RN ne peut pas dépasser son niveau lissé au "
                 "départ de la prolongation. Ce n’est pas une prédiction électorale validée."
             )
