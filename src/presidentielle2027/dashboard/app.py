@@ -25,7 +25,11 @@ from presidentielle2027.dashboard.views.second_round_raw import render_second_ro
 from presidentielle2027.dashboard.views.sources_metadata import render_sources_metadata_page
 from presidentielle2027.dashboard.party_assets import render_app_header
 from presidentielle2027.dashboard.styles import apply_browser_chrome_overrides, apply_dashboard_styles
-from presidentielle2027.extraction.canonicalization import canonicalize_candidate_fields, is_generic_bloc_label
+from presidentielle2027.extraction.canonicalization import (
+    canonicalize_candidate_fields,
+    canonicalize_polling_company,
+    is_generic_bloc_label,
+)
 from presidentielle2027.extraction.excel_parser import raw_wikipedia_2027_tables_to_normalized_dataframe
 
 
@@ -301,6 +305,10 @@ def prepare_dashboard_frame(frame: pd.DataFrame) -> pd.DataFrame:
     )
     canonical.columns = ["candidate_name", "candidate_party", "political_family"]
     working[["candidate_name", "candidate_party", "political_family"]] = canonical
+    if "polling_company" in working.columns:
+        working["polling_company"] = working["polling_company"].map(
+            canonicalize_polling_company
+        )
     working["is_generic_bloc"] = working["candidate_name"].map(is_generic_bloc_label)
     working["publication_date"] = pd.to_datetime(working["publication_date"], errors="coerce")
     working["fieldwork_start_date"] = pd.to_datetime(working.get("fieldwork_start_date"), errors="coerce")

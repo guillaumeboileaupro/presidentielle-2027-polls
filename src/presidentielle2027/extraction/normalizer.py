@@ -9,7 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from presidentielle2027.db.models import Candidate, Poll, PollResult, PollScenario, PollingCompany, Source
-from presidentielle2027.extraction.canonicalization import canonicalize_candidate_fields
+from presidentielle2027.extraction.canonicalization import (
+    canonicalize_candidate_fields,
+    canonicalize_polling_company,
+)
 from presidentielle2027.extraction.table_parser import clean_table
 from presidentielle2027.extraction.validators import NormalizedPollRecord
 
@@ -81,7 +84,7 @@ def normalize_row(row: dict[str, object]) -> NormalizedPollRecord:
         "poll_id": row["poll_id"],
         "source_url": row["source_url"],
         "source_name": row["source_name"],
-        "polling_company": row["polling_company"],
+        "polling_company": canonicalize_polling_company(row["polling_company"]),
         "commissioner": _none_if_na(row.get("commissioner")),
         "media_partner": _none_if_na(row.get("media_partner")),
         "fieldwork_start_date": _parse_date(row.get("fieldwork_start_date")),

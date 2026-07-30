@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 
 GENERIC_BLOC_LABELS: set[str] = {
@@ -36,6 +38,26 @@ FAMILY_ALIASES: dict[str, str] = {
     "centre_left": "centre_gauche",
     "centre_gauche": "centre_gauche",
 }
+
+POLLING_COMPANY_ALIASES: dict[str, str] = {
+    "cluster 17": "Cluster17",
+    "cluster17": "Cluster17",
+    "harris": "Harris Interactive",
+    "harris interactive": "Harris Interactive",
+    "harris-interactive": "Harris Interactive",
+    "ifop": "Ifop",
+}
+
+
+def canonicalize_polling_company(value: object) -> object:
+    """Remove source footnotes and return one stable name per polling company."""
+    if value is None or pd.isna(value):
+        return value
+    text = re.sub(r"\s*\[[a-z0-9]+\]\s*$", "", str(value), flags=re.IGNORECASE)
+    text = re.sub(r"\s+", " ", text).strip()
+    return POLLING_COMPANY_ALIASES.get(text.casefold(), text)
+
+
 CANDIDATE_ALIASES: dict[str, str] = {
     "Arthaud": "Arlette Arthaud",
     "Poutou": "Philippe Poutou",
