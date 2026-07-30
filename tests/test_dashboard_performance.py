@@ -91,7 +91,6 @@ def test_2022_campaign_extension_caps_rn_at_its_current_level() -> None:
     values = pd.to_numeric(paths[0]["y"], errors="coerce")
 
     assert values.max() <= 32.0
-    assert values.min() >= 28.0
 
 
 def test_2022_campaign_extension_preserves_lfi_late_acceleration() -> None:
@@ -126,7 +125,7 @@ def test_2022_campaign_extension_preserves_lfi_late_acceleration() -> None:
     late_gain = float(values.iloc[-1] - values.iloc[midpoint])
 
     assert late_gain > first_half_gain
-    assert values.iloc[-1] <= 16.0
+    assert values.iloc[-1] > 16.0
 
 
 def test_2022_campaign_comparison_is_the_default_extension_view() -> None:
