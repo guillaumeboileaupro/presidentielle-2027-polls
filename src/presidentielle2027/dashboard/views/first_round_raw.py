@@ -464,7 +464,16 @@ def _build_2022_campaign_extension_paths(
         current_path = pd.to_numeric(path["y"], errors="coerce").to_numpy(dtype=float)
         anchor = float(current_path[0])
         current_delta = current_path - anchor
-        blended_delta = 0.35 * current_delta + 0.65 * historical_delta
+        historical_final_delta = float(historical_delta[-1])
+        if abs(historical_final_delta) > 0.15:
+            # Preserve the observed 2022 timing (including LFI's late acceleration)
+            # while bounding only its final amplitude in the 2027 scenario.
+            historical_shape = historical_delta / abs(historical_final_delta)
+            historical_amplitude = float(np.clip(0.65 * historical_final_delta, -4.0, 4.0))
+            historical_component = historical_shape * abs(historical_amplitude)
+        else:
+            historical_component = np.zeros_like(historical_delta)
+        blended_delta = 0.35 * current_delta + historical_component
         plateaued = anchor + np.clip(blended_delta, -4.0, 4.0)
         if historical_force == "RN":
             plateaued = np.minimum(plateaued, anchor)
