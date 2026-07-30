@@ -62,6 +62,38 @@ def test_smoothed_curve_alignment_accepts_duplicate_publication_dates() -> None:
     assert aligned.tolist() == [10.0, 15.0, 15.0, 20.0]
 
 
+def test_2022_campaign_extension_caps_rn_at_its_current_level() -> None:
+    payloads = [
+        {
+            "display_name": "RN",
+            "color": "#123456",
+            "smoothed": pd.Series(
+                [31.0, 32.0],
+                index=pd.to_datetime(["2026-09-01", "2026-10-01"]),
+            ),
+            "sigma": 1.0,
+            "anchor_value": 32.0,
+        }
+    ]
+    historical = pd.DataFrame(
+        {
+            "force_label": ["RN", "RN"],
+            "days_until_election": [190, 115],
+            "estimate_percent": [20.0, 24.0],
+        }
+    )
+
+    paths = first_round_raw._build_2022_campaign_extension_paths(
+        payloads,
+        pd.Timestamp("2027-04-18"),
+        historical,
+    )
+    values = pd.to_numeric(paths[0]["y"], errors="coerce")
+
+    assert values.max() <= 32.0
+    assert values.min() >= 28.0
+
+
 def test_detailed_poll_table_is_deferred_by_default() -> None:
     function_source = inspect.getsource(first_round_raw.render_first_round_raw_page)
 
