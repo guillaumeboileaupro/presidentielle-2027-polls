@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     default_election_date: str = "2027-04-11"
     auto_ingest_interval_minutes: int = Field(default=60, alias="AUTO_INGEST_INTERVAL_MINUTES")
     auto_ingest_max_runs: int = Field(default=0, alias="AUTO_INGEST_MAX_RUNS")
+    auto_ingest_with_dashboard: bool = Field(default=True, alias="AUTO_INGEST_WITH_DASHBOARD")
 
 
 @lru_cache(maxsize=1)

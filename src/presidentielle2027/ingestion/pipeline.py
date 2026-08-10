@@ -124,15 +124,19 @@ def run_periodic_refresh_pipeline(
 
     executed_runs = 0
     while max_runs is None or executed_runs < max_runs:
-        summary = run_refresh_pipeline(settings=settings, session_factory=session_factory)
-        print(
-            "[auto-refresh] completed: "
-            f"normalized_input={summary.normalized_input}, "
-            f"normalized_output={summary.normalized_output}, "
-            f"persisted_rows={summary.persisted_rows}, "
-            f"coverage_output={summary.coverage_output}, "
-            f"averages_output={summary.averages_output}"
-        )
+        try:
+            summary = run_refresh_pipeline(settings=settings, session_factory=session_factory)
+        except Exception as exc:
+            print(f"[auto-refresh] failed: {type(exc).__name__}: {exc}")
+        else:
+            print(
+                "[auto-refresh] completed: "
+                f"normalized_input={summary.normalized_input}, "
+                f"normalized_output={summary.normalized_output}, "
+                f"persisted_rows={summary.persisted_rows}, "
+                f"coverage_output={summary.coverage_output}, "
+                f"averages_output={summary.averages_output}"
+            )
         executed_runs += 1
         if max_runs is not None and executed_runs >= max_runs:
             break

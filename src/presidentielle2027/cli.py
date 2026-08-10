@@ -23,6 +23,23 @@ from presidentielle2027.ingestion.wikipedia_scraper import ingest_wikipedia_sour
 app = typer.Typer(help="CLI for polling ingestion, normalization and dashboard operations.")
 
 
+def _start_dashboard_scraper() -> subprocess.Popen[bytes]:
+    return subprocess.Popen(
+        [sys.executable, "-m", "presidentielle2027.cli", "auto-refresh-pipeline"],
+    )
+
+
+def _stop_dashboard_scraper(process: subprocess.Popen[bytes]) -> None:
+    if process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
 @app.command("init-db")
 def init_db() -> None:
     init_database()
@@ -179,18 +196,29 @@ def train_model(
 
 @app.command("run-dashboard")
 def run_dashboard() -> None:
+    settings = get_settings()
     dashboard_path = Path(__file__).parent / "dashboard" / "live_app.py"
-    run(
-        str(dashboard_path),
-        False,
-        args=[
-            "--server.port",
-            str(get_settings().dashboard_port),
-            "--server.address",
-            get_settings().dashboard_host,
-        ],
-        flag_options={},
-    )
+    scraper_process = _start_dashboard_scraper() if settings.auto_ingest_with_dashboard else None
+    if scraper_process is not None:
+        typer.echo(
+            "Automatic scraping started with the dashboard "
+            f"(interval={settings.auto_ingest_interval_minutes} min)."
+        )
+    try:
+        run(
+            str(dashboard_path),
+            False,
+            args=[
+                "--server.port",
+                str(settings.dashboard_port),
+                "--server.address",
+                settings.dashboard_host,
+            ],
+            flag_options={},
+        )
+    finally:
+        if scraper_process is not None:
+            _stop_dashboard_scraper(scraper_process)
 
 
 @app.command("install-notebook-kernel")

@@ -59,6 +59,42 @@ def test_run_periodic_refresh_pipeline_respects_max_runs(monkeypatch, tmp_path: 
     assert sleeps == [300]
 
 
+def test_run_periodic_refresh_pipeline_retries_after_failure(monkeypatch, tmp_path: Path) -> None:
+    settings = Settings(DATABASE_URL=f"sqlite:///{tmp_path / 'test.sqlite3'}")
+    calls: list[int] = []
+    sleeps: list[float] = []
+
+    def flaky_refresh(*, settings, session_factory):  # type: ignore[no-untyped-def]
+        calls.append(1)
+        if len(calls) == 1:
+            raise ConnectionError("temporary network failure")
+        return type(
+            "Summary",
+            (),
+            {
+                "normalized_input": Path("in.csv"),
+                "normalized_output": Path("out.csv"),
+                "coverage_output": Path("coverage.csv"),
+                "averages_output": Path("averages.csv"),
+                "persisted_rows": 12,
+            },
+        )()
+
+    monkeypatch.setattr("presidentielle2027.ingestion.pipeline.run_refresh_pipeline", flaky_refresh)
+
+    executed_runs = run_periodic_refresh_pipeline(
+        settings=settings,
+        session_factory=DummySessionFactory(),
+        interval_minutes=1,
+        max_runs=2,
+        sleep_fn=sleeps.append,
+    )
+
+    assert executed_runs == 2
+    assert len(calls) == 2
+    assert sleeps == [60]
+
+
 def test_run_refresh_pipeline_writes_outputs(monkeypatch, tmp_path: Path) -> None:
     raw_dir = tmp_path / "data" / "raw"
     processed_dir = tmp_path / "data" / "processed"

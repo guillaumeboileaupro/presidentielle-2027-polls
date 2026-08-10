@@ -167,6 +167,7 @@ def normalize_to_database(records: Iterable[NormalizedPollRecord], session: Sess
     persisted_rows = 0
     poll_cache: dict[str, Poll] = {}
     scenario_cache: dict[tuple[str, str], PollScenario] = {}
+    result_cache: dict[tuple[int, int], PollResult] = {}
 
     for record in records:
         source = _get_or_create_source(session, record)
@@ -229,12 +230,15 @@ def normalize_to_database(records: Iterable[NormalizedPollRecord], session: Sess
         scenario_cache[scenario_key] = scenario
 
         candidate = _get_or_create_candidate(session, record)
-        existing = session.scalar(
-            select(PollResult).where(
-                PollResult.scenario_id == scenario.id,
-                PollResult.candidate_id == candidate.id,
+        result_key = (scenario.id, candidate.id)
+        existing = result_cache.get(result_key)
+        if existing is None:
+            existing = session.scalar(
+                select(PollResult).where(
+                    PollResult.scenario_id == scenario.id,
+                    PollResult.candidate_id == candidate.id,
+                )
             )
-        )
         if existing is None:
             existing = PollResult(
                 scenario_id=scenario.id,
@@ -245,11 +249,13 @@ def normalize_to_database(records: Iterable[NormalizedPollRecord], session: Sess
                 margin_of_error=record.margin_of_error,
             )
             session.add(existing)
+            result_cache[result_key] = existing
         else:
             existing.estimate_percent = record.estimate_percent
             existing.lower_bound_percent = record.lower_bound_percent
             existing.upper_bound_percent = record.upper_bound_percent
             existing.margin_of_error = record.margin_of_error
+            result_cache[result_key] = existing
         persisted_rows += 1
     session.commit()
     return persisted_rows

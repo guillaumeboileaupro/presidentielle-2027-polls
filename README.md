@@ -307,6 +307,7 @@ WIKIPEDIA_EN_URL=...
 - `WIKIPEDIA_EN_URL` : source EN par défaut.
 - `AUTO_INGEST_INTERVAL_MINUTES` : fréquence de relance du pipeline automatique.
 - `AUTO_INGEST_MAX_RUNS` : nombre maximal de cycles ; `0` signifie boucle infinie.
+- `AUTO_INGEST_WITH_DASHBOARD` : démarre automatiquement la collecte avec le dashboard ; activé par défaut.
 
 ## Démarrage rapide
 
@@ -348,6 +349,10 @@ make auto-refresh
 ```
 
 Par défaut, la commande relance tout le pipeline toutes les 60 minutes et continue indéfiniment.
+
+`make dashboard` démarre également cette boucle en arrière-plan. Le premier cycle est lancé immédiatement,
+puis la collecte recommence selon `AUTO_INGEST_INTERVAL_MINUTES`. Le processus est arrêté proprement avec le dashboard.
+Pour exploiter un scraper externe, définir `AUTO_INGEST_WITH_DASHBOARD=false` afin d'éviter deux boucles concurrentes.
 
 ### Option 3 : ouvrir les notebooks avec le bon kernel
 
