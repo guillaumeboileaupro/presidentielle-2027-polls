@@ -29,7 +29,12 @@ Ne pas modifier le code sur la base de suppositions. Avant chaque changement, lo
 - fait : courbes par candidat et tableau détaillé chargés uniquement sur demande ;
 - fait : régressions locales mises en cache et payload Plotly ramené à 300 points par courbe ;
 - mesuré : environ `0,02 s` pour une préparation en cache et `0,004 s` pour une courbe LOWESS en cache ;
-- restant : profiler le rendu dans un navigateur et optimiser les vues historiques les plus lourdes.
+- fait le 25 août 2026 : contrôle Chromium headless des quatre vues principales ;
+- mesuré à froid : premier tour `4,07 s`, historique 2022 `2,28 s`, législatives 2024
+  `2,25 s`, circonscriptions 2024 `2,13 s` ;
+- conclusion : les vues historiques ne sont plus les plus lentes et ne nécessitent pas
+  d'optimisation corrective supplémentaire à ce stade ; la page de premier tour reste la cible
+  prioritaire des futures optimisations.
 
 ## P.1. Ne plus rafraîchir Wikipédia à chaque exécution Streamlit
 
