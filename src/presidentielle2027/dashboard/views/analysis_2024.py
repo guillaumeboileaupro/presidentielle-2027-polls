@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import re
 from datetime import date
 from pathlib import Path
-import re
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -18,8 +18,10 @@ from presidentielle2027.analytics.historical_corrections import (
 from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
-from presidentielle2027.dashboard.wiki_complete_zip import load_complete_layout_lines, load_complete_visual_rows
-
+from presidentielle2027.dashboard.wiki_complete_zip import (
+    load_complete_layout_lines,
+    load_complete_visual_rows,
+)
 
 SECOND_ROUND_TRIANGULAIRES = 89
 SECOND_ROUND_DESISTEMENTS = 218

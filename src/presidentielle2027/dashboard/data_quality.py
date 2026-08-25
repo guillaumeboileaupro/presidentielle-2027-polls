@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pandas as pd
 
-
 SCENARIO_COLUMNS = ["poll_id", "round", "scenario_name"]
 
 

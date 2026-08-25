@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import date
-from pathlib import Path
 import re
 import warnings
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -11,27 +10,36 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from presidentielle2027.analytics.polling_average import load_results_dataframe
 from presidentielle2027.config import get_settings
-from presidentielle2027.db.session import get_engine
-from presidentielle2027.dashboard.views.analysis_2022 import render_analysis_2022_comparison_page, render_analysis_2022_page
+from presidentielle2027.dashboard.party_assets import render_app_header
+from presidentielle2027.dashboard.styles import (
+    apply_browser_chrome_overrides,
+    apply_dashboard_styles,
+)
+from presidentielle2027.dashboard.views.analysis_2022 import (
+    render_analysis_2022_comparison_page,
+    render_analysis_2022_page,
+)
 from presidentielle2027.dashboard.views.analysis_2024 import render_analysis_2024_page
-from presidentielle2027.dashboard.views.analysis_2024_projection_logic import render_analysis_2024_projection_logic_page
+from presidentielle2027.dashboard.views.analysis_2024_projection_logic import (
+    render_analysis_2024_projection_logic_page,
+)
 from presidentielle2027.dashboard.views.biases import render_biases_page
 from presidentielle2027.dashboard.views.corrected_dataset import render_corrected_dataset_page
-from presidentielle2027.dashboard.views.error_bars_raw import render_error_bars_raw_page
 from presidentielle2027.dashboard.views.dynamic_bias import render_dynamic_bias_page
+from presidentielle2027.dashboard.views.error_bars_raw import render_error_bars_raw_page
 from presidentielle2027.dashboard.views.first_round_raw import render_first_round_raw_page
 from presidentielle2027.dashboard.views.projection_scenarios import render_projection_scenarios_page
 from presidentielle2027.dashboard.views.second_round_raw import render_second_round_raw_page
 from presidentielle2027.dashboard.views.sources_metadata import render_sources_metadata_page
-from presidentielle2027.dashboard.party_assets import render_app_header
-from presidentielle2027.dashboard.styles import apply_browser_chrome_overrides, apply_dashboard_styles
+from presidentielle2027.db.session import get_engine
 from presidentielle2027.extraction.canonicalization import (
     canonicalize_candidate_fields,
     canonicalize_polling_company,
     is_generic_bloc_label,
 )
-from presidentielle2027.extraction.excel_parser import raw_wikipedia_2027_tables_to_normalized_dataframe
-
+from presidentielle2027.extraction.excel_parser import (
+    raw_wikipedia_2027_tables_to_normalized_dataframe,
+)
 
 warnings.filterwarnings(
     "ignore",

@@ -9,19 +9,24 @@ import streamlit as st
 
 from presidentielle2027.analytics.historical_corrections import (
     CURRENT_ELECTION_DATE,
+    apply_first_round_historical_correction,
     apply_second_round_coalition_2024_correction,
     apply_second_round_legislative_correction,
-    apply_first_round_historical_correction,
     get_reference_dir,
 )
-from presidentielle2027.analytics.uncertainty import approximate_margin_of_error
 from presidentielle2027.analytics.trends import build_lowess_curve, exploratory_extension
+from presidentielle2027.analytics.uncertainty import approximate_margin_of_error
 from presidentielle2027.dashboard.colors import get_political_color
-from presidentielle2027.dashboard.methodology_text import corrected_dataset_methodology_html, second_round_methodology_html
-from presidentielle2027.dashboard.party_assets import build_candidate_summary_table, build_force_summary_table
+from presidentielle2027.dashboard.methodology_text import (
+    corrected_dataset_methodology_html,
+    second_round_methodology_html,
+)
+from presidentielle2027.dashboard.party_assets import (
+    build_candidate_summary_table,
+    build_force_summary_table,
+)
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
 from presidentielle2027.dashboard.table_views import clean_user_facing_frame
-
 
 REQUIRED_CORRECTION_COLUMNS = {
     "structural_bias_component": 0.0,

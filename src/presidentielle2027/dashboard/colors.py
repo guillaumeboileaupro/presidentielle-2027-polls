@@ -7,7 +7,6 @@ PARTY_COLORS: dict[str, str] = {
     "PS": "#E8528D",
     "PP": "#FFEC00",
     "EELV": "#109910",
-    "ECO": "#00C666",
     "RE": "#FFEB00",
     "ENS": "#FED700",
     "HOR": "#0001B8",

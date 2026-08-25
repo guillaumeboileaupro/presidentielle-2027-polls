@@ -11,7 +11,6 @@ from presidentielle2027.adjustments.recency_weighting import compute_recency_wei
 from presidentielle2027.adjustments.sample_size_weighting import compute_sample_size_weights
 from presidentielle2027.extraction.canonicalization import is_generic_bloc_label
 
-
 JOINED_RESULTS_SQL = """
 SELECT
     polls.poll_id,

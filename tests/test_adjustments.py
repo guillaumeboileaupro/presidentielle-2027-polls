@@ -1,24 +1,28 @@
 
-import pandas as pd
-import pytest
 from pathlib import Path
 
-from presidentielle2027.adjustments.house_effects import apply_house_effect_adjustment, estimate_house_effects
-from presidentielle2027.analytics.dynamic_poll_bias import apply_dynamic_poll_bias_correction
+import pandas as pd
+import pytest
+
+from presidentielle2027.adjustments.house_effects import (
+    apply_house_effect_adjustment,
+    estimate_house_effects,
+)
 from presidentielle2027.adjustments.recency_weighting import compute_recency_weights
 from presidentielle2027.adjustments.sample_size_weighting import compute_sample_size_weights
-from presidentielle2027.analytics.trends import exploratory_extension
+from presidentielle2027.analytics.dynamic_poll_bias import apply_dynamic_poll_bias_correction
 from presidentielle2027.analytics.historical_corrections import (
     apply_first_round_historical_correction,
     apply_second_round_coalition_2024_correction,
     apply_second_round_legislative_correction,
+    compute_legislative_2024_poll_bias,
     compute_second_round_coalition_2024_benchmark,
     compute_second_round_legislative_benchmark,
-    compute_legislative_2024_poll_bias,
     get_second_round_coalition_2024_transfer_map,
     get_second_round_transfer_map,
     load_legislative_2024_results,
 )
+from presidentielle2027.analytics.trends import exploratory_extension
 
 
 def test_weighting_functions() -> None:

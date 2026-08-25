@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 COMPLETE_WIKI_ZIP_DIR = Path("data/imported_wiki_zip_complete")
 
 WIKI_COMPLETE_FILES = {

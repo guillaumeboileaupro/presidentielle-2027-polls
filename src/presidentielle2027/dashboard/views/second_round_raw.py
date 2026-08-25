@@ -9,12 +9,12 @@ import streamlit as st
 
 from presidentielle2027.analytics.historical_corrections import (
     CURRENT_ELECTION_DATE,
-    apply_second_round_coalition_2024_correction,
     apply_first_round_historical_correction,
+    apply_second_round_coalition_2024_correction,
     apply_second_round_legislative_correction,
+    get_reference_dir,
     get_second_round_coalition_2024_transfer_map,
     get_second_round_transfer_map,
-    get_reference_dir,
     normalize_broad_bloc,
 )
 from presidentielle2027.analytics.trends import build_lowess_curve, exploratory_extension
@@ -169,8 +169,6 @@ def render_second_round_raw_page(frame: pd.DataFrame) -> None:
         .sort_values(["candidate_name", "candidate_party"])
     )
     candidate_labels = candidate_catalog["candidate_label"].tolist()
-    default_a = candidate_labels[0]
-    default_b = candidate_labels[1] if len(candidate_labels) > 1 else candidate_labels[0]
 
     pollsters = ["Tous"] + sorted(working["polling_company"].dropna().astype(str).unique().tolist())
     scenarios = ["Toutes"] + sorted(working["scenario_label"].dropna().astype(str).unique().tolist())

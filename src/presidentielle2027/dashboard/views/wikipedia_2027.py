@@ -6,12 +6,14 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from presidentielle2027.analytics.adjustment_core import build_polynomial_curve, select_auto_polynomial_degree
+from presidentielle2027.analytics.adjustment_core import (
+    build_polynomial_curve,
+    select_auto_polynomial_degree,
+)
 from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
 from presidentielle2027.dashboard.views.first_round_raw import GITLAB_LOESS_SPANS
-
 
 CANDIDATE_SPECS = [
     ("Arthaud — LO", "LO", ("arthaud",), "solid"),

@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from presidentielle2027.analytics.trends import build_loess_curve
 from presidentielle2027.analytics.adjustment_core import (
     _evaluate_polynomial_degree,
     _prepare_xy,
@@ -14,6 +13,7 @@ from presidentielle2027.analytics.adjustment_core import (
     evaluate_curve_fit,
     select_auto_polynomial_degree,
 )
+from presidentielle2027.analytics.trends import build_loess_curve
 
 
 def test_build_loess_curve_returns_a_dense_smooth_local_regression() -> None:

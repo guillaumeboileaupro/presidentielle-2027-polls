@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from itertools import combinations
-from io import StringIO
-from pathlib import Path
 import re
+from io import StringIO
+from itertools import combinations
+from pathlib import Path
 from urllib.parse import unquote
 from zipfile import ZipFile
 
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import requests
@@ -16,7 +15,6 @@ from bs4 import BeautifulSoup
 
 from presidentielle2027.analytics.dynamic_poll_bias import apply_dynamic_poll_bias_correction
 from presidentielle2027.analytics.historical_corrections import (
-    get_reference_dir,
     get_second_round_coalition_2024_transfer_map,
     load_legislative_2024_results,
     load_legislative_2024_seats,
@@ -24,7 +22,6 @@ from presidentielle2027.analytics.historical_corrections import (
 )
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
-
 
 LOCAL_2024_VISUAL_ROWS = (
     "data/imported_wiki_zip_complete/"
@@ -795,7 +792,6 @@ def _normalize_nfp_circo_key(value: object) -> str:
     )
     exact_named_keys = {
         "Saint-Pierre-et-Miquelon": "975-97501",
-        "Saint-Pierre-et-Miquelon": "975-97501",
     }
     if compact in exact_named_keys:
         return exact_named_keys[compact]
@@ -853,7 +849,7 @@ def _nfp_assignment_score(nuance: object, current_force_label: object, target_fo
     elif target == "NPA / NFP":
         ranking = {"EXG": 120, "UG": 110}
     else:
-        if party_code in {"TAVINI", "MDES", "PEYI-A", "PEYI-A", "SE", "G.S", "GS"}:
+        if party_code in {"TAVINI", "MDES", "PEYI-A", "SE", "G.S", "GS"}:
             ranking = {"REG": 130, "DVG": 100, "ECO": 90, "VEC": 90, "EXG": 80, "COM": 70, "SOC": 70, "PS": 70, "UG": 60, "FI": 50}
         elif party_code in {"PLR", "LP", "RE974", "DVG"}:
             ranking = {"DVG": 130, "REG": 80, "ECO": 90, "VEC": 90, "EXG": 80, "COM": 70, "SOC": 70, "PS": 70, "UG": 60, "FI": 50}
@@ -866,13 +862,15 @@ def _apply_nfp_circo_mapping_to_candidates(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty or "circo_key" not in frame.columns or "nfp_internal_party" not in frame.columns:
         return frame
     working = frame.copy()
-    for circo_key, group in working.groupby("circo_key", dropna=False):
+    for _circo_key, group in working.groupby("circo_key", dropna=False):
         target_label = str(group["nfp_internal_party"].dropna().iloc[0]).strip() if group["nfp_internal_party"].notna().any() else ""
         party_code = group["nfp_party_code"].dropna().iloc[0] if "nfp_party_code" in group.columns and group["nfp_party_code"].notna().any() else pd.NA
         if not target_label or not _has_explicit_nfp_party_code(party_code):
             continue
         scores = group.apply(
-            lambda row: _nfp_assignment_score(row.get("nuance"), row.get("force_label"), target_label, party_code),
+            lambda row, target=target_label, code=party_code: _nfp_assignment_score(
+                row.get("nuance"), row.get("force_label"), target, code
+            ),
             axis=1,
         )
         if scores.empty or int(scores.max()) <= 0:
@@ -5776,7 +5774,7 @@ def render_analysis_2024_projection_logic_page(frame: pd.DataFrame) -> None:
             st.caption(
                 "Lecture parallèle par coalition : "
                 + ", ".join(
-                    f"{str(row.Force)} ({float(row.socle_projete_2027_t1):.1f}%)"
+                    f"{row.Force!s} ({float(row.socle_projete_2027_t1):.1f}%)"
                     for row in top_coalitions.itertuples(index=False)
                 )
             )

@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass
 import importlib.util
-from pathlib import Path
 import shutil
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
 from types import ModuleType
 
 import pandas as pd
 from sqlalchemy.orm import Session, sessionmaker
 
-from presidentielle2027.analytics.polling_average import compute_weighted_polling_averages, load_results_dataframe
+from presidentielle2027.analytics.polling_average import (
+    compute_weighted_polling_averages,
+    load_results_dataframe,
+)
 from presidentielle2027.config import Settings
 from presidentielle2027.db.init_db import init_database
 from presidentielle2027.db.session import get_engine
@@ -20,15 +23,14 @@ from presidentielle2027.extraction.excel_parser import (
     raw_wikipedia_2027_tables_to_normalized_dataframe,
     workbook_to_normalized_dataframe,
 )
-from presidentielle2027.extraction.normalizer import normalize_csv_file, normalize_to_database
 from presidentielle2027.extraction.migration import (
     NORMALIZATION_VERSION,
     build_migration_report,
     build_percentage_correction_report,
     canonicalize_normalized_frame,
 )
+from presidentielle2027.extraction.normalizer import normalize_csv_file, normalize_to_database
 from presidentielle2027.ingestion.wikipedia_scraper import ingest_wikipedia_sources
-
 
 GenerateWikiDatasetsCallable = Callable[[Path, Path], None]
 
@@ -42,14 +44,18 @@ def _load_generate_wiki_datasets() -> GenerateWikiDatasetsCallable:
         module_path = Path(__file__).resolve().parents[3] / "make_wiki_datasets.py"
         spec = importlib.util.spec_from_file_location("make_wiki_datasets", module_path)
         if spec is None or spec.loader is None:
-            raise ModuleNotFoundError(f"Unable to load make_wiki_datasets from {module_path}")
+            raise ModuleNotFoundError(
+                f"Unable to load make_wiki_datasets from {module_path}"
+            ) from None
         module = importlib.util.module_from_spec(spec)
         loader = spec.loader
         assert isinstance(module, ModuleType)
         loader.exec_module(module)
         generate_wiki_datasets = getattr(module, "generate_wiki_datasets", None)
         if not callable(generate_wiki_datasets):
-            raise AttributeError(f"generate_wiki_datasets not found in {module_path}")
+            raise AttributeError(
+                f"generate_wiki_datasets not found in {module_path}"
+            ) from None
         return generate_wiki_datasets
 
 

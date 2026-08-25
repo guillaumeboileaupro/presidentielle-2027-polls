@@ -4,7 +4,6 @@ from collections.abc import Iterable
 
 import pandas as pd
 
-
 CANONICAL_COLUMNS = {
     "pollster": "polling_company",
     "polling company": "polling_company",

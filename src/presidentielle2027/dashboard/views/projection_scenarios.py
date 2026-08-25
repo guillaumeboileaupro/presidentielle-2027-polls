@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from datetime import date
 import inspect
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from presidentielle2027.analytics.historical_corrections import apply_first_round_historical_correction, get_reference_dir
-from presidentielle2027.analytics.historical_corrections import CURRENT_ELECTION_DATE
+from presidentielle2027.analytics.historical_corrections import (
+    CURRENT_ELECTION_DATE,
+    apply_first_round_historical_correction,
+    get_reference_dir,
+)
 from presidentielle2027.analytics.trends import build_lowess_curve, exploratory_extension
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME

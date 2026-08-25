@@ -4,7 +4,6 @@ from datetime import date
 
 import pandas as pd
 
-
 FEATURE_COLUMNS = [
     "polling_company",
     "candidate_party",

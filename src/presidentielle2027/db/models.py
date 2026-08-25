@@ -1,8 +1,20 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import ClassVar
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -10,7 +22,7 @@ JsonObject = dict[str, object]
 
 
 class Base(DeclarativeBase):
-    type_annotation_map = {JsonObject: JSON}
+    type_annotation_map: ClassVar[dict[object, object]] = {JsonObject: JSON}
 
 
 class TimestampMixin:

@@ -6,7 +6,10 @@ import pandas as pd
 
 from presidentielle2027.config import Settings
 from presidentielle2027.db.session import get_session_factory
-from presidentielle2027.ingestion.pipeline import run_periodic_refresh_pipeline, run_refresh_pipeline
+from presidentielle2027.ingestion.pipeline import (
+    run_periodic_refresh_pipeline,
+    run_refresh_pipeline,
+)
 
 
 class DummySession:

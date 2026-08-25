@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 CRITICAL_FIELD_LABELS = {
     "sample_size": "Taille d'échantillon",
     "fieldwork_start_date": "Date de terrain début",

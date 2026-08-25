@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-
 
 MIN_POINTS_FOR_TREND = 5
 MAX_AUTO_POLYNOMIAL_DEGREE = 5

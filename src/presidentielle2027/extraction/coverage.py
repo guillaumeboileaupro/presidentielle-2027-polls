@@ -6,7 +6,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from presidentielle2027.extraction.canonicalization import CANDIDATE_ALIASES, canonicalize_candidate_fields
+from presidentielle2027.extraction.canonicalization import (
+    CANDIDATE_ALIASES,
+    canonicalize_candidate_fields,
+)
 from presidentielle2027.extraction.normalizer import normalize_csv_file
 from presidentielle2027.extraction.validators import NormalizedPollRecord
 

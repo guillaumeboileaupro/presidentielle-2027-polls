@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import date
 import re
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -18,9 +18,14 @@ from presidentielle2027.analytics.historical_corrections import (
 from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
-from presidentielle2027.dashboard.table_views import clean_user_facing_frame, rename_user_facing_columns
-from presidentielle2027.dashboard.wiki_complete_zip import load_complete_layout_lines, load_complete_visual_rows
-
+from presidentielle2027.dashboard.table_views import (
+    clean_user_facing_frame,
+    rename_user_facing_columns,
+)
+from presidentielle2027.dashboard.wiki_complete_zip import (
+    load_complete_layout_lines,
+    load_complete_visual_rows,
+)
 
 SECOND_ROUND_ELECTION_DATE = pd.Timestamp("2022-04-24")
 WIKI_2022_TABLES_FILE = Path("sondages_presidentielle_2022_wikipedia_tables.csv")
@@ -557,8 +562,6 @@ def render_analysis_2022_comparison_page() -> None:
 
 def render_analysis_2022_page() -> None:
     st.subheader("Analyse historique 2022")
-    reference_dir = get_reference_dir(Path.cwd())
-    context = compute_first_round_correction_context(reference_dir)
     history, official_results, archive_sections = _load_analysis_2022_history()
     if history.empty:
         st.info("Aucune donnée 2022 disponible.")

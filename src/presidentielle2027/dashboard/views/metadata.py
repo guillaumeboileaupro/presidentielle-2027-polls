@@ -5,7 +5,10 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from presidentielle2027.dashboard.metadata import build_frame_completeness_summary, load_csv_if_exists
+from presidentielle2027.dashboard.metadata import (
+    build_frame_completeness_summary,
+    load_csv_if_exists,
+)
 
 
 def render_metadata_page(frame: pd.DataFrame) -> None:

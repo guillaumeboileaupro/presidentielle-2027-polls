@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import requests
 
-from presidentielle2027.ingestion.wiki_api import extract_wikipedia_title, fetch_wikipedia_page_snapshot
+from presidentielle2027.ingestion.wiki_api import (
+    extract_wikipedia_title,
+    fetch_wikipedia_page_snapshot,
+)
 
 
 class DummyResponse:

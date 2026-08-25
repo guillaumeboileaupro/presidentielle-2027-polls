@@ -8,7 +8,6 @@ import streamlit as st
 
 from presidentielle2027.dashboard.party_assets import get_party_logo_url
 
-
 USER_VALUE_REPLACEMENTS = {
     "unknown": "Non renseigné",
     "unknown_source": "Source à vérifier",

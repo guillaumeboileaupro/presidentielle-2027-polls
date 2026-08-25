@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 from statsmodels.nonparametric.smoothers_lowess import lowess
-
 
 MIN_POINTS_FOR_TREND = 5
 MIN_POINTS_FOR_EXTENSION = 2

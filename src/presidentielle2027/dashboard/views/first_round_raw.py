@@ -7,7 +7,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from presidentielle2027.analytics.adjustment_core import (
-    build_adaptive_polynomial_curve,
     build_polynomial_curve,
     select_auto_polynomial_degree,
 )
@@ -23,7 +22,11 @@ from presidentielle2027.dashboard.force_selection import (
 )
 from presidentielle2027.dashboard.methodology_text import first_round_methodology_html
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
-from presidentielle2027.dashboard.table_views import USER_VALUE_REPLACEMENTS, clean_user_facing_frame, render_poll_results_table
+from presidentielle2027.dashboard.table_views import (
+    USER_VALUE_REPLACEMENTS,
+    clean_user_facing_frame,
+    render_poll_results_table,
+)
 
 PARTY_SOURCE_ORDER = [
     "LO",

@@ -136,7 +136,7 @@ def _render_complete_wiki_zip_section() -> None:
     )
 
     tabs = st.tabs([config["label"] for config in WIKI_COMPLETE_FILES.values()])
-    for tab, (year_key, config) in zip(tabs, WIKI_COMPLETE_FILES.items()):
+    for tab, (year_key, _config) in zip(tabs, WIKI_COMPLETE_FILES.items()):
         with tab:
             visual_rows = load_complete_visual_rows(year_key)
             layout_lines = load_complete_layout_lines(year_key)

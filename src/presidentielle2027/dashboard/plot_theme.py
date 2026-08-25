@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 PLOT_LAYOUT_THEME = {
     "paper_bgcolor": "#ffffff",
     "plot_bgcolor": "#ffffff",

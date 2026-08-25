@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Annotated
 import subprocess
 import sys
+from pathlib import Path
+from typing import Annotated
 
 import pandas as pd
 import typer
 from streamlit.web.bootstrap import run
 
-from presidentielle2027.analytics.polling_average import compute_weighted_polling_averages, load_results_dataframe
+from presidentielle2027.analytics.polling_average import (
+    compute_weighted_polling_averages,
+    load_results_dataframe,
+)
 from presidentielle2027.config import get_settings
 from presidentielle2027.db.init_db import init_database
 from presidentielle2027.db.session import get_engine, get_session_factory
@@ -17,7 +20,10 @@ from presidentielle2027.extraction.coverage import build_coverage_report_from_cs
 from presidentielle2027.extraction.excel_parser import workbook_to_normalized_dataframe
 from presidentielle2027.extraction.normalizer import normalize_csv_file, normalize_to_database
 from presidentielle2027.ingestion.pdf_collector import download_pdf
-from presidentielle2027.ingestion.pipeline import run_periodic_refresh_pipeline, run_refresh_pipeline
+from presidentielle2027.ingestion.pipeline import (
+    run_periodic_refresh_pipeline,
+    run_refresh_pipeline,
+)
 from presidentielle2027.ingestion.wikipedia_scraper import ingest_wikipedia_sources
 
 app = typer.Typer(help="CLI for polling ingestion, normalization and dashboard operations.")

@@ -19,7 +19,6 @@ from presidentielle2027.analytics.historical_corrections import (
     normalize_force_label,
 )
 
-
 MIN_POINTS_FOR_SEGMENT_MODEL = 3
 
 

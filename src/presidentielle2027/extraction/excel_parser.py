@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import re
 from datetime import date
 from itertools import zip_longest
-import re
 from pathlib import Path
-from typing import Iterable
 
-from openpyxl import load_workbook
 import pandas as pd
+from openpyxl import load_workbook
 
-from presidentielle2027.extraction.canonicalization import canonicalize_candidate_fields, is_generic_bloc_label
+from presidentielle2027.extraction.canonicalization import (
+    canonicalize_candidate_fields,
+    is_generic_bloc_label,
+)
 
 PARSING_DIAGNOSTIC_COLUMNS = [
     "fieldwork_date_raw",

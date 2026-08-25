@@ -1251,7 +1251,6 @@ def apply_second_round_legislative_correction(frame: pd.DataFrame, reference_dir
     if frame.empty:
         return frame.copy()
 
-    legislative_results = load_legislative_2024_results(reference_dir)
     legislative_seats = load_legislative_2024_seats(reference_dir)
     legislative_poll_bias = compute_legislative_2024_poll_bias(reference_dir)
     manual_second_round = load_manual_second_round_bloc_overrides(reference_dir)

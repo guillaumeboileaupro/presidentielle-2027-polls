@@ -8,7 +8,14 @@ import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from presidentielle2027.db.models import Candidate, Poll, PollResult, PollScenario, PollingCompany, Source
+from presidentielle2027.db.models import (
+    Candidate,
+    Poll,
+    PollingCompany,
+    PollResult,
+    PollScenario,
+    Source,
+)
 from presidentielle2027.extraction.canonicalization import (
     canonicalize_candidate_fields,
     canonicalize_polling_company,

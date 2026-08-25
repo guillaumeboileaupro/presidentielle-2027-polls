@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import tokenize
 from io import StringIO
 from pathlib import Path
-import tokenize
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCANNED_DIRS = ("src", "tests", "scripts", "alembic")

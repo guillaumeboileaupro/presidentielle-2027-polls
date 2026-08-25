@@ -5,4 +5,4 @@ Import concrete submodules (`features`, `train`, `predict`, `backtesting`) only
 when ML functionality is actually needed.
 """
 
-__all__ = ["features", "train", "predict", "backtesting"]
+__all__ = ["backtesting", "features", "predict", "train"]

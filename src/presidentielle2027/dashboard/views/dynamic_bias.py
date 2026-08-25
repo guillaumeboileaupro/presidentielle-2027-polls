@@ -9,7 +9,6 @@ import streamlit as st
 from presidentielle2027.analytics.dynamic_poll_bias import apply_dynamic_poll_bias_correction
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
 
-
 MODEL_SOURCE_LABELS = {
     "pollster_force": "Institut + force",
     "force_only": "Force seule",

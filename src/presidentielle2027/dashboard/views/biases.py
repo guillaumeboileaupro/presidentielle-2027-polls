@@ -2,13 +2,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import plotly.express as px
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
-from presidentielle2027.analytics.historical_corrections import compute_first_round_correction_context, get_reference_dir
+from presidentielle2027.analytics.historical_corrections import (
+    compute_first_round_correction_context,
+    get_reference_dir,
+)
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
-from presidentielle2027.dashboard.table_views import clean_user_facing_frame, rename_user_facing_columns
+from presidentielle2027.dashboard.table_views import (
+    clean_user_facing_frame,
+    rename_user_facing_columns,
+)
 
 
 def render_biases_page(frame: pd.DataFrame) -> None:
