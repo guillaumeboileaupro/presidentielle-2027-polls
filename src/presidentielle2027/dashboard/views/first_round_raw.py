@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -27,6 +29,7 @@ from presidentielle2027.dashboard.table_views import (
     clean_user_facing_frame,
     render_poll_results_table,
 )
+from presidentielle2027.extraction.canonicalization import PARTY_ALIASES
 
 PARTY_SOURCE_ORDER = [
     "LO",
@@ -208,22 +211,18 @@ def _wikipedia_bloc_label(value: object) -> str | None:
     return WIKIPEDIA_BLOC_MAP.get(str(value).strip())
 
 
-def _party_family_label(party: object, family: object) -> str:
-    party_code = str(party).strip() if party not in (None, "") and not pd.isna(party) else ""
-    if party_code in {"RN", "REC"}:
-        return "Extrême droite"
-    if party_code == "DLF":
-        return "Droite souverainiste"
-    if party_code == "LR":
-        return "Droite"
-    if party_code in {"RE", "ENS", "HOR", "LFH"}:
-        return "Centre"
-    if party_code in {"PP", "PS"}:
-        return "Centre gauche"
-    if party_code in {"LFI", "PCF", "LO"}:
-        return "Gauche"
-    if party_code in {"EELV", "ECO"}:
-        return "Écologistes"
+def _party_family_label(family: object) -> str:
+    """Translate an already-canonical `political_family` value for display.
+
+    `political_family` is canonicalized upstream (see
+    `extraction/canonicalization.py::canonicalize_candidate_fields`), so this
+    only needs to apply the shared French display translation
+    (`table_views.USER_VALUE_REPLACEMENTS` via `_fr_label`). This used to
+    shortcut on hardcoded party-code buckets that disagreed with the
+    canonical family (e.g. RN showed "Extrême droite" instead of the
+    canonical "Droite nationale", LFH showed "Centre" instead of "Droite
+    gaulliste") — removed in favor of the single canonical mapping.
+    """
     return _fr_label(family, "Non renseigné")
 
 
@@ -275,7 +274,7 @@ def _align_smoothed_values_to_observations(
     unique_dates = pd.DatetimeIndex(requested_dates.dropna().unique()).sort_values()
     interpolation_index = curve.index.union(unique_dates).drop_duplicates().sort_values()
     interpolated = curve.reindex(interpolation_index).interpolate(method="time").ffill().bfill()
-    return interpolated.reindex(requested_dates).to_numpy(dtype=float)
+    return cast(np.ndarray, interpolated.reindex(requested_dates).to_numpy(dtype=float))
 
 
 @st.cache_data(show_spinner=False, max_entries=256)
@@ -320,7 +319,9 @@ def _build_joint_extension_paths(
     if not extension_payloads:
         return []
 
-    last_solid_date = max(pd.Timestamp(payload["smoothed"].index.max()) for payload in extension_payloads)
+    last_solid_date = max(
+        pd.Timestamp(cast(pd.Series, payload["smoothed"]).index.max()) for payload in extension_payloads
+    )
     start_date = last_solid_date
     election_ts = pd.Timestamp(election_date)
     if start_date > election_ts:
@@ -332,12 +333,12 @@ def _build_joint_extension_paths(
 
     for payload in extension_payloads:
         key = str(payload["display_name"])
-        smoothed = payload["smoothed"]
+        smoothed = cast(pd.Series, payload["smoothed"])
         smoothed = smoothed[~smoothed.index.duplicated(keep="last")].sort_index()
         smoothed_extended = smoothed.reindex(smoothed.index.union(pd.DatetimeIndex([last_solid_date]))).sort_index()
         smoothed_extended = smoothed_extended.interpolate(method="time").ffill().bfill()
         anchor_value = float(smoothed_extended.loc[last_solid_date])
-        sigma_map[key] = float(payload["sigma"])
+        sigma_map[key] = float(cast(float, payload["sigma"]))
 
         recent_window = smoothed.loc[smoothed.index >= smoothed.index.max() - pd.Timedelta(days=60)]
         if len(recent_window.index) < 2:
@@ -363,10 +364,10 @@ def _build_joint_extension_paths(
         center = projected_frame[key]
         growth = np.linspace(1.0, 1.8, num=len(extension_dates))
         width = np.clip(sigma_map[key] * growth, 0.8, 6.0)
-        smoothed = payload["smoothed"]
+        smoothed = cast(pd.Series, payload["smoothed"])
         own_last_date = pd.Timestamp(smoothed.index.max())
         own_last_value = float(smoothed.iloc[-1])
-        anchor_value = float(payload["anchor_value"])
+        anchor_value = float(cast(float, payload["anchor_value"]))
         transition_days = min(28, max(7, len(extension_dates) // 6))
         transition_steps = np.arange(len(extension_dates), dtype=float)
         transition_weight = np.clip(transition_steps / max(float(transition_days), 1.0), 0.0, 1.0)
@@ -459,7 +460,7 @@ def _build_2022_campaign_extension_paths(
         else:
             historical_values = smooth_history["score_smooth"].to_numpy(dtype=float)
         historical_progress = np.linspace(0.0, 1.0, num=len(historical_values))
-        projected_progress = np.linspace(0.0, 1.0, num=len(path["x"]))
+        projected_progress = np.linspace(0.0, 1.0, num=len(cast(pd.Series, path["x"])))
         historical_levels = np.interp(
             projected_progress,
             historical_progress,
@@ -501,17 +502,31 @@ def _build_2022_campaign_extension_paths(
     return paths
 
 
+def first_round_scenario_totals(frame: pd.DataFrame) -> pd.Series:
+    """Sum of published scores per first-round scenario, generic blocs included.
+
+    A joint list such as ``NFP`` is a generic bloc row but still part of the scenario;
+    leaving it out reported totals of 74 % for scenarios that sum to 100 %.
+    """
+    first_round = frame.loc[frame["round"] == "first_round"]
+    return (
+        first_round.groupby(["poll_id", "scenario_name"], dropna=False)["estimate_percent"]
+        .sum(min_count=1)
+        .dropna()
+    )
+
+
 def render_first_round_raw_page(frame: pd.DataFrame) -> None:
+    # Imported lazily to avoid a module cycle: the Wikipedia view reuses trend
+    # helpers declared in this module.
+    from presidentielle2027.dashboard.views.wikipedia_2027 import render_wikipedia_style_table
+
     st.subheader("Sondages 2027 concernant le premier tour")
     working = frame.loc[(frame["round"] == "first_round") & (~frame["is_generic_bloc"])].copy()
     if working.empty:
         st.info("Aucune donnée de premier tour exploitable.")
         return
-    scenario_totals = (
-        working.groupby(["poll_id", "scenario_name"], dropna=False)["estimate_percent"]
-        .sum(min_count=1)
-        .dropna()
-    )
+    scenario_totals = first_round_scenario_totals(frame)
     if "source_url" not in working.columns:
         working["source_url"] = pd.NA
     st.markdown(first_round_methodology_html(), unsafe_allow_html=True)
@@ -589,8 +604,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
             current_selection = list(st.session_state.get(widget_key, []))
             if party_mode:
                 current_selection = [
-                    "EELV" if force == "LE" else force
-                    for force in current_selection
+                    PARTY_ALIASES.get(force, force) for force in current_selection
                 ]
             st.session_state[widget_key] = list(
                 dict.fromkeys(
@@ -718,10 +732,7 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         )
         force_summary["Sigle"] = force_summary["candidate_party"].map(_party_graph_label)
         force_summary["Force"] = force_summary["candidate_party"].map(_party_full_label)
-        force_summary["Famille"] = force_summary.apply(
-            lambda row: _party_family_label(row.get("candidate_party"), row.get("political_family")),
-            axis=1,
-        )
+        force_summary["Famille"] = force_summary["political_family"].map(_party_family_label)
         force_summary["Dernière valeur"] = force_summary["estimate_percent"].map(lambda value: f"{value:.1f}%")
         force_summary["__ordre_valeur"] = force_summary["estimate_percent"].astype(float)
         force_summary["__ordre_sigle"] = force_summary["Sigle"].map(_display_sort_key)
@@ -1007,7 +1018,9 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
         yaxis_title="Intentions de vote (%)",
         **PLOT_LAYOUT_THEME,
     )
-    figure.update_layout(legend={**PLOT_LAYOUT_THEME["legend"], "traceorder": "normal"})
+    figure.update_layout(
+        legend={**cast(dict[str, object], PLOT_LAYOUT_THEME["legend"]), "traceorder": "normal"}
+    )
     chart_end_ts = max(period_end_ts, WIKIPEDIA_2027_FIRST_ROUND_DATE) if show_extension else period_end_ts
     figure.update_xaxes(range=[period_start_ts, chart_end_ts])
     figure.update_yaxes(ticksuffix=" %")
@@ -1047,6 +1060,10 @@ def render_first_round_raw_page(frame: pd.DataFrame) -> None:
                 "électorale validée."
             )
     st.caption("Les données historiques 2017–2022 sont affichées dans la vue `Analyse historique 2022`. Cette vue reste un graphe brut 2027, sans mélange de séries historiques dans la courbe principale.")
+
+    # The wide source table must follow the same period and pollster filters as
+    # the chart (notably so selecting Cluster17 displays its rows immediately).
+    render_wikipedia_style_table(filtered)
 
     if st.checkbox(
         "Afficher le tableau détaillé des sondages",

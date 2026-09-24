@@ -14,6 +14,7 @@ from presidentielle2027.analytics.historical_corrections import (
     compute_first_round_correction_context,
     get_reference_dir,
     load_historical_2022_results,
+    normalize_broad_bloc,
 )
 from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
@@ -48,19 +49,19 @@ FRENCH_MONTHS = {
 }
 
 WIKI_2022_FORCE_MAP = {
-    "Arthaud (LO)": ("EXG", "Nathalie Arthaud", "far_left"),
-    "Poutou (NPA)": ("EXG", "Philippe Poutou", "far_left"),
-    "Roussel (PCF)": ("PCF", "Fabien Roussel", "left"),
-    "Mélenchon (LFI)": ("LFI", "Jean-Luc Mélenchon", "left"),
-    "Hidalgo (PS)": ("PS-PP", "Anne Hidalgo", "left"),
-    "Jadot (EELV)": ("EELV", "Yannick Jadot", "green"),
+    "Arthaud (LO)": ("EXG", "Nathalie Arthaud", "extrême_gauche"),
+    "Poutou (NPA)": ("EXG", "Philippe Poutou", "extrême_gauche"),
+    "Roussel (PCF)": ("PCF", "Fabien Roussel", "gauche"),
+    "Mélenchon (LFI)": ("LFI", "Jean-Luc Mélenchon", "gauche"),
+    "Hidalgo (PS)": ("PS-PP", "Anne Hidalgo", "gauche"),
+    "Jadot (EELV)": ("EELV", "Yannick Jadot", "écologistes"),
     "Macron (LREM)": ("ENS", "Emmanuel Macron", "centre"),
-    "Pécresse (LR)": ("LR", "Valérie Pécresse", "right"),
+    "Pécresse (LR)": ("LR", "Valérie Pécresse", "droite"),
     "Lassalle (RES)": ("DIV", "Jean Lassalle", "autres"),
-    "Dupont-Aignan (DLF)": ("DLF", "Nicolas Dupont-Aignan", "sovereigntist_right"),
-    "Le Pen (RN)": ("RN", "Marine Le Pen", "far_right"),
-    "Zemmour (REC)": ("REC", "Éric Zemmour", "far_right"),
-    "Taubira (DVG)": ("PS-PP", "Christiane Taubira", "left"),
+    "Dupont-Aignan (DLF)": ("DLF", "Nicolas Dupont-Aignan", "droite_souverainiste"),
+    "Le Pen (RN)": ("RN", "Marine Le Pen", "extrême_droite"),
+    "Zemmour (REC)": ("REC", "Éric Zemmour", "extrême_droite"),
+    "Taubira (DVG)": ("PS-PP", "Christiane Taubira", "gauche"),
 }
 
 
@@ -404,7 +405,10 @@ def _load_analysis_2022_history() -> tuple[pd.DataFrame, pd.DataFrame, dict[str,
         history["months_before_vote"] = history["days_before_vote"] / 30.44
         history["error_poll_minus_result"] = history["historical_error"]
         history["error_result_minus_poll"] = -history["historical_error"]
-        history["broad_bloc"] = history["political_family"].fillna("Autre")
+        history["broad_bloc"] = history.apply(
+            lambda row: normalize_broad_bloc(row.get("force_label"), row.get("political_family")),
+            axis=1,
+        )
 
     return history, official_results, archive_sections
 

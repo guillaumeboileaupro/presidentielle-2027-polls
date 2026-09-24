@@ -31,6 +31,24 @@ def _api_base_url(source_url: str) -> str:
     return f"{parsed.scheme}://{parsed.netloc}/w/api.php"
 
 
+def fetch_wikipedia_html(url: str, timeout: int = 30) -> str:
+    """Fetch the raw rendered HTML of a Wikipedia page via a plain GET.
+
+    Unlike `fetch_wikipedia_page_snapshot`, this does not go through the
+    MediaWiki API and returns no metadata (title, revision id, ...) - it is
+    meant for callers that only need to run `pandas.read_html`/BeautifulSoup
+    over a page's markup directly (e.g. legislative results pages keyed by
+    URL rather than by canonical title).
+    """
+    response = requests.get(
+        url,
+        headers={"User-Agent": "presidentielle2027-polls/0.1 (+wiki-html-ingestion)"},
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    return response.text
+
+
 def fetch_wikipedia_page_snapshot(source_url: str, timeout: int = 30) -> WikipediaPageSnapshot:
     title = extract_wikipedia_title(source_url)
     api_url = _api_base_url(source_url)

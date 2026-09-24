@@ -29,6 +29,12 @@ def test_resolve_party_logo_filename_normalizes_ren() -> None:
     assert resolve_party_logo_filename("EPR") is None
 
 
+def test_resolve_party_logo_filename_uses_shared_party_aliases() -> None:
+    """Aliases come from extraction.canonicalization.PARTY_ALIASES, not a local copy."""
+    assert resolve_party_logo_filename("LE") == resolve_party_logo_filename("EELV")
+    assert resolve_party_logo_filename("MODEM") == resolve_party_logo_filename("MoDem")
+
+
 def test_display_labels_are_user_facing() -> None:
     assert get_party_display_label("RN") == "Rassemblement national"
     assert get_party_display_label("LFH") == "La France humaniste"

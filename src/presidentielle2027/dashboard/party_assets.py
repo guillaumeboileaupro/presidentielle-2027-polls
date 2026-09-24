@@ -7,6 +7,7 @@ from urllib.parse import quote
 import pandas as pd
 
 from presidentielle2027.dashboard.colors import get_political_color
+from presidentielle2027.extraction.canonicalization import PARTY_ALIASES
 
 FI_BRAND = {
     "violet": "#9A36E0",
@@ -116,8 +117,7 @@ def resolve_party_logo_filename(
         filename = CANDIDATE_LOGO_FILENAMES.get((normalized_party, normalized_candidate))
         if filename is not None:
             return filename
-    if normalized_party == "REN":
-        normalized_party = "RE"
+    normalized_party = PARTY_ALIASES.get(normalized_party, normalized_party)
     return PARTY_LOGO_FILENAMES.get(normalized_party)
 
 

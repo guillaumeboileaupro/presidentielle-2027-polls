@@ -199,7 +199,22 @@ def _sanitize_display_frame(data: object) -> object:
 
 
 def install_user_facing_text_guard() -> None:
-    """Prevent internal identifiers from leaking through Streamlit widgets."""
+    """Prevent internal identifiers from leaking through Streamlit widgets.
+
+    This monkeypatches `st.dataframe`, `st.table`, `st.selectbox`,
+    `st.multiselect` and `st.radio` at module level, process-wide, so any
+    dashboard view that calls one of those functions afterwards gets
+    sanitized output for free without importing anything from this module.
+
+    That is deliberate (it is the only way to guarantee no view forgets to
+    sanitize), but it is fragile: it depends on Streamlit's public function
+    signatures staying stable across upgrades, and it is invisible at call
+    sites, which is why `mypy` cannot follow the reassigned attributes
+    cleanly. Call once, early, before any view renders (see
+    `dashboard/live_app.py`); the `_presidentielle_text_guard_installed` flag
+    makes repeated calls a no-op. See `tests/test_table_views_guard.py` for
+    the behavior this patch is expected to preserve.
+    """
     if getattr(st, "_presidentielle_text_guard_installed", False):
         return
 

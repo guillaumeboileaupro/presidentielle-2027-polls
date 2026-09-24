@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from io import StringIO
 from itertools import combinations
@@ -9,7 +10,6 @@ from zipfile import ZipFile
 
 import pandas as pd
 import plotly.graph_objects as go
-import requests
 import streamlit as st
 from bs4 import BeautifulSoup
 
@@ -22,6 +22,9 @@ from presidentielle2027.analytics.historical_corrections import (
 )
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
+from presidentielle2027.ingestion.wiki_api import fetch_wikipedia_html as _fetch_wikipedia_html
+
+logger = logging.getLogger(__name__)
 
 LOCAL_2024_VISUAL_ROWS = (
     "data/imported_wiki_zip_complete/"
@@ -997,6 +1000,7 @@ def _load_official_circo_results_from_zip() -> pd.DataFrame:
             if not frame.empty:
                 return frame
         except Exception:
+            logger.warning("Échec de lecture de %s, poursuite avec le chemin suivant.", path, exc_info=True)
             continue
     for path in OFFICIAL_2024_LEGISLATIVE_ZIP_PATHS:
         if not path.exists():
@@ -1089,6 +1093,7 @@ def _load_official_t2_candidatures_from_zip() -> pd.DataFrame:
             if not frame.empty:
                 return frame
         except Exception:
+            logger.warning("Échec de lecture de %s, poursuite avec le chemin suivant.", path, exc_info=True)
             continue
     for path in OFFICIAL_2024_LEGISLATIVE_ZIP_PATHS:
         if not path.exists():
@@ -1151,16 +1156,6 @@ def _build_wikipedia_circo_code(dept_code: str, ordinal: int) -> str:
     if dept_text.isdigit():
         return str(int(f"{dept_text}{int(ordinal):02d}"))
     return f"{dept_text}{int(ordinal):02d}"
-
-
-def _fetch_wikipedia_html(url: str) -> str:
-    response = requests.get(
-        url,
-        headers={"User-Agent": "Mozilla/5.0 Codex scraper"},
-        timeout=30,
-    )
-    response.raise_for_status()
-    return response.text
 
 
 def _flatten_wikipedia_columns(frame: pd.DataFrame) -> list[str]:
@@ -1419,6 +1414,7 @@ def _load_wikipedia_constituency_second_round_results() -> pd.DataFrame:
             if not frame.empty and has_expected_columns and covered_circos >= 500:
                 return frame
         except Exception:
+            logger.warning("Échec de lecture de %s, poursuite avec le chemin suivant.", path, exc_info=True)
             continue
     try:
         frame = _scrape_wikipedia_constituency_second_round_results()
@@ -1428,6 +1424,10 @@ def _load_wikipedia_constituency_second_round_results() -> pd.DataFrame:
             frame.to_csv(target_path, index=False)
         return frame
     except Exception:
+        logger.warning(
+            "Échec du scraping Wikipédia des résultats de second tour par circonscription.",
+            exc_info=True,
+        )
         return pd.DataFrame()
 
 
@@ -1481,7 +1481,7 @@ def _load_official_candidate_results_2024() -> pd.DataFrame:
                         frame[column] = frame[column].astype("string").str.strip()
                 return frame
         except Exception:
-            pass
+            logger.warning("Échec de lecture de %s, poursuite avec le chemin suivant.", path, exc_info=True)
     try:
         chunks: list[pd.DataFrame] = []
         for chunk in pd.read_csv(
@@ -1504,6 +1504,11 @@ def _load_official_candidate_results_2024() -> pd.DataFrame:
                 frame[column] = frame[column].astype("string").str.strip()
         return frame
     except Exception:
+        logger.warning(
+            "Échec de téléchargement des résultats officiels de candidature depuis %s.",
+            OFFICIAL_CANDIDATE_RESULTS_REMOTE_URL,
+            exc_info=True,
+        )
         return pd.DataFrame()
 
 

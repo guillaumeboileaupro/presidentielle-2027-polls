@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 import warnings
+from collections.abc import Callable
 from pathlib import Path
+from typing import TypedDict
 
 import pandas as pd
 import streamlit as st
@@ -49,7 +51,13 @@ warnings.filterwarnings(
 )
 
 
-PAGE_CONFIG = [
+class PageConfig(TypedDict):
+    label: str
+    renderer: Callable[[pd.DataFrame], None]
+    help: str
+
+
+PAGE_CONFIG: list[PageConfig] = [
     {
         "label": "Sources et métadonnées",
         "renderer": render_sources_metadata_page,
