@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unicodedata
+from typing import cast
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -14,6 +15,7 @@ from presidentielle2027.analytics.trends import build_lowess_curve
 from presidentielle2027.dashboard.colors import get_political_color
 from presidentielle2027.dashboard.plot_theme import PLOT_LAYOUT_THEME
 from presidentielle2027.dashboard.views.first_round_raw import GITLAB_LOESS_SPANS
+from presidentielle2027.extraction.canonicalization import canonicalize_polling_company
 
 CANDIDATE_SPECS = [
     ("Arthaud — LO", "LO", ("arthaud",), "solid"),
@@ -32,6 +34,188 @@ CANDIDATE_SPECS = [
     ("Le Pen — RN", "RN", ("le pen",), "solid"),
     ("Zemmour — REC", "REC", ("zemmour",), "solid"),
 ]
+
+CANDIDATE_TABLE_ORDER = [
+    "Arlette Arthaud",
+    "Jean-Luc Mélenchon",
+    "Fabien Roussel",
+    "Marine Tondelier",
+    "Raphaël Glucksmann",
+    "Olivier Faure",
+    "François Hollande",
+    "Gabriel Attal",
+    "Édouard Philippe",
+    "Dominique de Villepin",
+    "Bruno Retailleau",
+    "Nicolas Dupont-Aignan",
+    "Marine Le Pen",
+    "Jordan Bardella",
+    "Éric Zemmour",
+    "Sarah Knafo",
+]
+
+CANDIDATE_TABLE_PARTIES = {
+    "Arlette Arthaud": "LO",
+    "Jean-Luc Mélenchon": "LFI",
+    "Fabien Roussel": "PCF",
+    "Marine Tondelier": "EELV",
+    "Raphaël Glucksmann": "PP",
+    "Olivier Faure": "PS",
+    "François Hollande": "PS",
+    "Gabriel Attal": "RE",
+    "Édouard Philippe": "HOR",
+    "Dominique de Villepin": "LFH",
+    "Bruno Retailleau": "LR",
+    "Nicolas Dupont-Aignan": "DLF",
+    "Marine Le Pen": "RN",
+    "Jordan Bardella": "RN",
+    "Éric Zemmour": "REC",
+    "Sarah Knafo": "REC",
+}
+
+
+def wikipedia_table_cell_styles(row: pd.Series) -> list[str]:
+    """Highlight and bold the two highest scores, as in Wikipedia's table."""
+    styles = [""] * len(row.index)
+    candidate_scores: list[tuple[str, float]] = []
+    metadata_columns = {"Sondeur", "Date", "Échantillon", "Hypothèse"}
+    for column in row.index:
+        if column in metadata_columns:
+            continue
+        score = pd.to_numeric(row[column], errors="coerce")
+        if pd.notna(score):
+            candidate_scores.append((str(column), float(score)))
+    qualified = sorted(candidate_scores, key=lambda item: (-item[1], item[0]))[:2]
+    light_parties = {"PP", "RE", "LFH"}
+    for candidate_name, _ in qualified:
+        party = CANDIDATE_TABLE_PARTIES.get(candidate_name)
+        color = get_political_color(party, None)
+        foreground = "#111111" if party in light_parties else "#ffffff"
+        position = row.index.get_loc(candidate_name)
+        styles[position] = (
+            f"background-color: {color}; color: {foreground}; "
+            "font-weight: 800; border: 2px solid #111111"
+        )
+    return styles
+
+
+def _format_sample_size(value: object) -> str:
+    if value is None or pd.isna(value):
+        return "—"
+    number = pd.to_numeric(value, errors="coerce")
+    if pd.isna(number):
+        return str(value)
+    return f"{int(round(float(number))):,}".replace(",", "\u00a0")
+
+
+def build_wikipedia_style_table(frame: pd.DataFrame) -> pd.DataFrame:
+    """Return one wide row per scenario, close to Wikipedia's source layout."""
+    required = {
+        "poll_id",
+        "round",
+        "scenario_name",
+        "candidate_name",
+        "estimate_percent",
+        "polling_company",
+        "sample_size",
+    }
+    if frame.empty or not required.issubset(frame.columns):
+        return pd.DataFrame()
+
+    working = frame.loc[frame["round"].eq("first_round")].copy()
+    working["polling_company"] = working["polling_company"].map(canonicalize_polling_company)
+    if "parse_status" in working.columns:
+        working = working.loc[
+            ~working["parse_status"].isin({"technical_duplicate", "unparsed_estimate"})
+        ].copy()
+    working["estimate_percent"] = pd.to_numeric(working["estimate_percent"], errors="coerce")
+    working = working.dropna(subset=["candidate_name"])
+    if working.empty:
+        return pd.DataFrame()
+
+    scenario_key = ["poll_id", "scenario_name"]
+    metadata_columns = ["poll_id", "scenario_name", "polling_company", "sample_size"]
+    if "fieldwork_date_raw" in working.columns:
+        metadata_columns.append("fieldwork_date_raw")
+    if "publication_date" in working.columns:
+        metadata_columns.append("publication_date")
+
+    metadata = working[metadata_columns].drop_duplicates(subset=scenario_key, keep="first")
+    candidate_names = working["candidate_name"].dropna().astype(str).unique().tolist()
+    values = working.pivot_table(
+        index=scenario_key,
+        columns="candidate_name",
+        values="estimate_percent",
+        aggfunc="first",
+    ).reset_index()
+    for candidate_name in candidate_names:
+        if candidate_name not in values.columns:
+            values[candidate_name] = pd.NA
+    wide = metadata.merge(values, on=scenario_key, how="left", validate="one_to_one")
+    date_column = "fieldwork_date_raw" if "fieldwork_date_raw" in wide.columns else "publication_date"
+    if "publication_date" in wide.columns:
+        wide["_sort_date"] = pd.to_datetime(wide["publication_date"], errors="coerce")
+    else:
+        wide["_sort_date"] = pd.NaT
+    wide = wide.rename(
+        columns={
+            "polling_company": "Sondeur",
+            "sample_size": "Échantillon",
+            date_column: "Date",
+            "scenario_name": "Hypothèse",
+        }
+    )
+    candidate_columns = [name for name in CANDIDATE_TABLE_ORDER if name in wide.columns]
+    candidate_columns.extend(
+        sorted(
+            column
+            for column in wide.columns
+            if column not in {*metadata_columns, "Sondeur", "Échantillon", "Date", "Hypothèse", "poll_id", "_sort_date", "publication_date"}
+            and column not in candidate_columns
+        )
+    )
+    wide = wide.sort_values(["_sort_date", "Sondeur", "Hypothèse"], ascending=[False, True, True])
+    result = wide[["Sondeur", "Date", "Échantillon", "Hypothèse", *candidate_columns]].copy()
+    result["Échantillon"] = result["Échantillon"].map(_format_sample_size)
+
+    # A "<1" source cell has no point estimate but is not "non testé": show its bound.
+    bounded_labels: dict[tuple[str, str, str], str] = {}
+    if {"parse_status", "upper_bound_percent"}.issubset(working.columns):
+        bounded = working.loc[
+            working["parse_status"].eq("bounded_estimate")
+            & pd.to_numeric(working["upper_bound_percent"], errors="coerce").notna()
+        ]
+        for poll_id, scenario, candidate, bound in zip(
+            bounded["poll_id"],
+            bounded["scenario_name"],
+            bounded["candidate_name"].astype(str),
+            pd.to_numeric(bounded["upper_bound_percent"], errors="coerce"),
+        ):
+            bounded_labels[(str(poll_id), str(scenario), candidate)] = f"<{float(bound):g}"
+
+    for column in candidate_columns:
+        result[column] = [
+            bounded_labels.get((str(poll_id), str(scenario), column), "—")
+            if pd.isna(value)
+            else f"{float(value):g}"
+            for value, poll_id, scenario in zip(wide[column], wide["poll_id"], wide["Hypothèse"])
+        ]
+    return result
+
+
+def render_wikipedia_style_table(frame: pd.DataFrame) -> None:
+    table = build_wikipedia_style_table(frame)
+    st.markdown("**Tableau des sondages au format Wikipédia**")
+    st.caption(
+        "Une ligne par hypothèse et une colonne par candidat ; les deux premiers, "
+        "qualifiés au second tour dans l’hypothèse, sont en gras et aux couleurs politiques. "
+        "« — » signifie non testé ; « <1 » signifie un score publié inférieur à 1 %."
+    )
+    if table.empty:
+        st.info("Aucun sondage de premier tour disponible pour ce tableau.")
+        return
+    styled = table.style.apply(wikipedia_table_cell_styles, axis=1)
+    st.dataframe(styled, width="stretch", hide_index=True, height=620)
 
 
 def _normalize_text(value: object) -> str:
@@ -178,7 +362,9 @@ def render_candidate_trace_chart(frame: pd.DataFrame) -> None:
         yaxis_title="Intentions de vote (%)",
         **PLOT_LAYOUT_THEME,
     )
-    figure.update_layout(legend={**PLOT_LAYOUT_THEME["legend"], "traceorder": "normal"})
+    figure.update_layout(
+        legend={**cast(dict[str, object], PLOT_LAYOUT_THEME["legend"]), "traceorder": "normal"}
+    )
     figure.update_yaxes(ticksuffix=" %")
     st.plotly_chart(
         figure,

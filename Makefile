@@ -1,7 +1,7 @@
 PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,$(shell command -v python3.10 2>/dev/null || command -v python3 2>/dev/null || command -v python))
 PACKAGE = presidentielle2027
 
-.PHONY: install init-db ingest refresh auto-refresh normalize dashboard test lint format notebook notebook-kernel wiki-datasets
+.PHONY: install init-db ingest refresh auto-refresh normalize dashboard test lint format notebook notebook-kernel wiki-datasets deb
 
 install:
 	$(PYTHON) -m pip install -e ".[dev]"
@@ -41,3 +41,6 @@ lint:
 
 format:
 	$(PYTHON) -m ruff format src tests
+
+deb:
+	bash packaging/build-deb.sh

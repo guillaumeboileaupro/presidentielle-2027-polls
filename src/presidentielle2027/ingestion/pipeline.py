@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import importlib.util
+import logging
 import shutil
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
+from typing import cast
 
 import pandas as pd
 from sqlalchemy.orm import Session, sessionmaker
@@ -32,6 +34,8 @@ from presidentielle2027.extraction.migration import (
 from presidentielle2027.extraction.normalizer import normalize_csv_file, normalize_to_database
 from presidentielle2027.ingestion.wikipedia_scraper import ingest_wikipedia_sources
 
+logger = logging.getLogger(__name__)
+
 GenerateWikiDatasetsCallable = Callable[[Path, Path], None]
 
 
@@ -56,7 +60,7 @@ def _load_generate_wiki_datasets() -> GenerateWikiDatasetsCallable:
             raise AttributeError(
                 f"generate_wiki_datasets not found in {module_path}"
             ) from None
-        return generate_wiki_datasets
+        return cast(GenerateWikiDatasetsCallable, generate_wiki_datasets)
 
 
 generate_wiki_datasets = _load_generate_wiki_datasets()
@@ -80,7 +84,11 @@ def run_refresh_pipeline(
 
     session = session_factory()
     try:
-        ingest_wikipedia_sources(session=session, raw_dir=settings.raw_dir)
+        ingest_wikipedia_sources(
+            session=session,
+            raw_dir=settings.raw_dir,
+            wikipedia_cache_dir=settings.raw_dir / "wikipedia_html",
+        )
     finally:
         session.close()
 
@@ -91,7 +99,11 @@ def run_refresh_pipeline(
     session = session_factory()
     try:
         records = normalize_csv_file(normalized_output)
-        persisted_rows = normalize_to_database(records, session=session)
+        persisted_rows = normalize_to_database(
+            records,
+            session=session,
+            replace_all_polls=True,
+        )
     finally:
         session.close()
 
@@ -132,16 +144,17 @@ def run_periodic_refresh_pipeline(
     while max_runs is None or executed_runs < max_runs:
         try:
             summary = run_refresh_pipeline(settings=settings, session_factory=session_factory)
-        except Exception as exc:
-            print(f"[auto-refresh] failed: {type(exc).__name__}: {exc}")
+        except Exception:
+            logger.error("[auto-refresh] failed", exc_info=True)
         else:
-            print(
-                "[auto-refresh] completed: "
-                f"normalized_input={summary.normalized_input}, "
-                f"normalized_output={summary.normalized_output}, "
-                f"persisted_rows={summary.persisted_rows}, "
-                f"coverage_output={summary.coverage_output}, "
-                f"averages_output={summary.averages_output}"
+            logger.info(
+                "[auto-refresh] completed: normalized_input=%s, normalized_output=%s, "
+                "persisted_rows=%s, coverage_output=%s, averages_output=%s",
+                summary.normalized_input,
+                summary.normalized_output,
+                summary.persisted_rows,
+                summary.coverage_output,
+                summary.averages_output,
             )
         executed_runs += 1
         if max_runs is not None and executed_runs >= max_runs:

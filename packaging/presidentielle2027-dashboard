@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/bin/presidentielle2027 run-dashboard "$@"

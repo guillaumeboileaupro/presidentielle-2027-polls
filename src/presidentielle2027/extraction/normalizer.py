@@ -170,13 +170,37 @@ def _get_or_create_candidate(session: Session, record: NormalizedPollRecord) -> 
     return candidate
 
 
-def normalize_to_database(records: Iterable[NormalizedPollRecord], session: Session) -> int:
+def normalize_to_database(
+    records: Iterable[NormalizedPollRecord],
+    session: Session,
+    *,
+    replace_source_snapshot: bool = False,
+    replace_all_polls: bool = False,
+) -> int:
+    materialized_records = list(records)
+    if replace_all_polls:
+        if not materialized_records:
+            # An empty snapshot means the upstream fetch/parse produced nothing; keep the
+            # last good data instead of wiping every stored poll on each automatic refresh.
+            raise ValueError("Refusing to replace all stored polls with an empty record set.")
+        for existing_poll in session.scalars(select(Poll)).all():
+            session.delete(existing_poll)
+        session.flush()
+    elif replace_source_snapshot and materialized_records:
+        source_urls = {str(record.source_url) for record in materialized_records}
+        existing_polls = session.scalars(
+            select(Poll).join(Source).where(Source.source_url.in_(source_urls))
+        ).all()
+        for existing_poll in existing_polls:
+            session.delete(existing_poll)
+        session.flush()
+
     persisted_rows = 0
     poll_cache: dict[str, Poll] = {}
     scenario_cache: dict[tuple[str, str], PollScenario] = {}
     result_cache: dict[tuple[int, int], PollResult] = {}
 
-    for record in records:
+    for record in materialized_records:
         source = _get_or_create_source(session, record)
         company = _get_or_create_polling_company(session, record)
         poll = poll_cache.get(record.poll_id) or session.scalar(select(Poll).where(Poll.poll_id == record.poll_id))

@@ -223,7 +223,8 @@ def extract_page(page: dict[str, str], cache_dir: Path | None = None) -> pd.Data
     soup = BeautifulSoup(html, "lxml")
 
     tables = soup.find_all("table", class_=lambda cls: cls and "wikitable" in cls)
-    dfs = pd.read_html(StringIO(html))
+    # Preserve French decimal commas (``1,5`` must not become ``15``).
+    dfs = pd.read_html(StringIO(html), decimal=",", thousands=None)
 
     extracted: list[pd.DataFrame] = []
     for table_index, df in enumerate(dfs):

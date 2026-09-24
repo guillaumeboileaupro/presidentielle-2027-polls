@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Présidentielle 2027 – Sondages
+Comment=Explorer les sondages de l'élection présidentielle française de 2027
+Exec=presidentielle2027-dashboard
+Icon=presidentielle2027
+Terminal=false
+Categories=Education;Science;DataVisualization;
+Keywords=sondages;élection;présidentielle;statistiques;
+StartupNotify=true

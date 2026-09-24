@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+
+APP_DIR=/opt/presidentielle2027
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/presidentielle2027"
+
+mkdir -p "$DATA_HOME"
+if [ ! -e "$DATA_HOME/.initialized" ]; then
+    cp -a "$APP_DIR/share/." "$DATA_HOME/"
+    touch "$DATA_HOME/.initialized"
+fi
+
+# The code shipped with the package must follow upgrades, but the user's data
+# (SQLite database, raw snapshots, exports) must never be overwritten.
+cp -f "$APP_DIR/share/make_wiki_datasets.py" "$DATA_HOME/make_wiki_datasets.py"
+mkdir -p "$DATA_HOME/scripts"
+cp -af "$APP_DIR/share/scripts/." "$DATA_HOME/scripts/"
+
+cd "$DATA_HOME"
+export PYTHONPATH="$APP_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONNOUSERSITE=1
+export DATABASE_URL="${DATABASE_URL:-sqlite:///$DATA_HOME/data/polls.sqlite3}"
+# A desktop application must not listen on the network unless the user asks for it.
+export DASHBOARD_HOST="${DASHBOARD_HOST:-127.0.0.1}"
+
+exec "$APP_DIR/venv/bin/python" -m presidentielle2027.cli "$@"

@@ -192,7 +192,7 @@ def _parse_raw_poll_percent(value: object) -> float | None:
     if not text or text in {"—", "-", "nan", "NaN"}:
         return None
     if text.startswith("<"):
-        return 0.5
+        return None
     match = re.search(r"(\d+(?:[.,]\d+)?)", text)
     if not match:
         return None
@@ -201,13 +201,38 @@ def _parse_raw_poll_percent(value: object) -> float | None:
     except ValueError:
         return None
 
+
+_SCORE_PREFIX_PATTERN = re.compile(r"^\s*<?\s*\d+(?:[.,]\d+)?\s*")
+
+
+def _bounded_upper_percent(value: object) -> float | None:
+    """Return the upper bound X of a ``<X`` cell (e.g. ``<1``), otherwise None."""
+    text = str(value or "").replace("\xa0", " ").strip()
+    match = re.match(r"<\s*(\d+(?:[.,]\d+)?)", text)
+    if match is None:
+        return None
+    return float(match.group(1).replace(",", "."))
+
+
+def _split_compound_candidate_cell(value: object, *, generic_header: bool) -> list[str]:
+    """Split multiple ``score candidate`` entries collapsed from HTML ``<br>`` tags."""
+    text = str(value or "").strip()
+    if not generic_header:
+        return [text]
+    parts = re.split(
+        r"(?<=[A-Za-zÀ-ÖØ-öø-ÿ])(?=<?\d+(?:[.,]\d+)?\s+[A-ZÀ-ÖØ-Þ])",
+        text,
+    )
+    return [part.strip() for part in parts if part.strip()] or [text]
+
+
 def _poll_percentage_options(raw_text: object, parsed_value: float) -> list[float]:
     """Return plausible percentages when an HTML decimal separator was lost."""
     text = str(raw_text or "").replace("\xa0", " ").strip()
     numeric_match = re.search(r"(\d+(?:[.,]\d+)?)", text)
     token = numeric_match.group(1) if numeric_match else ""
     if text.startswith("<"):
-        return [0.5]
+        return []
     if "," in token or ("." in token and not token.endswith(".0")):
         return [float(parsed_value)]
 
@@ -351,7 +376,9 @@ def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
     for _, indexes in corrected.groupby(scenario_columns, dropna=False).groups.items():
         group = corrected.loc[list(indexes)]
         usable = group.loc[
-            ~group["parse_status"].isin({"technical_duplicate", "not_tested"})
+            ~group["parse_status"].isin(
+                {"technical_duplicate", "not_tested", "bounded_estimate"}
+            )
         ].copy()
         values_before = pd.to_numeric(usable["estimate_percent"], errors="coerce")
         total_before = float(values_before.sum(min_count=1))
@@ -363,6 +390,8 @@ def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
             corrected.loc[group.index, "percentage_correction_reason"] = "ambiguous_missing_value"
             corrected.loc[group.index, "scenario_total_after"] = total_before
             continue
+        # Published scenarios can sum to 101 because of independent rounding.
+        # Do not alter valid source values merely to force an exact total.
         if total_before <= 101.0 and bool(values_before.le(100.0).all()):
             corrected.loc[group.index, "scenario_total_after"] = total_before
             continue
@@ -384,6 +413,7 @@ def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
             corrected.loc[group.index, "scenario_total_after"] = total_before
             continue
 
+        reconstructed_total = float(reconstructed.sum())
         corrected.loc[reconstructed.index, "estimate_percent"] = reconstructed
         corrected.loc[reconstructed.index, "estimate_percent_corrected"] = reconstructed
         originals = pd.to_numeric(
@@ -397,7 +427,7 @@ def _correct_poll_units_by_scenario(frame: pd.DataFrame) -> pd.DataFrame:
             reconstructed.loc[changed_indexes] / originals.loc[changed_indexes]
         )
         corrected.loc[group.index, "percentage_correction_reason"] = "scenario_total_aberrant"
-        corrected.loc[group.index, "scenario_total_after"] = float(reconstructed.sum())
+        corrected.loc[group.index, "scenario_total_after"] = reconstructed_total
 
     assert len(corrected) == len(frame)
     assert corrected.index.equals(frame.index)
@@ -459,13 +489,23 @@ def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int)
         poll_id = f"RAW-FR-{pollster_label.upper().replace(' ', '-')}-{table_index}-{row_index:03d}"
 
         for column_index, header_label in enumerate(candidate_headers, start=3):
-            cell_text = str(frame.iat[row_index, column_index] or "").strip()
+            original_cell_text = str(frame.iat[row_index, column_index] or "").strip()
+            generic_header = header_label.startswith("Candidat ") or header_label in {"Autre", "Autres"}
+            if header_label.startswith("Unnamed:") and not original_cell_text:
+                # pandas names a header-less spacer column "Unnamed: N_level_M"; an empty
+                # cell under it carries neither a candidate identity nor a score.
+                continue
+            cell_parts = _split_compound_candidate_cell(
+                original_cell_text,
+                generic_header=generic_header,
+            )
+            cell_text = cell_parts[0]
             estimate = _parse_raw_poll_percent(cell_text)
             is_not_tested = cell_text in {"", "-", "—"}
-            candidate_fragment = re.sub(r"^\s*\d+(?:[.,]\d+)?\s*", "", _strip_wikipedia_annotations(cell_text)).strip()
+            is_bounded = cell_text.startswith("<")
+            candidate_fragment = _SCORE_PREFIX_PATTERN.sub("", _strip_wikipedia_annotations(cell_text)).strip()
             has_named_candidate = bool(re.search(r"[A-Za-zÀ-ÖØ-öø-ÿ]", candidate_fragment))
             candidate_label = candidate_fragment if has_named_candidate else header_label
-            generic_header = header_label.startswith("Candidat ") or header_label in {"Autre", "Autres"}
             candidate_name, candidate_party, political_family = _extract_candidate_and_party_from_label(
                 candidate_label,
                 header_label if generic_header else None,
@@ -492,7 +532,7 @@ def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int)
                     "political_family": political_family,
                     "estimate_percent": estimate,
                     "lower_bound_percent": None,
-                    "upper_bound_percent": None,
+                    "upper_bound_percent": _bounded_upper_percent(cell_text) if is_bounded else None,
                     "margin_of_error": None,
                     "undecided_percent": None,
                     "abstention_estimate": None,
@@ -501,7 +541,9 @@ def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int)
                     "extraction_confidence": 0.55,
                     "fieldwork_date_raw": str(date_text),
                     "parse_status": (
-                        "not_tested"
+                        "bounded_estimate"
+                        if is_bounded
+                        else "not_tested"
                         if is_not_tested
                         else "parsed"
                         if estimate is not None
@@ -509,13 +551,49 @@ def _parse_first_round_raw_wikipedia_table(table_path: Path, fallback_year: int)
                     ),
                     "parse_error": (
                         None
-                        if is_not_tested
+                        if is_not_tested or is_bounded
                         else "unparseable percentage"
                         if estimate is None
                         else date_error
                     ),
                 }
             )
+            for extra_cell_text in cell_parts[1:]:
+                extra_estimate = _parse_raw_poll_percent(extra_cell_text)
+                extra_fragment = _SCORE_PREFIX_PATTERN.sub(
+                    "",
+                    _strip_wikipedia_annotations(extra_cell_text),
+                ).strip()
+                extra_name, extra_party, extra_family = _extract_candidate_and_party_from_label(
+                    extra_fragment,
+                    header_label,
+                )
+                extra_upper_bound = _bounded_upper_percent(extra_cell_text)
+                extra_row = rows[-1].copy()
+                extra_row.update(
+                    candidate_name=extra_name,
+                    candidate_party=extra_party,
+                    political_family=extra_family,
+                    estimate_percent=extra_estimate,
+                    lower_bound_percent=None,
+                    upper_bound_percent=extra_upper_bound,
+                    raw_text_context=extra_cell_text,
+                    parse_status=(
+                        "bounded_estimate"
+                        if extra_upper_bound is not None
+                        else "parsed"
+                        if extra_estimate is not None
+                        else "unparsed_estimate"
+                    ),
+                    parse_error=(
+                        None
+                        if extra_upper_bound is not None
+                        else date_error
+                        if extra_estimate is not None
+                        else "unparseable percentage"
+                    ),
+                )
+                rows.append(extra_row)
     return pd.DataFrame(rows)
 
 
@@ -548,6 +626,7 @@ def _parse_second_round_raw_wikipedia_table(table_path: Path, fallback_year: int
             cell_text = str(frame.iat[row_index, offset] or "").strip()
             estimate = _parse_raw_poll_percent(cell_text)
             is_not_tested = cell_text in {"", "-", "—"}
+            is_bounded = cell_text.startswith("<")
             candidate_name, candidate_party, political_family = _extract_candidate_and_party_from_label(candidate_label)
             rows.append(
                 {
@@ -571,7 +650,7 @@ def _parse_second_round_raw_wikipedia_table(table_path: Path, fallback_year: int
                     "political_family": political_family,
                     "estimate_percent": estimate,
                     "lower_bound_percent": None,
-                    "upper_bound_percent": None,
+                    "upper_bound_percent": _bounded_upper_percent(cell_text) if is_bounded else None,
                     "margin_of_error": None,
                     "undecided_percent": None,
                     "abstention_estimate": None,
@@ -580,7 +659,9 @@ def _parse_second_round_raw_wikipedia_table(table_path: Path, fallback_year: int
                     "extraction_confidence": 0.65,
                     "fieldwork_date_raw": str(date_text),
                     "parse_status": (
-                        "not_tested"
+                        "bounded_estimate"
+                        if is_bounded
+                        else "not_tested"
                         if is_not_tested
                         else "parsed"
                         if estimate is not None
@@ -588,7 +669,7 @@ def _parse_second_round_raw_wikipedia_table(table_path: Path, fallback_year: int
                     ),
                     "parse_error": (
                         None
-                        if is_not_tested
+                        if is_not_tested or is_bounded
                         else "unparseable percentage"
                         if estimate is None
                         else date_error

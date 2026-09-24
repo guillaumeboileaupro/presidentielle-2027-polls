@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import subprocess
 import sys
 from pathlib import Path
@@ -7,13 +8,13 @@ from typing import Annotated
 
 import pandas as pd
 import typer
-from streamlit.web.bootstrap import run
+from streamlit.web.bootstrap import load_config_options, run
 
 from presidentielle2027.analytics.polling_average import (
     compute_weighted_polling_averages,
     load_results_dataframe,
 )
-from presidentielle2027.config import get_settings
+from presidentielle2027.config import Settings, get_settings
 from presidentielle2027.db.init_db import init_database
 from presidentielle2027.db.session import get_engine, get_session_factory
 from presidentielle2027.extraction.coverage import build_coverage_report_from_csv
@@ -57,7 +58,11 @@ def ingest_wikipedia() -> None:
     settings = get_settings()
     session = get_session_factory()()
     try:
-        artifacts = ingest_wikipedia_sources(session=session, raw_dir=settings.raw_dir)
+        artifacts = ingest_wikipedia_sources(
+            session=session,
+            raw_dir=settings.raw_dir,
+            wikipedia_cache_dir=settings.raw_dir / "wikipedia_html",
+        )
     finally:
         session.close()
     typer.echo(f"Ingested {len(artifacts)} Wikipedia sources.")
@@ -85,6 +90,7 @@ def auto_refresh_pipeline(
     interval_minutes: Annotated[int | None, typer.Option("--interval-minutes")] = None,
     max_runs: Annotated[int | None, typer.Option("--max-runs")] = None,
 ) -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     settings = get_settings()
     configured_interval = interval_minutes or settings.auto_ingest_interval_minutes
     configured_max_runs = max_runs if max_runs is not None else settings.auto_ingest_max_runs
@@ -200,6 +206,13 @@ def train_model(
     typer.echo(f"Model saved to {artifact_path} with metrics {metrics}")
 
 
+def _dashboard_flag_options(settings: Settings) -> dict[str, object]:
+    return {
+        "server_address": settings.dashboard_host,
+        "server_port": settings.dashboard_port,
+    }
+
+
 @app.command("run-dashboard")
 def run_dashboard() -> None:
     settings = get_settings()
@@ -211,17 +224,11 @@ def run_dashboard() -> None:
             f"(interval={settings.auto_ingest_interval_minutes} min)."
         )
     try:
-        run(
-            str(dashboard_path),
-            False,
-            args=[
-                "--server.port",
-                str(settings.dashboard_port),
-                "--server.address",
-                settings.dashboard_host,
-            ],
-            flag_options={},
-        )
+        # Streamlit reads server settings from flag_options, not from the script's argv:
+        # passing them as `args` silently kept the defaults (all interfaces, port 8501).
+        flag_options = _dashboard_flag_options(settings)
+        load_config_options(flag_options=flag_options)
+        run(str(dashboard_path), False, args=[], flag_options=flag_options)
     finally:
         if scraper_process is not None:
             _stop_dashboard_scraper(scraper_process)

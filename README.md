@@ -238,6 +238,19 @@ Contraintes respectées :
 
 Python 3.10+ est requis.
 
+### Paquet Ubuntu 22.04
+
+Un paquet `.deb` autonome peut être construit sur Ubuntu 22.04 amd64 avec :
+
+```bash
+make deb
+sudo apt install ./dist/presidentielle2027_0.1.0_amd64.deb
+```
+
+L'application apparaît ensuite dans le menu sous « Présidentielle 2027 – Sondages ».
+Elle peut aussi être lancée avec `presidentielle2027-dashboard`. Les données de travail
+sont conservées dans `~/.local/share/presidentielle2027`.
+
 ### Installation manuelle
 
 ```bash

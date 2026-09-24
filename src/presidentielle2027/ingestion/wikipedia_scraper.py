@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from io import StringIO
 from pathlib import Path
 
 import pandas as pd
@@ -22,6 +23,7 @@ class WikipediaIngestionArtifact:
     source_url: str
     html_path: Path
     metadata_path: Path
+    cache_path: Path | None
     csv_paths: list[Path]
     table_count: int
 
@@ -33,6 +35,7 @@ def _slugify(value: str) -> str:
 def fetch_wikipedia_tables(
     source: SourceDefinition,
     raw_dir: Path,
+    cache_path: Path | None = None,
     timeout: int = 30,
 ) -> WikipediaIngestionArtifact:
     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -71,8 +74,14 @@ def fetch_wikipedia_tables(
         }
 
     html_path.write_text(html, encoding="utf-8")
+    if cache_path is not None:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(html, encoding="utf-8")
     metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-    tables = pd.read_html(html)
+    # French polling tables use commas as decimal separators.  pandas treats
+    # commas as thousands separators by default, silently turning ``1,5``
+    # into ``15`` (notably for Nicolas Dupont-Aignan's scores).
+    tables = pd.read_html(StringIO(html), decimal=",", thousands=None)
     csv_paths: list[Path] = []
     for index, frame in enumerate(tables, start=1):
         csv_path = raw_dir / f"{slug}-{timestamp}-table-{index:02d}.csv"
@@ -84,15 +93,23 @@ def fetch_wikipedia_tables(
         source_url=source.source_url,
         html_path=html_path,
         metadata_path=metadata_path,
+        cache_path=cache_path,
         csv_paths=csv_paths,
         table_count=len(csv_paths),
     )
 
 
-def ingest_wikipedia_sources(session: Session, raw_dir: Path) -> list[WikipediaIngestionArtifact]:
+def ingest_wikipedia_sources(
+    session: Session,
+    raw_dir: Path,
+    wikipedia_cache_dir: Path | None = None,
+) -> list[WikipediaIngestionArtifact]:
     artifacts: list[WikipediaIngestionArtifact] = []
     for source_def in get_default_sources():
-        artifact = fetch_wikipedia_tables(source_def, raw_dir=raw_dir)
+        cache_path = None
+        if wikipedia_cache_dir is not None and source_def.source_name == "wikipedia_fr_2027_polls":
+            cache_path = wikipedia_cache_dir / "presidentielle_2027.html"
+        artifact = fetch_wikipedia_tables(source_def, raw_dir=raw_dir, cache_path=cache_path)
         source = session.scalar(select(Source).where(Source.source_url == source_def.source_url))
         if source is None:
             source = Source(
@@ -114,6 +131,7 @@ def ingest_wikipedia_sources(session: Session, raw_dir: Path) -> list[WikipediaI
                     "table_count": artifact.table_count,
                     "html_path": str(artifact.html_path),
                     "metadata_path": str(artifact.metadata_path),
+                    "cache_path": str(artifact.cache_path) if artifact.cache_path else None,
                     "csv_paths": [str(path) for path in artifact.csv_paths],
                 },
                 message=f"Ingested {artifact.table_count} tables from {source_def.source_name}.",
