@@ -32,6 +32,17 @@ from presidentielle2027.extraction.migration import (
     canonicalize_normalized_frame,
 )
 from presidentielle2027.extraction.normalizer import normalize_csv_file, normalize_to_database
+from presidentielle2027.ingestion.refresh_state import (
+    RefreshInProgressError,
+    file_sha256,
+    lock_path,
+    read_refresh_status,
+    refresh_lock,
+    seconds_since,
+    status_path,
+    utc_now_iso,
+    write_refresh_status,
+)
 from presidentielle2027.ingestion.wikipedia_scraper import ingest_wikipedia_sources
 
 logger = logging.getLogger(__name__)
@@ -75,7 +86,7 @@ class PipelineRunSummary:
     persisted_rows: int
 
 
-def run_refresh_pipeline(
+def _run_refresh_locked(
     *,
     settings: Settings,
     session_factory: sessionmaker[Session],
@@ -92,7 +103,12 @@ def run_refresh_pipeline(
     finally:
         session.close()
 
-    generate_wiki_datasets(Path("."), settings.raw_dir / "wikipedia_html")
+    try:
+        generate_wiki_datasets(Path("."), settings.raw_dir / "wikipedia_html")
+    except SystemExit as exc:
+        # make_wiki_datasets is also a CLI script and exits on network errors; inside a
+        # long-running refresh loop that must be a retryable failure, not process exit.
+        raise RuntimeError(f"Wikipedia dataset generation failed (exit code {exc.code}).") from exc
 
     normalized_input, normalized_output = _refresh_normalized_dataset(settings)
 
@@ -127,6 +143,50 @@ def run_refresh_pipeline(
     )
 
 
+def run_refresh_pipeline(
+    *,
+    settings: Settings,
+    session_factory: sessionmaker[Session],
+) -> PipelineRunSummary:
+    """Scrape, normalize and persist the polls, recording progress for the dashboard.
+
+    Raises ``RefreshInProgressError`` when another process is already refreshing.
+    """
+    state_dir = settings.interim_dir
+    status_file = status_path(state_dir)
+    with refresh_lock(lock_path(state_dir)):
+        write_refresh_status(status_file, state="running", started_at=utc_now_iso(), error=None)
+        try:
+            summary = _run_refresh_locked(settings=settings, session_factory=session_factory)
+        except Exception as exc:
+            write_refresh_status(
+                status_file,
+                state="error",
+                finished_at=utc_now_iso(),
+                error=f"{type(exc).__name__}: {exc}"[:240],
+            )
+            raise
+        finished_at = utc_now_iso()
+        write_refresh_status(
+            status_file,
+            state="ok",
+            finished_at=finished_at,
+            last_success_at=finished_at,
+            persisted_rows=summary.persisted_rows,
+            dataset_sha256=file_sha256(summary.normalized_output),
+            error=None,
+        )
+        return summary
+
+
+def _seconds_until_data_is_stale(settings: Settings, min_age_minutes: int) -> float:
+    status = read_refresh_status(status_path(settings.interim_dir))
+    age = seconds_since(status.last_success_at) if status is not None else None
+    if age is None:
+        return 0.0
+    return max(0.0, min_age_minutes * 60 - age)
+
+
 def run_periodic_refresh_pipeline(
     *,
     settings: Settings,
@@ -134,18 +194,41 @@ def run_periodic_refresh_pipeline(
     interval_minutes: int,
     max_runs: int | None = None,
     sleep_fn: Callable[[float], None] = time.sleep,
+    min_age_minutes: int = 0,
+    retry_minutes: int = 5,
 ) -> int:
+    """Refresh now, then every ``interval_minutes``.
+
+    ``min_age_minutes`` delays the first run when the last successful refresh is more
+    recent than that, so relaunching the app does not hammer Wikipedia. A failed run is
+    retried after ``min(interval_minutes, retry_minutes)``, so starting offline recovers
+    as soon as the network is back instead of waiting a full interval.
+    """
     if interval_minutes <= 0:
         raise ValueError("interval_minutes must be strictly positive")
     if max_runs is not None and max_runs <= 0:
         raise ValueError("max_runs must be positive when provided")
 
+    if min_age_minutes > 0:
+        wait_seconds = _seconds_until_data_is_stale(settings, min_age_minutes)
+        if wait_seconds > 0:
+            logger.info(
+                "[auto-refresh] data refreshed recently, first refresh in %d s", int(wait_seconds)
+            )
+            sleep_fn(wait_seconds)
+
+    normal_delay = interval_minutes * 60
+    retry_delay = min(interval_minutes, retry_minutes) * 60
     executed_runs = 0
     while max_runs is None or executed_runs < max_runs:
+        delay = normal_delay
         try:
             summary = run_refresh_pipeline(settings=settings, session_factory=session_factory)
+        except RefreshInProgressError:
+            logger.info("[auto-refresh] another refresh is already running, skipping this run")
         except Exception:
-            logger.error("[auto-refresh] failed", exc_info=True)
+            logger.error("[auto-refresh] failed, retrying in %d s", retry_delay, exc_info=True)
+            delay = retry_delay
         else:
             logger.info(
                 "[auto-refresh] completed: normalized_input=%s, normalized_output=%s, "
@@ -159,7 +242,7 @@ def run_periodic_refresh_pipeline(
         executed_runs += 1
         if max_runs is not None and executed_runs >= max_runs:
             break
-        sleep_fn(interval_minutes * 60)
+        sleep_fn(delay)
     return executed_runs
 
 
@@ -224,6 +307,18 @@ def _write_processed_frame(frame: pd.DataFrame, output_path: Path) -> None:
         output_path.parent / "poll_percentage_correction_report.csv",
         index=False,
     )
+
+    # Keep the historical filename as a compatibility mirror.  Several documented
+    # commands and external CSV consumers still open it directly; leaving it untouched
+    # made a successful V2 refresh look stale even though the database and dashboard
+    # had received the recent polls.
+    if output_path.name == "wikipedia_2027_polls_normalized_v2.csv":
+        legacy_path = output_path.with_name("wikipedia_2027_polls_normalized.csv")
+        migrated.to_csv(legacy_path, index=False)
+        build_migration_report(before, migrated).to_csv(
+            legacy_path.parent / f"{legacy_path.stem}_migration_report.csv",
+            index=False,
+        )
 
 
 def _merge_with_latest_raw_wikipedia_tables(frame: pd.DataFrame, raw_dir: Path) -> pd.DataFrame:

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import StringIO
@@ -26,10 +29,61 @@ class WikipediaIngestionArtifact:
     cache_path: Path | None
     csv_paths: list[Path]
     table_count: int
+    unchanged: bool = False
+
+
+# Bump when the way tables are extracted from the HTML changes (for example the French
+# decimal-comma fix): older snapshots then stop being reused and are re-extracted once.
+TABLE_EXTRACTION_VERSION = 2
 
 
 def _slugify(value: str) -> str:
     return "".join(char.lower() if char.isalnum() else "-" for char in value).strip("-")
+
+
+def _html_fingerprint(html: str) -> str:
+    """Hash of the page markup without HTML comments (render ids, parser-cache stamps)."""
+    return hashlib.sha256(re.sub(r"<!--.*?-->", "", html, flags=re.DOTALL).encode("utf-8")).hexdigest()
+
+
+def _find_reusable_snapshot(
+    raw_dir: Path,
+    slug: str,
+    metadata: Mapping[str, object],
+    html: str,
+) -> tuple[Path, Path, list[Path]] | None:
+    """Return the latest stored snapshot when it is the same page revision, else None.
+
+    Reusing it keeps one snapshot per distinct Wikipedia revision, so an hourly refresh
+    does not add ~25 identical files each time while provenance is preserved.
+    """
+    pattern = re.compile(rf"^{re.escape(slug)}-(\d{{8}}T\d{{6}}Z)\.json$")
+    candidates = sorted(
+        (path for path in raw_dir.glob(f"{slug}-*.json") if pattern.match(path.name)),
+        key=lambda path: path.name,
+    )
+    if not candidates:
+        return None
+    metadata_path = candidates[-1]
+    stamp = pattern.match(metadata_path.name).group(1)  # type: ignore[union-attr]
+    html_path = raw_dir / f"{slug}-{stamp}.html"
+    csv_paths = sorted(raw_dir.glob(f"{slug}-{stamp}-table-*.csv"))
+    try:
+        stored = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(stored, dict) or not html_path.exists() or not csv_paths:
+        return None
+    if stored.get("extraction_version") != metadata["extraction_version"]:
+        return None
+    revision = metadata.get("revision_id")
+    if revision is not None:
+        same_page = stored.get("revision_id") == revision
+    else:
+        same_page = stored.get("revision_id") is None and _html_fingerprint(
+            html_path.read_text(encoding="utf-8")
+        ) == _html_fingerprint(html)
+    return (html_path, metadata_path, csv_paths) if same_page else None
 
 
 def fetch_wikipedia_tables(
@@ -73,10 +127,24 @@ def fetch_wikipedia_tables(
             "fetch_method": "direct_html_fallback",
         }
 
-    html_path.write_text(html, encoding="utf-8")
+    metadata["extraction_version"] = TABLE_EXTRACTION_VERSION
     if cache_path is not None:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(html, encoding="utf-8")
+    reusable = _find_reusable_snapshot(raw_dir, slug, metadata, html)
+    if reusable is not None:
+        reused_html, reused_metadata, reused_csvs = reusable
+        return WikipediaIngestionArtifact(
+            source_name=title,
+            source_url=source.source_url,
+            html_path=reused_html,
+            metadata_path=reused_metadata,
+            cache_path=cache_path,
+            csv_paths=reused_csvs,
+            table_count=len(reused_csvs),
+            unchanged=True,
+        )
+    html_path.write_text(html, encoding="utf-8")
     metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     # French polling tables use commas as decimal separators.  pandas treats
     # commas as thousands separators by default, silently turning ``1,5``
@@ -132,9 +200,13 @@ def ingest_wikipedia_sources(
                     "html_path": str(artifact.html_path),
                     "metadata_path": str(artifact.metadata_path),
                     "cache_path": str(artifact.cache_path) if artifact.cache_path else None,
+                    "unchanged": artifact.unchanged,
                     "csv_paths": [str(path) for path in artifact.csv_paths],
                 },
-                message=f"Ingested {artifact.table_count} tables from {source_def.source_name}.",
+                message=(
+                    f"Ingested {artifact.table_count} tables from {source_def.source_name}"
+                    + (" (page revision unchanged, existing snapshot reused)." if artifact.unchanged else ".")
+                ),
             )
         )
         artifacts.append(artifact)

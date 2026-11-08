@@ -321,6 +321,18 @@ WIKIPEDIA_EN_URL=...
 - `AUTO_INGEST_INTERVAL_MINUTES` : fréquence de relance du pipeline automatique.
 - `AUTO_INGEST_MAX_RUNS` : nombre maximal de cycles ; `0` signifie boucle infinie.
 - `AUTO_INGEST_WITH_DASHBOARD` : démarre automatiquement la collecte avec le dashboard ; activé par défaut.
+- `AUTO_INGEST_MIN_AGE_MINUTES` : au démarrage, la première collecte est retardée si la dernière collecte réussie date de moins que ce délai (10 par défaut), pour ne pas solliciter Wikipédia à chaque relance ; `0` collecte toujours immédiatement.
+- `DASHBOARD_HOST` / `DASHBOARD_PORT` : interface et port d'écoute du dashboard (`0.0.0.0:8501` par défaut ; le paquet `.deb` écoute sur `127.0.0.1`).
+
+### Collecte automatique au lancement
+
+`make dashboard`, `presidentielle2027 run-dashboard` et `presidentielle2027-dashboard` démarrent, avec le dashboard, un processus qui exécute le pipeline de collecte (scraping Wikipédia, normalisation, base SQLite, exports) puis le relance toutes les `AUTO_INGEST_INTERVAL_MINUTES` minutes. Pour ne pas collecter, mettre `AUTO_INGEST_WITH_DASHBOARD=false`.
+
+- **Le dashboard se met à jour seul** : il compare toutes les 30 s l'empreinte du dernier jeu de données collecté ; si elle change, la page se recalcule sans rechargement. Une ligne sous l'en-tête indique l'état de la collecte (en cours, dernière réussite, échec).
+- **Hors-ligne** : un échec est journalisé et enregistré, les données locales restent affichées, et une nouvelle tentative a lieu après 5 minutes (ou l'intervalle s'il est plus court), pas après une heure.
+- **Un seul refresh à la fois** : un verrou (`data/interim/refresh.lock`) empêche deux collectes simultanées, par exemple si le dashboard est lancé deux fois. L'état de la dernière collecte est dans `data/interim/refresh_status.json` (ignoré par git).
+- **Pas d'accumulation inutile** : `data/raw/` conserve un snapshot par révision de la page Wikipédia ; une collecte qui retrouve la même révision réutilise le snapshot existant au lieu d'en écrire un nouveau.
+- Lancer directement `streamlit run` sur `dashboard/live_app.py` n'active pas la collecte automatique : passer par la commande `run-dashboard`.
 
 ## Démarrage rapide
 

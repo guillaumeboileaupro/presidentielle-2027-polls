@@ -12,6 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from presidentielle2027.analytics.polling_average import load_results_dataframe
 from presidentielle2027.config import get_settings
+from presidentielle2027.dashboard.data_freshness import dashboard_data_version, describe_refresh
 from presidentielle2027.dashboard.party_assets import render_app_header
 from presidentielle2027.dashboard.styles import (
     apply_browser_chrome_overrides,
@@ -248,8 +249,9 @@ def _page_slug(label: str) -> str:
     return slug or "page"
 
 
-@st.cache_data(show_spinner=False)
-def load_dashboard_data() -> pd.DataFrame:
+@st.cache_data(show_spinner=False, max_entries=2)
+def load_dashboard_data(data_version: str = "") -> pd.DataFrame:
+    """Load the polls; ``data_version`` only keys the cache so new data replaces old."""
     settings = get_settings()
     normalized_v2_path = settings.processed_dir / "wikipedia_2027_polls_normalized_v2.csv"
     normalized_path = settings.processed_dir / "wikipedia_2027_polls_normalized.csv"
@@ -354,6 +356,14 @@ def prepare_dashboard_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return working
 
 
+@st.fragment(run_every="30s")
+def _render_refresh_status(loaded_version: str) -> None:
+    settings = get_settings()
+    if dashboard_data_version(settings) != loaded_version:
+        st.rerun(scope="app")
+    st.caption(describe_refresh(settings))
+
+
 def main() -> None:
     page_icon = Path(__file__).parent / "assets" / "favicon-neutral.svg"
     st.set_page_config(page_title="Présidentielle 2027", page_icon=str(page_icon), layout="wide")
@@ -361,7 +371,9 @@ def main() -> None:
     apply_browser_chrome_overrides()
     st.markdown(render_app_header(), unsafe_allow_html=True)
 
-    frame = prepare_dashboard_frame(load_dashboard_data())
+    data_version = dashboard_data_version(get_settings())
+    frame = prepare_dashboard_frame(load_dashboard_data(data_version))
+    _render_refresh_status(data_version)
     if frame.empty:
         st.warning("Aucune donnée disponible.")
         return
