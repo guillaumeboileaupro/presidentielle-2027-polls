@@ -363,3 +363,19 @@ Limite de la vérification visuelle : les captures headless demandent un précha
 tour » a été regardée, pas les onze autres.
 
 Total : 175 tests, `ruff` propre, mypy inchangé à 45 erreurs.
+
+### Collecte automatique au lancement (24/09/2026)
+
+`run-dashboard` (donc `make dashboard`, `presidentielle2027-dashboard`, le `.desktop`) lance
+déjà le scraper ; il manquait ce qui le rend fiable. Ajouté et vérifié :
+- verrou + fichier d'état (`data/interim/refresh.lock`, `refresh_status.json`, ignorés par git) ;
+- `SystemExit` réseau converti en erreur récupérable (il tuait la boucle hors-ligne) ;
+  retry après 5 min au lieu d'1 h ; attente `AUTO_INGEST_MIN_AGE_MINUTES` (10) au lancement ;
+- un snapshot brut par révision Wikipédia (fini les ~25 fichiers/heure) ;
+- dashboard : cache versionné par l'empreinte du jeu de données, mise à jour seule sans
+  rechargement, bannière d'état de la collecte.
+Vérifié en réel (Chromium piloté) : anciennes données (147 scénarios) → 247 après collecte, dans la
+même session, page jamais rechargée ; hors-ligne ; `.deb` reconstruit, sa collecte se lance seule
+au démarrage (statut `ok`, SHA identique). 193 tests, ruff propre, mypy 45.
+Limite : `streamlit run` direct n'active pas la collecte ; `make normalize` manuel ne met pas à
+jour le statut (redémarrer le dashboard).

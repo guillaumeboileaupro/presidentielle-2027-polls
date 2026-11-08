@@ -105,6 +105,7 @@ def auto_refresh_pipeline(
         session_factory=get_session_factory(),
         interval_minutes=configured_interval,
         max_runs=effective_max_runs,
+        min_age_minutes=settings.auto_ingest_min_age_minutes,
     )
     typer.echo(f"Automatic refresh pipeline stopped after {executed_runs} run(s).")
 

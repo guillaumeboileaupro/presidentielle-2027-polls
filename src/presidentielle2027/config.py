@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     auto_ingest_interval_minutes: int = Field(default=60, alias="AUTO_INGEST_INTERVAL_MINUTES")
     auto_ingest_max_runs: int = Field(default=0, alias="AUTO_INGEST_MAX_RUNS")
     auto_ingest_with_dashboard: bool = Field(default=True, alias="AUTO_INGEST_WITH_DASHBOARD")
+    auto_ingest_min_age_minutes: int = Field(default=10, alias="AUTO_INGEST_MIN_AGE_MINUTES")
 
 
 @lru_cache(maxsize=1)
